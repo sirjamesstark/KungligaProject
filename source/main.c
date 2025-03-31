@@ -1,7 +1,15 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <math.h>
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_timer.h>
+#include <SDL_mixer.h>
+
+#include "../include/platform.h"
+#include "../include/player.h"
+
+#define PLATTFORM_COUNT
 
 typedef struct {
     int window_width;
@@ -9,6 +17,12 @@ typedef struct {
     int speed_x; 
     int speed_y; 
 } displayMode; 
+
+typedef struct {
+    SDL_Rect rect;
+    bool isOnPlatform;
+    float fallFromHeight;
+} Platform;
 
 
 int main(int argv, char** args) {
@@ -67,6 +81,7 @@ int main(int argv, char** args) {
     shipRect.h/=6;
     float shipX = (DM.window_width - shipRect.w)/2;//left side
     float shipY = (DM.window_height - shipRect.h)/2;//upper side
+    
     float shipVelocityX = 0;//unit: pixels/s
     float shipVelocityY = 0;
 
