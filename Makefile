@@ -51,15 +51,18 @@ $(OBJDIR)/platform.o: $(SRCDIR)/platform.c | $(OBJDIR)
 $(OBJDIR)/player.o: $(SRCDIR)/player.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -o $(OBJDIR)/player.o $(SRCDIR)/player.c
 
+# Välj rätt mkdir-kommando baserat på plattform
+ifeq ($(UNAME_S),Darwin)  # macOS
+    MKDIR = mkdir -p
+else ifeq ($(UNAME_S),Linux)  # Linux
+    MKDIR = mkdir -p
+else  # Windows (cmd)
+    MKDIR = mkdir
+endif
+
 # Skapar obj-mappen om den inte finns
 $(OBJDIR):
-ifeq ($(UNAME_S),Darwin)  # macOS
-	@mkdir -p $(OBJDIR)
-else ifeq ($(UNAME_S),Linux)  # Linux
-	@mkdir -p $(OBJDIR)
-else  # Windows
-	@mkdir $(OBJDIR)
-endif
+	@$(MKDIR) $(OBJDIR)
 
 # Städar upp genererade filer (körbar fil och .o-filer)
 clean:
