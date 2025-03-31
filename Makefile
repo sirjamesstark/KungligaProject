@@ -21,8 +21,13 @@ INCDIR = ./include
 OBJDIR = ./obj
 
 # Flaggor
-CFLAGS = -g -I$(INCLUDE) -Dmain=SDL_main -c
-LDFLAGS = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
+ifeq ($(UNAME_S),Windows)
+    CFLAGS = -g -I$(INCLUDE) -Dmain=SDL_main -c
+    LDFLAGS = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
+else
+    CFLAGS = -g -I$(INCLUDE) -c
+    LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
+endif
 
 # Lista över filer
 SRC = $(SRCDIR)/main.c $(SRCDIR)/platform.c $(SRCDIR)/player.c
