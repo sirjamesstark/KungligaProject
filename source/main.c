@@ -3,6 +3,8 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
+#define COUNTER 20
+
 typedef struct {
     int window_width;
     int window_height; 
@@ -26,8 +28,8 @@ int main(int argv, char** args) {
     displayMode DM; 
     DM.window_width = windowMode.w;
     DM.window_height = windowMode.h;
-    DM.speed_x = DM.window_width/2; 
-    DM.speed_y = DM.window_height/2;  
+    DM.speed_x = DM.window_width/20; 
+    DM.speed_y = DM.window_height/20;  
 
     SDL_Window* pWindow = SDL_CreateWindow("Enkelt exempel 1",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED, DM.window_width, DM.window_height,SDL_WINDOW_FULLSCREEN_DESKTOP);
     if (!pWindow) {
@@ -72,7 +74,9 @@ int main(int argv, char** args) {
 
     bool closeWindow = false;
     bool up,down,left,right;
+    bool onAir = 0;
     up = down = left = right = false;
+    int upCounter = COUNTER, downCounter = COUNTER;
 
     while(!closeWindow){
 
@@ -126,8 +130,34 @@ int main(int argv, char** args) {
         }
 
         shipVelocityX = shipVelocityY = 0;
-        if(up && !down) shipVelocityY = -DM.speed_y;
-        if(down && !up) shipVelocityY = DM.speed_y;
+        
+        if(up && !down && !onAir) //    Om man är på golvet och trycker bara upp
+        {
+            onAir = true;   //Sätter vi på hoppande boolsk variabel på True (Nu hoppar vi)
+        }
+        if (onAir == true)  //Om vi hoppar just nu
+        {
+            if (upCounter > 0)      //Om räknaren för hopp är mer än 0
+            {
+                shipVelocityY = -(DM.speed_y*5);     //Rörelse upp
+                upCounter--;    // Minska räknaren för hopp
+            }
+            else        // Om räknaren för hopp är 0
+            {
+                if ((downCounter > 0) && (shipY < (DM.window_height - shipRect.h)))   //Om räknaren för gravitation är mer än 0 och karaktären är i luften
+                {
+                    shipVelocityY = (DM.speed_y)*5;  //Rörelse ner
+                    downCounter--;    // Minska räknare för gravitation
+                }
+                else    // Om man har landat
+                {
+                    upCounter = COUNTER;    //Resetta räknare för hpop
+                    downCounter = COUNTER;  //Resetta räknare för gravitation
+                    onAir = false;  //Vi hoppar inte längre
+                }
+            }
+        }
+
         if(left && !right) shipVelocityX = -DM.speed_x;
         if(right && !left) shipVelocityX = DM.speed_x;
         shipX += shipVelocityX/60;//60 frames/s
