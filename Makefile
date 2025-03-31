@@ -6,7 +6,7 @@ else
 endif
 
 # Kompilatorn (beroende på plattform)
-CC = gcc-14
+CC = gcc
 ifeq ($(UNAME_S),Darwin)
     INCLUDE = /opt/homebrew/include/SDL2
     LIBS = /opt/homebrew/lib
@@ -18,7 +18,7 @@ else  # Windows
     LIBS = C:/path/to/SDL2/lib
 endif
 
-# Sökvägar relativt Makefilen:
+# Sökvägar relativt Makefilen
 SRCDIR = ./source
 INCDIR = ./include
 OBJDIR = ./obj
@@ -36,9 +36,11 @@ HEADERS = $(INCDIR)/platform.h $(INCDIR)/player.h
 ifeq ($(UNAME_S),Windows)
     MKDIR = if not exist $(OBJDIR) mkdir $(OBJDIR)
     RM = del /Q
+    RMDIR = rmdir /S /Q
 else
-    MKDIR = mkdir -p $(OBJDIR)
+	MKDIR = mkdir -p $(OBJDIR)
     RM = rm -f
+    RMDIR = rm -rf
 endif
 
 # Skapar en exekverbar fil utifrån .o-filerna
@@ -53,7 +55,14 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 $(OBJDIR):
 	@$(MKDIR)
 
-# Städar upp genererade filer
+# Städar upp genererade filer och tar bort obj-mappen
 clean:
+ifeq ($(UNAME_S),Windows)
+	$(RM) KungligaProjekt.exe
+	$(RM) $(OBJDIR)\*.o
+	$(RMDIR) $(OBJDIR)
+else
 	$(RM) KungligaProjekt
 	$(RM) $(OBJS)
+	$(RMDIR) $(OBJDIR)
+endif
