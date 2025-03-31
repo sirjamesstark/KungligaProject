@@ -1,4 +1,17 @@
-CC = gcc-14 # Kompilatorn
+# Bestämmer om systemet är Windows eller Unix-liknande
+UNAME_S := $(shell uname -s)
+
+# Kompilatorn (beroende på plattform)
+CC = gcc-14
+ifeq ($(UNAME_S),Darwin)
+    # macOS (kanske en annan version av GCC, här använder vi gcc-14 som exempel)
+    INCLUDE = /opt/homebrew/include/SDL2
+    LIBS = /opt/homebrew/lib
+else
+    # Windows (t.ex. MinGW eller liknande, justera för din miljö)
+    INCLUDE = C:/path/to/SDL2/include
+    LIBS = C:/path/to/SDL2/lib
+endif
 
 # Sökvägar relativt Makefilen:
 # Källkodsfilernas mapp med .c-filer (funktionsdefinitioner)
@@ -7,12 +20,6 @@ SRCDIR = ./source
 INCDIR = ./include
 # Objektfilernas mapp med .o-filer (filerna genereras efter kompilering)
 OBJDIR = ./obj
-
-# Fullständiga sökvägar till SDL2
-# Sökväg till SDL2:s headerfiler 
-INCLUDE = /opt/homebrew/include/SDL2
-# Sökväg till SLD2:s bibliotek
-LIBS = /opt/homebrew/lib
 
 # Flaggor
 # Kompilatorflaggor som används vid kompliering av egna .c-filer samt ger kompliatorn information om SLD2:s headerfiler
@@ -33,18 +40,36 @@ KungligaProjekt: $(OBJS)
 	$(CC) $(OBJS) -o KungligaProjekt $(LDFLAGS)
 
 # Kompilerar main.c till main.o
-$(OBJDIR)/main.o: $(SRCDIR)/main.c
+$(OBJDIR)/main.o: $(SRCDIR)/main.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -o $(OBJDIR)/main.o $(SRCDIR)/main.c
 
 # Kompilerar platform.c till platform.o
-$(OBJDIR)/platform.o: $(SRCDIR)/platform.c
+$(OBJDIR)/platform.o: $(SRCDIR)/platform.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -o $(OBJDIR)/platform.o $(SRCDIR)/platform.c
 
 # Kompilerar player.c till player.o
-$(OBJDIR)/player.o: $(SRCDIR)/player.c
+$(OBJDIR)/player.o: $(SRCDIR)/player.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -o $(OBJDIR)/player.o $(SRCDIR)/player.c
+
+# Skapar obj-mappen om den inte finns
+$(OBJDIR):
+ifeq ($(UNAME_S),Darwin)  # macOS
+	@mkdir -p $(OBJDIR)
+else ifeq ($(UNAME_S),Linux)  # Linux
+	@mkdir -p $(OBJDIR)
+else  # Windows
+	@mkdir $(OBJDIR)
+endif
 
 # Städar upp genererade filer (körbar fil och .o-filer)
 clean:
-	rm KungligaProjekt
-	rm $(OBJS)
+ifeq ($(UNAME_S),Darwin)  # macOS
+	rm -f KungligaProjekt
+	rm -f $(OBJS)
+else ifeq ($(UNAME_S),Linux)  # Linux
+	rm -f KungligaProjekt
+	rm -f $(OBJS)
+else  # Windows
+	del KungligaProjekt.exe
+	del $(OBJDIR)\*.o
+endif
