@@ -3,12 +3,12 @@
 #include <stdlib.h>
 #include "../include/platform.h"
 
-struct asteroidImage{
+struct platformImage{
     SDL_Renderer *pRenderer;
     SDL_Texture *pTexture;    
 };
 
-struct asteroid{
+struct platform{
     float x, y;
     int window_width,window_height;
     SDL_Renderer *pRenderer;
@@ -16,53 +16,53 @@ struct asteroid{
     SDL_Rect rect;
 };
 
-static void getStartValues(Asteroid *a);
+static void getStartValues(Platform *a);
 
-AsteroidImage *createAsteroidImage(SDL_Renderer *pRenderer){
-    static AsteroidImage* pAsteroidImage = NULL;
-    if(pAsteroidImage==NULL){
-        pAsteroidImage = malloc(sizeof(struct asteroidImage));
+PlatformImage *createAsteroidImage(SDL_Renderer *pRenderer){
+    static PlatformImage* pPlatformImage = NULL;
+    if(pPlatformImage==NULL){
+        pPlatformImage = malloc(sizeof(struct platformImage));
         SDL_Surface *surface = IMG_Load("resources/block.png");
         if(!surface){
             printf("Error: %s\n",SDL_GetError());
             return NULL;
         }
-        pAsteroidImage->pRenderer = pRenderer;
-        pAsteroidImage->pTexture = SDL_CreateTextureFromSurface(pRenderer, surface);
+        pPlatformImage->pRenderer = pRenderer;
+        pPlatformImage->pTexture = SDL_CreateTextureFromSurface(pRenderer, surface);
         SDL_FreeSurface(surface);
-        if(!pAsteroidImage->pTexture){
+        if(!pPlatformImage->pTexture){
             printf("Error: %s\n",SDL_GetError());
             return NULL;
         }
     }
-    return pAsteroidImage;
+    return pPlatformImage;
 }
 
-Asteroid *createAsteroid(AsteroidImage *pAsteroidImage, int window_width, int window_height){
-    Asteroid *pAsteroid = malloc(sizeof(struct asteroid));
-    pAsteroid->pRenderer = pAsteroidImage->pRenderer;
-    pAsteroid->pTexture = pAsteroidImage->pTexture;
-    pAsteroid->window_width = window_width;
-    pAsteroid->window_height = window_height;
-    SDL_QueryTexture(pAsteroidImage->pTexture,NULL,NULL,&(pAsteroid->rect.w),&(pAsteroid->rect.h));
-    pAsteroid->rect.w=16;
-    pAsteroid->rect.h=16;
+Platform *createPlatform(PlatformImage *pPlatformImage, int window_width, int window_height){
+    Platform *pPlatform = malloc(sizeof(struct platform));
+    pPlatform->pRenderer = pPlatformImage->pRenderer;
+    pPlatform->pTexture = pPlatformImage->pTexture;
+    pPlatform->window_width = window_width;
+    pPlatform->window_height = window_height;
+    SDL_QueryTexture(pPlatformImage->pTexture,NULL,NULL,&(pPlatform->rect.w),&(pPlatform->rect.h));
+    pPlatform->rect.w=16;
+    pPlatform->rect.h=16;
 
-    return pAsteroid;
+    return pPlatform;
 }
 
-SDL_Rect getRectAsteroid(Asteroid *pAsteroid){
-    return pAsteroid->rect;
+SDL_Rect getRectPlatform(Platform *pPlatform){
+    return pPlatform->rect;
 }
 
-void drawAsteroid(Asteroid *pAsteroid){
-    SDL_RenderCopyEx(pAsteroid->pRenderer,pAsteroid->pTexture,NULL,&(pAsteroid->rect),0,NULL,SDL_FLIP_NONE);
+void drawPlatform(Platform *pPlatform){
+    SDL_RenderCopyEx(pPlatform->pRenderer,pPlatform->pTexture,NULL,&(pPlatform->rect),0,NULL,SDL_FLIP_NONE);
 }
 
-void destroyAsteroid(Asteroid *pAsteroid){
-    free(pAsteroid);
+void destroyPlatform(Platform *pPlatform){
+    free(pPlatform);
 }
 
-void destroyAsteroidImage(AsteroidImage *pAsteroidImage){
-    SDL_DestroyTexture(pAsteroidImage->pTexture);
+void destroyPlatformImage(PlatformImage *pPlatformImage){
+    SDL_DestroyTexture(pPlatformImage->pTexture);
 }
