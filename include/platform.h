@@ -1,15 +1,15 @@
 #ifndef asteroid_h
 #define asteroid_h
 
-typedef struct asteroidImage AsteroidImage;
-typedef struct asteroid Asteroid;
+typedef struct platformImage PlatformImage;
+typedef struct platform Platform;
 
-AsteroidImage *createAsteroidImage(SDL_Renderer *pRenderer);
-Asteroid *createAsteroid(AsteroidImage *pAsteroidImage, int window_width, int window_height);
-void updateAsteroid(Asteroid *pAsteroid);
-void drawAsteroid(Asteroid *pAsteroid);
-void destroyAsteroid(Asteroid *pAsteroid);
-SDL_Rect getRectAsteroid(Asteroid *pAsteroid);
-void destroyAsteroidImage(AsteroidImage *pAsteroidImage);
+PlatformImage *createAsteroidImage(SDL_Renderer *pRenderer);
+Platform *createPlatform(PlatformImage *pAsteroidImage, int window_width, int window_height);
+void updateAsteroid(Platform *pAsteroid);
+void drawPlatform(Platform *pAsteroid);
+void destroyPlatform(Platform *pAsteroid);
+SDL_Rect getRectPlatform(Platform *pAsteroid);
+void destroyPlatformImage(PlatformImage *pAsteroidImage);
 
 #endif

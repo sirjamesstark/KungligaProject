@@ -1,15 +1,15 @@
 #ifndef rocket_h
 #define rocket_h
 
-typedef struct rocket Rocket;
+typedef struct player Player;
 
-Rocket *createRocket(int x, int y, SDL_Renderer *pRenderer, int window_width, int window_height);
-void updateRocket(Rocket *pRocket);
-void drawRocket(Rocket *pRocket);
-void destroyRocket(Rocket *pRocket);
-void turnLeft(Rocket *pRocket);
-void turnRight(Rocket *pRocket);
-void accelerate(Rocket *pRocket);
-int collideRocket(Rocket *pRocket, SDL_Rect rect);
+Player *createPlayer(int x, int y, SDL_Renderer *pRenderer, int window_width, int window_height);
+void updatePlayer(Player *pRocket);
+void drawPlayer(Player *pRocket);
+void destroyPlayer(Player *pRocket);
+void turnLeft(Player *pRocket);
+void turnRight(Player *pRocket);
+void accelerate(Player *pRocket);
+int collidePlayer(Player *pRocket, SDL_Rect rect);
 
 #endif
