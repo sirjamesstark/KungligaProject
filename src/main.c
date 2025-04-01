@@ -79,7 +79,16 @@ int main(int argv, char** args) {
         up = down = left = right = false;
         int upCounter = COUNTER, downCounter = COUNTER;
 
+        Uint32 lastTime = SDL_GetTicks(); // Tidpunkt för senaste uppdateringen
+        Uint32 currentTime;
+        float deltaTime;
+
         while(!closeWindow){
+
+            // Beräkna tid sedan senaste frame
+            currentTime = SDL_GetTicks();
+            deltaTime = (currentTime - lastTime) / 1000.0f; // Omvandla till sekunder
+            lastTime = currentTime;
 
             SDL_Event event;
             while(SDL_PollEvent(&event)){
@@ -161,8 +170,12 @@ int main(int argv, char** args) {
 
             if(left && !right) shipVelocityX = -dM.speed_x;
             if(right && !left) shipVelocityX = dM.speed_x;
-            shipX += shipVelocityX/20;//60 frames/s
-            shipY += shipVelocityY/60;
+
+            // Multiplicera hastigheten med deltaTime
+            shipX += shipVelocityX * 5 * deltaTime;
+            shipY += shipVelocityY * deltaTime;
+            
+            // Se till att skeppet inte går utanför skärmen
             if(shipX<0) shipX=0;
             if(shipY<0) shipY=0;
             if(shipX>dM.window_width-playerRect.w) shipX = dM.window_width-playerRect.w;
