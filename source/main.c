@@ -81,11 +81,11 @@ int main(int argv, char** args) {
     SDL_QueryTexture(pTexture,NULL,NULL,&playerRect.w,&playerRect.h);
     playerRect.w/=6;
     playerRect.h/=6;
-    float shipX = (DM.window_width - playerRect.w)/2;//left side
-    float shipY = (DM.window_height - playerRect.h)/2;//upper side
+    float playerX = (DM.window_width - playerRect.w)/2;//left side
+    float playerY = (DM.window_height - playerRect.h)/2;//upper side
     
-    float shipVelocityX = 0;//unit: pixels/s
-    float shipVelocityY = 0;
+    float playerVelocityX = 0;//unit: pixels/s
+    float playerVelocityY = 0;
 
     bool closeWindow = false;
     bool up,down,left,right;
@@ -144,7 +144,7 @@ int main(int argv, char** args) {
             }
         }
 
-        shipVelocityX = shipVelocityY = 0;
+        playerVelocityX = playerVelocityY = 0;
         
         if(up && !down && !onAir) //    Om man är på golvet och trycker bara upp
         {
@@ -154,14 +154,14 @@ int main(int argv, char** args) {
         {
             if (upCounter > 0)      //Om räknaren för hopp är mer än 0
             {
-                shipVelocityY = -(DM.speed_y*5);     //Rörelse upp
+                playerVelocityY = -(DM.speed_y*5);     //Rörelse upp
                 upCounter--;    // Minska räknaren för hopp
             }
             else        // Om räknaren för hopp är 0
             {
-                if ((downCounter > 0) && (shipY < (DM.window_height - playerRect.h)))   //Om räknaren för gravitation är mer än 0 och karaktären är i luften
+                if ((downCounter > 0) && (playerY < (DM.window_height - playerRect.h)))   //Om räknaren för gravitation är mer än 0 och karaktären är i luften
                 {
-                    shipVelocityY = (DM.speed_y)*5;  //Rörelse ner
+                    playerVelocityY = (DM.speed_y)*5;  //Rörelse ner
                     downCounter--;    // Minska räknare för gravitation
                 }
                 else    // Om man har landat
@@ -173,16 +173,16 @@ int main(int argv, char** args) {
             }
         }
 
-        if(left && !right) shipVelocityX = -DM.speed_x;
-        if(right && !left) shipVelocityX = DM.speed_x;
-        shipX += shipVelocityX/60;//60 frames/s
-        shipY += shipVelocityY/60;
-        if(shipX<0) shipX=0;
-        if(shipY<0) shipY=0;
-        if(shipX>DM.window_width-playerRect.w) shipX = DM.window_width-playerRect.w;
-        if(shipY>DM.window_height-playerRect.h) shipY = DM.window_height-playerRect.h;
-        playerRect.x = shipX;
-        playerRect.y = shipY;
+        if(left && !right) playerVelocityX = -DM.speed_x;
+        if(right && !left) playerVelocityX = DM.speed_x;
+        playerX += playerVelocityX/60;//60 frames/s
+        playerY += playerVelocityY/60;
+        if(playerX<0) playerX=0;
+        if(playerY<0) playerY=0;
+        if(playerX>DM.window_width-playerRect.w) playerX = DM.window_width-playerRect.w;
+        if(playerY>DM.window_height-playerRect.h) playerY = DM.window_height-playerRect.h;
+        playerRect.x = playerX;
+        playerRect.y = playerY;
 
         SDL_RenderClear(pRenderer);
         SDL_RenderCopy(pRenderer,pTexture,NULL,&playerRect);

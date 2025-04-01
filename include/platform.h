@@ -4,7 +4,7 @@
 typedef struct platformImage PlatformImage;
 typedef struct platform Platform;
 
-PlatformImage *createAsteroidImage(SDL_Renderer *pRenderer);
+PlatformImage *createPlatformImage(SDL_Renderer *pRenderer);
 Platform *createPlatform(PlatformImage *pAsteroidImage, int window_width, int window_height);
 void updateAsteroid(Platform *pAsteroid);
 void drawPlatform(Platform *pAsteroid);
