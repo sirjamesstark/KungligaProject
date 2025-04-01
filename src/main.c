@@ -161,7 +161,7 @@ int main(int argv, char** args) {
 
             if(left && !right) shipVelocityX = -dM.speed_x;
             if(right && !left) shipVelocityX = dM.speed_x;
-            shipX += shipVelocityX/60;//60 frames/s
+            shipX += shipVelocityX/20;//60 frames/s
             shipY += shipVelocityY/60;
             if(shipX<0) shipX=0;
             if(shipY<0) shipY=0;
