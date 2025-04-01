@@ -77,12 +77,12 @@ int main(int argv, char** args) {
         return 1;    
     }
 
-    SDL_Rect shipRect;
-    SDL_QueryTexture(pTexture,NULL,NULL,&shipRect.w,&shipRect.h);
-    shipRect.w/=6;
-    shipRect.h/=6;
-    float shipX = (DM.window_width - shipRect.w)/2;//left side
-    float shipY = (DM.window_height - shipRect.h)/2;//upper side
+    SDL_Rect playerRect;
+    SDL_QueryTexture(pTexture,NULL,NULL,&playerRect.w,&playerRect.h);
+    playerRect.w/=6;
+    playerRect.h/=6;
+    float shipX = (DM.window_width - playerRect.w)/2;//left side
+    float shipY = (DM.window_height - playerRect.h)/2;//upper side
     
     float shipVelocityX = 0;//unit: pixels/s
     float shipVelocityY = 0;
@@ -159,7 +159,7 @@ int main(int argv, char** args) {
             }
             else        // Om räknaren för hopp är 0
             {
-                if ((downCounter > 0) && (shipY < (DM.window_height - shipRect.h)))   //Om räknaren för gravitation är mer än 0 och karaktären är i luften
+                if ((downCounter > 0) && (shipY < (DM.window_height - playerRect.h)))   //Om räknaren för gravitation är mer än 0 och karaktären är i luften
                 {
                     shipVelocityY = (DM.speed_y)*5;  //Rörelse ner
                     downCounter--;    // Minska räknare för gravitation
@@ -179,13 +179,13 @@ int main(int argv, char** args) {
         shipY += shipVelocityY/60;
         if(shipX<0) shipX=0;
         if(shipY<0) shipY=0;
-        if(shipX>DM.window_width-shipRect.w) shipX = DM.window_width-shipRect.w;
-        if(shipY>DM.window_height-shipRect.h) shipY = DM.window_height-shipRect.h;
-        shipRect.x = shipX;
-        shipRect.y = shipY;
+        if(shipX>DM.window_width-playerRect.w) shipX = DM.window_width-playerRect.w;
+        if(shipY>DM.window_height-playerRect.h) shipY = DM.window_height-playerRect.h;
+        playerRect.x = shipX;
+        playerRect.y = shipY;
 
         SDL_RenderClear(pRenderer);
-        SDL_RenderCopy(pRenderer,pTexture,NULL,&shipRect);
+        SDL_RenderCopy(pRenderer,pTexture,NULL,&playerRect);
         SDL_RenderPresent(pRenderer);
         SDL_Delay(1000/60);//60 frames/s
     }
