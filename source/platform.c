@@ -9,8 +9,8 @@ struct asteroidImage{
 };
 
 struct asteroid{
-    float x, y, vx, vy;
-    int window_width,window_height,renderAngle;
+    float x, y;
+    int window_width,window_height;
     SDL_Renderer *pRenderer;
     SDL_Texture *pTexture;
     SDL_Rect rect;
@@ -22,7 +22,7 @@ AsteroidImage *createAsteroidImage(SDL_Renderer *pRenderer){
     static AsteroidImage* pAsteroidImage = NULL;
     if(pAsteroidImage==NULL){
         pAsteroidImage = malloc(sizeof(struct asteroidImage));
-        SDL_Surface *surface = IMG_Load("resources/Asteroid.png");
+        SDL_Surface *surface = IMG_Load("resources/block.png");
         if(!surface){
             printf("Error: %s\n",SDL_GetError());
             return NULL;
@@ -45,50 +45,18 @@ Asteroid *createAsteroid(AsteroidImage *pAsteroidImage, int window_width, int wi
     pAsteroid->window_width = window_width;
     pAsteroid->window_height = window_height;
     SDL_QueryTexture(pAsteroidImage->pTexture,NULL,NULL,&(pAsteroid->rect.w),&(pAsteroid->rect.h));
-    int sizeFactor = rand()%8+1;
-    pAsteroid->rect.w/=sizeFactor;
-    pAsteroid->rect.h/=sizeFactor;
-    getStartValues(pAsteroid);
-    pAsteroid->renderAngle = rand()%360;
+    pAsteroid->rect.w=16;
+    pAsteroid->rect.h=16;
 
     return pAsteroid;
-}
-
-static void getStartValues(Asteroid *pAsteroid){
-    int angle;
-    if(rand()%2){
-        pAsteroid->x=rand()%pAsteroid->window_width-pAsteroid->rect.w/2;
-        pAsteroid->y=-pAsteroid->rect.h;
-        angle=rand()%90-45;
-    }else{
-        pAsteroid->y=rand()%pAsteroid->window_height-pAsteroid->rect.h/2;
-        pAsteroid->x=-pAsteroid->rect.w;
-        angle=rand()%90;
-    }
-    int v=rand()%8+5;
-    pAsteroid->vx=v*sin(angle*2*M_PI/360);
-    pAsteroid->vy=v*cos(angle*2*M_PI/360);
-    pAsteroid->rect.x=pAsteroid->x;
-    pAsteroid->rect.y=pAsteroid->y;
 }
 
 SDL_Rect getRectAsteroid(Asteroid *pAsteroid){
     return pAsteroid->rect;
 }
 
-void updateAsteroid(Asteroid *pAsteroid){
-    pAsteroid->x+=pAsteroid->vx*0.1;
-    pAsteroid->y+=pAsteroid->vy*0.1;
-    if (pAsteroid->x>pAsteroid->window_width||pAsteroid->y>pAsteroid->window_height){
-        getStartValues(pAsteroid);
-        return;
-    }
-    pAsteroid->rect.x=pAsteroid->x;
-    pAsteroid->rect.y=pAsteroid->y;
-}
-
 void drawAsteroid(Asteroid *pAsteroid){
-    SDL_RenderCopyEx(pAsteroid->pRenderer,pAsteroid->pTexture,NULL,&(pAsteroid->rect),pAsteroid->renderAngle,NULL,SDL_FLIP_NONE);
+    SDL_RenderCopyEx(pAsteroid->pRenderer,pAsteroid->pTexture,NULL,&(pAsteroid->rect),0,NULL,SDL_FLIP_NONE);
 }
 
 void destroyAsteroid(Asteroid *pAsteroid){
