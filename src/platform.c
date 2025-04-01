@@ -18,7 +18,7 @@ struct platform{
 
 static void getStartValues(Platform *a);
 
-PlatformImage *createAsteroidImage(SDL_Renderer *pRenderer){
+PlatformImage *createPlatformImage(SDL_Renderer *pRenderer){
     static PlatformImage* pPlatformImage = NULL;
     if(pPlatformImage==NULL){
         pPlatformImage = malloc(sizeof(struct platformImage));
