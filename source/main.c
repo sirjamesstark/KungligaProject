@@ -26,7 +26,7 @@ typedef struct
     SDL_Rect rect;
     bool isOnPlatform;
     float fallFromHeight;
-} Platform;
+} platform;
 
 int main(int argv, char **args)
 {
