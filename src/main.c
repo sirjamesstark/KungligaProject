@@ -13,6 +13,7 @@
 #include "../include/renderer.h"
 
 #define COUNTER 20
+#define NUM_MENU 2
 
 typedef struct {
     int window_width;
@@ -23,72 +24,85 @@ typedef struct {
 } DisplayMode; 
 
 void initiateFullscreen(DisplayMode *pdM);
-//void runGame();                             // Det är här spelet körs
-//void handleInput();                         // Styr spelarens tangentval
-//void exitGame();                            // Här avslutas spelet
+bool showMenu(SDL_Renderer *pRenderer, SDL_Window *pWindow, DisplayMode position);
 
 int main(int argv, char** args) {
-    DisplayMode dM ={0};
+    DisplayMode dM = {0};
     initiateFullscreen(&dM);
-    if (dM.continue_game) { // OBS!! Funktionerna innanför denna if-sats bör delas upp i funktioner och andra filer (se förslag på funktioner ovanför)
-        SDL_Window* pWindow = SDL_CreateWindow("Enkelt exempel 1",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED, dM.window_width, dM.window_height,SDL_WINDOW_FULLSCREEN_DESKTOP);
-        if (!pWindow) {
-            printf("Error: %s\n",SDL_GetError());
-            SDL_Quit();
-            return 1;
-        }
-        SDL_Renderer *pRenderer = SDL_CreateRenderer(pWindow, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
-        if(!pRenderer) {
-            printf("Error: %s\n",SDL_GetError());
-            SDL_DestroyWindow(pWindow);
-            SDL_Quit();
-            return 1;    
-        }
 
-        SDL_Surface *pSurface = IMG_Load("resources/Ship.png");
-        if(!pSurface){
-            printf("Error: %s\n",SDL_GetError());
-            SDL_DestroyRenderer(pRenderer);
-            SDL_DestroyWindow(pWindow);
-            SDL_Quit();
-            return 1;    
-        }
-        SDL_Texture *pTexture = SDL_CreateTextureFromSurface(pRenderer, pSurface);
-        SDL_FreeSurface(pSurface);
-        if(!pTexture){
-            printf("Error: %s\n",SDL_GetError());
-            SDL_DestroyRenderer(pRenderer);
-            SDL_DestroyWindow(pWindow);
-            SDL_Quit();
-            return 1;    
-        }
+    if (!dM.continue_game) {
+        return 1;
+    }
 
-        SDL_Rect playerRect;
-        SDL_QueryTexture(pTexture,NULL,NULL,&playerRect.w,&playerRect.h);
-        playerRect.w/=6;
-        playerRect.h/=6;
-        float shipX = (dM.window_width - playerRect.w)/2;//left side
-        float shipY = (dM.window_height - playerRect.h)/2;//upper side
-        
-        float shipVelocityX = 0;//unit: pixels/s
-        float shipVelocityY = 0;
+    SDL_Window* pWindow = SDL_CreateWindow("Meny", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, dM.window_width, dM.window_height, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    if (!pWindow) {
+        printf("Error: %s\n", SDL_GetError());
+        SDL_Quit();
+        return 1;
+    }
 
-        bool closeWindow = false;
-        bool up,down,left,right;
-        bool onAir = 0;
-        up = down = left = right = false;
-        int upCounter = COUNTER, downCounter = COUNTER;
+    SDL_Renderer *pRenderer = SDL_CreateRenderer(pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (!pRenderer) {
+        printf("Error: %s\n", SDL_GetError());
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;
+    }
 
-        Uint32 lastTime = SDL_GetTicks(); // Tidpunkt för senaste uppdateringen
-        Uint32 currentTime;
-        float deltaTime;
+    bool startGame = showMenu(pRenderer, pWindow, dM);
 
-        while(!closeWindow){
+    if (!startGame) {
+        SDL_DestroyRenderer(pRenderer);
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 0;
+    }
 
-            // Beräkna tid sedan senaste frame
-            currentTime = SDL_GetTicks();
-            deltaTime = (currentTime - lastTime) / 1000.0f; // Omvandla till sekunder
-            lastTime = currentTime;
+    // Här startar spelet om man väljer "Start"
+    SDL_Surface *pSurface = IMG_Load("resources/Ship.png");
+    if (!pSurface) {
+        printf("Error: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(pRenderer);
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_Texture *pTexture = SDL_CreateTextureFromSurface(pRenderer, pSurface);
+    SDL_FreeSurface(pSurface);
+    if (!pTexture) {
+        printf("Error: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(pRenderer);
+        SDL_DestroyWindow(pWindow);
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_Rect playerRect;
+    SDL_QueryTexture(pTexture, NULL, NULL, &playerRect.w, &playerRect.h);
+    playerRect.w /= 6;
+    playerRect.h /= 6;
+    float shipX = (dM.window_width - playerRect.w) / 2;
+    float shipY = (dM.window_height - playerRect.h) / 2;
+
+    float shipVelocityX = 0;//unit: pixels/s
+    float shipVelocityY = 0;
+    
+    bool closeWindow = false;
+    bool up,down,left,right;
+    bool onAir = 0;
+    up = down = left = right = false;
+    int upCounter = COUNTER, downCounter = COUNTER;
+
+    Uint32 lastTime = SDL_GetTicks(); // Tidpunkt för senaste uppdateringen
+    Uint32 currentTime;
+    float deltaTime;
+
+    while(!closeWindow){
+    // Beräkna tid sedan senaste frame
+        currentTime = SDL_GetTicks();
+        deltaTime = (currentTime - lastTime) / 1000.0f; // Omvandla till sekunder
+        lastTime = currentTime;
 
             SDL_Event event;
             while(SDL_PollEvent(&event)){
@@ -114,6 +128,12 @@ int main(int argv, char** args) {
                             case SDL_SCANCODE_RIGHT:
                                 right=true;
                                 break;
+                            case SDL_SCANCODE_ESCAPE:
+                                SDL_DestroyTexture(pTexture);
+                                SDL_DestroyRenderer(pRenderer);
+                                SDL_DestroyWindow(pWindow);
+                                SDL_Quit();
+                                return 0;
                         }
                         break;
                     case SDL_KEYUP:
@@ -189,18 +209,103 @@ int main(int argv, char** args) {
             SDL_Delay(1000/60);//60 frames/s
         }
 
-        SDL_DestroyTexture(pTexture);
-        SDL_DestroyRenderer(pRenderer);
-        SDL_DestroyWindow(pWindow);
+    SDL_DestroyTexture(pTexture);
+    SDL_DestroyRenderer(pRenderer);
+    SDL_DestroyWindow(pWindow);
+    SDL_Quit();
+    return 0;
+}
 
-        SDL_Quit();
-        return 0;
+bool showMenu(SDL_Renderer *pRenderer, SDL_Window *pWindow, DisplayMode position) {
+    int menuChoice = 0;
+    SDL_Surface *startSurface = IMG_Load("resources/menu_start.png");
+    SDL_Surface *exitSurface = IMG_Load("resources/menu_exit.png");
+
+    if (!startSurface || !exitSurface) {
+        printf("Error loading menu images: %s\n", SDL_GetError());
+        return false;
     }
+
+    SDL_Texture *startTexture = SDL_CreateTextureFromSurface(pRenderer, startSurface);
+    SDL_Texture *exitTexture = SDL_CreateTextureFromSurface(pRenderer, exitSurface);
+    SDL_FreeSurface(startSurface);
+    SDL_FreeSurface(exitSurface);
+
+    if (!startTexture || !exitTexture) {
+        printf("Error creating menu textures: %s\n", SDL_GetError());
+        return false;
+    }
+
+    SDL_Rect startRect;
+    startRect.w = ((position.window_width)/6)*2;
+    startRect.h = ((position.window_height)/10)*2;
+    startRect.x = (position.window_width - startRect.w)/2;
+    startRect.y = ((position.window_height - (startRect.h)*4));
+    SDL_Rect exitRect;
+    exitRect.w = ((position.window_width)/6)*2;
+    exitRect.h = ((position.window_height)/10)*2;
+    exitRect.x = (position.window_width - exitRect.w)/2;
+    exitRect.y = ((position.window_height - (exitRect.h)*2));
+
+    bool menuRunning = true;
+    bool startGame = false;
+
+    while (menuRunning) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                menuRunning = false;
+            } else if (event.type == SDL_KEYDOWN) {
+                switch (event.key.keysym.scancode) {
+                    case SDL_SCANCODE_UP:
+                        if (menuChoice < 2)
+                        {
+                            menuChoice = 1;
+                        }
+                        else
+                        {
+                            menuChoice--;
+                        }
+                        break;
+                    case SDL_SCANCODE_DOWN:
+                        if (menuChoice == NUM_MENU)
+                        {
+                            menuChoice = NUM_MENU;
+                        }
+                        else
+                        {
+                            menuChoice++;
+                        }
+                        break;
+                    case SDL_SCANCODE_RETURN:
+                        if (menuChoice == 1)
+                        {
+                            startGame = true;
+                            menuRunning = false;
+                        }
+                        else 
+                        {
+                            menuRunning = false;
+                        }   
+                }
+            }
+        }
+
+        SDL_RenderClear(pRenderer);
+        SDL_RenderCopy(pRenderer, startTexture, NULL, &startRect);
+        SDL_RenderCopy(pRenderer, exitTexture, NULL, &exitRect);
+        SDL_RenderPresent(pRenderer);
+    }
+
+    SDL_DestroyTexture(startTexture);
+    SDL_DestroyTexture(exitTexture);
+
+    return startGame;
 }
 
 void initiateFullscreen(DisplayMode *pdM) {
-    if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)!=0){
-        printf("Error: %s\n",SDL_GetError());
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
+        printf("Error: %s\n", SDL_GetError());
         pdM->continue_game = false;
         return;
     }
@@ -209,12 +314,11 @@ void initiateFullscreen(DisplayMode *pdM) {
     if (SDL_GetCurrentDisplayMode(0, &windowMode) != 0) {
         printf("Failed to get display mode: %s\n", SDL_GetError());
         pdM->continue_game = false;
-    }
-    else {
+    } else {
         pdM->window_width = windowMode.w;
         pdM->window_height = windowMode.h;
-        pdM->speed_x = pdM->window_width /20;;  // Exempel på hastighet i x-led, kan justeras i efterhand
-        pdM->speed_y = pdM->window_height/20;   // Exempel på hastighet i y-led, kan justeras i efterhand
+        pdM->speed_x = pdM->window_width / 20;
+        pdM->speed_y = pdM->window_height / 20;
         pdM->continue_game = true;
     }
-}    
+}
