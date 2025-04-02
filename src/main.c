@@ -217,21 +217,28 @@ int main(int argv, char** args) {
 }
 
 bool showMenu(SDL_Renderer *pRenderer, SDL_Window *pWindow, DisplayMode position) {
-    int menuChoice = 0;
-    SDL_Surface *startSurface = IMG_Load("resources/menu_start.png");
-    SDL_Surface *exitSurface = IMG_Load("resources/menu_exit.png");
+    int menuChoice = 1;
+    SDL_Surface *pStartSurface = IMG_Load("resources/menu_start.png");
+    SDL_Surface *pExitSurface = IMG_Load("resources/menu_exit.png");
+    SDL_Surface *pStartBlueSurface = IMG_Load("resources/menu_start_blue.png");
+    SDL_Surface *pExitBlueSurface = IMG_Load("resources/menu_exit_blue.png");
 
-    if (!startSurface || !exitSurface) {
+
+    if (!pStartSurface || !pExitSurface || !pStartBlueSurface || !pExitBlueSurface) {
         printf("Error loading menu images: %s\n", SDL_GetError());
         return false;
     }
 
-    SDL_Texture *startTexture = SDL_CreateTextureFromSurface(pRenderer, startSurface);
-    SDL_Texture *exitTexture = SDL_CreateTextureFromSurface(pRenderer, exitSurface);
-    SDL_FreeSurface(startSurface);
-    SDL_FreeSurface(exitSurface);
+    SDL_Texture *pStartTexture = SDL_CreateTextureFromSurface(pRenderer, pStartSurface);
+    SDL_Texture *pExitTexture = SDL_CreateTextureFromSurface(pRenderer, pExitSurface);
+    SDL_Texture *pStartBlueTexture = SDL_CreateTextureFromSurface(pRenderer, pStartBlueSurface);
+    SDL_Texture *pExitBlueTexture = SDL_CreateTextureFromSurface(pRenderer, pExitBlueSurface);
+    SDL_FreeSurface(pStartSurface);
+    SDL_FreeSurface(pExitSurface);
+    SDL_FreeSurface(pStartBlueSurface);
+    SDL_FreeSurface(pExitBlueSurface);
 
-    if (!startTexture || !exitTexture) {
+    if (!pStartTexture || !pExitTexture) {
         printf("Error creating menu textures: %s\n", SDL_GetError());
         return false;
     }
@@ -291,14 +298,26 @@ bool showMenu(SDL_Renderer *pRenderer, SDL_Window *pWindow, DisplayMode position
             }
         }
 
-        SDL_RenderClear(pRenderer);
-        SDL_RenderCopy(pRenderer, startTexture, NULL, &startRect);
-        SDL_RenderCopy(pRenderer, exitTexture, NULL, &exitRect);
-        SDL_RenderPresent(pRenderer);
+        if (menuChoice == 1)
+        {
+            SDL_RenderClear(pRenderer);
+            SDL_RenderCopy(pRenderer, pStartBlueTexture, NULL, &startRect);
+            SDL_RenderCopy(pRenderer, pExitTexture, NULL, &exitRect);
+            SDL_RenderPresent(pRenderer);
+        }
+        else if (menuChoice == 2)
+        {
+            SDL_RenderClear(pRenderer);
+            SDL_RenderCopy(pRenderer, pStartTexture, NULL, &startRect);
+            SDL_RenderCopy(pRenderer, pExitBlueTexture, NULL, &exitRect);
+            SDL_RenderPresent(pRenderer);
+        }
     }
 
-    SDL_DestroyTexture(startTexture);
-    SDL_DestroyTexture(exitTexture);
+    SDL_DestroyTexture(pStartTexture);
+    SDL_DestroyTexture(pExitTexture);
+    SDL_DestroyTexture(pStartBlueTexture);
+    SDL_DestroyTexture(pExitBlueTexture);
 
     return startGame;
 }
