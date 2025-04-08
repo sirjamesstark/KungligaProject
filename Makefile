@@ -43,7 +43,7 @@ endif
 
 # Skapar en exekverbar fil utifrån .o-filerna
 KungligaProjekt: $(OBJS)
-	$(CC) $(OBJS) -o KungligaProjekt $(LDFLAGS)
+	$(CC) $(OBJS) -o KungligaProject $(LDFLAGS)
 
 # Kompilerar källfiler till objektfiler
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
@@ -57,11 +57,11 @@ $(OBJDIR):
 # Städar upp genererade filer och tar bort obj-mappen
 clean:
 ifeq ($(UNAME_S),Windows)
-	@if exist KungligaProjekt.exe del /Q KungligaProjekt.exe
+	@if exist KungligaProject.exe del /Q KungligaProject.exe
 	@for %%f in ($(OBJDIR)\*.o) do @if exist "%%f" del /Q "%%f"
 	@if exist $(OBJDIR) rmdir /S /Q $(OBJDIR)
 else
-	$(RM) KungligaProjekt
+	$(RM) KungligaProject
 	$(RM) $(OBJS)
 	$(RMDIR) $(OBJDIR)
 endif
