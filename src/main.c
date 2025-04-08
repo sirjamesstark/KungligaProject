@@ -41,9 +41,7 @@ int main(int argv, char **args)
 {
     DisplayMode dM = {0};
     Game game={0}; 
-    if(!initiate(&dM,&game)) return 1;
-
-    if (!showMenu(&game, dM))
+    if(!initiate(&dM,&game))
     {
         SDL_DestroyRenderer(game.pRenderer);
         SDL_DestroyWindow(game.pWindow);
