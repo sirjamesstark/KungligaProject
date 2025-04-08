@@ -5,7 +5,6 @@
 
 struct player{
     float x, y, vx, vy;
-    int angle;
     int window_width,window_height;
     SDL_Renderer *pRenderer;
     SDL_Texture *pTexture;
@@ -14,10 +13,9 @@ struct player{
 
 static float distance(int x1, int y1, int x2, int y2);
 
-Player *createPlayer(int x, int y, SDL_Renderer *pRenderer, int window_width, int window_height){
+Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_width, int window_height){
     Player *pPlayer = malloc(sizeof(struct player));
     pPlayer->vx=pPlayer->vy=0;
-    pPlayer->angle=0;
     pPlayer->window_width = window_width;
     pPlayer->window_height = window_height;
     SDL_Surface *pSurface = IMG_Load("resources/Ship.png");
@@ -33,34 +31,84 @@ Player *createPlayer(int x, int y, SDL_Renderer *pRenderer, int window_width, in
         return NULL;
     }
     SDL_QueryTexture(pPlayer->pTexture,NULL,NULL,&(pPlayer->playerRect.w),&(pPlayer->playerRect.h));
-    pPlayer->playerRect.w /=4;
-    pPlayer->playerRect.h /=4;
-    pPlayer->x=x-pPlayer->playerRect.w/2;
-    pPlayer->y=y-pPlayer->playerRect.h/2;
+    pPlayer->playerRect.w = ((pPlayer->window_width)/BOX_COL)/2;
+    pPlayer->playerRect.h = ((pPlayer->window_height)/BOX_ROW)/2;
+    pPlayer->x = blockRect.w * 2;
+    pPlayer->y = pPlayer->window_height - (pPlayer->window_height - (BOX_ROW * blockRect.h)) - blockRect.h - pPlayer->playerRect.h ;
     return pPlayer;
 }
 
 void turnLeft(Player *pPlayer){
-    pPlayer->angle-=5;
+    // pPlayer->angle-=5;
 }
 
 void turnRight(Player *pPlayer){
-    pPlayer->angle+=5;
+    // pPlayer->angle+=5;
 }
 
-void updatePlayer(Player *pPlayer){
-    pPlayer->x+=pPlayer->vx;
-    pPlayer->y+=pPlayer->vy;
-    if(pPlayer->x<0) pPlayer->x+=pPlayer->window_width;
-    else if (pPlayer->x>pPlayer->window_width) pPlayer->x-=pPlayer->window_width;
-    if(pPlayer->y<0) pPlayer->y+=pPlayer->window_height;
-    else if(pPlayer->y>pPlayer->window_height) pPlayer->y-=pPlayer->window_height;
-    pPlayer->playerRect.x=pPlayer->x;
-    pPlayer->playerRect.y=pPlayer->y;
+void setSpeed(bool up,bool down,bool left,bool right,int *pUpCounter,
+                bool onGround,Player *pPlayer,int speedX,int speedY)
+{
+    pPlayer->vx = pPlayer->vy = 0;
+    if (up && !down && onGround) 
+    {
+        (*pUpCounter) = COUNTER;
+    }
+    if ((*pUpCounter) > 0)
+    {
+        pPlayer->vy = -(speedY * 5); 
+        (*pUpCounter)--;
+    }
+    else if (!onGround)
+    {
+        pPlayer->vy = (speedY) * 5; 
+    }
+    if(left && !right) pPlayer->vx = -(speedX);
+    if(right && !left) pPlayer->vx = speedX;
+}
+
+void updatePlayer(Player *pPlayer,float deltaTime,int gameMap[BOX_ROW][BOX_COL],SDL_Rect blockRect,int *pUpCounter,bool *pOnGround){
+    //printf("y,x: %f,%f\n", pPlayer->y,pPlayer->x);
+    pPlayer->x += pPlayer->vx * 5 * deltaTime;
+    pPlayer->y += pPlayer->vy * deltaTime;
+    // Check Collision
+    if (gameMap[(((int)pPlayer->y - 1) + pPlayer->playerRect.h)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1)  // Bottom edge blocked on left?
+    {
+        pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         //Dont move
+    }
+    if (gameMap[((int)pPlayer->y + 1)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1)     // Top edge blocked on left?
+    {
+        pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         //Dont move
+    }
+    if(gameMap[(((int)pPlayer->y - 1) + pPlayer->playerRect.h)/blockRect.h][(((int)pPlayer->x - 1) + pPlayer->playerRect.w) / blockRect.w] == 1 || // Bottom edge blocked on right?
+    gameMap[((int)pPlayer->y + 1)/blockRect.h][(((int)pPlayer->x - 1) + pPlayer->playerRect.w) / blockRect.w] == 1)  // Top edge blocked on right?
+    {
+        pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         //Dont move
+    }
+    if (gameMap[((int)pPlayer->y + 1)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1 ||   // Left edge blocked on top?
+        gameMap[((int)pPlayer->y + 1)/blockRect.h][((int)pPlayer->x- 1 + pPlayer->playerRect.w)/blockRect.w] == 1) // Right edge blocked on top?
+    {
+        pPlayer->y -= (pPlayer->vy * deltaTime);             //Dont move
+        (*pUpCounter) = 0;
+    }
+    if (gameMap[(((int)pPlayer->y - 1) + pPlayer->playerRect.h)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1 || // Left edge blocked on bottom?
+        gameMap[(((int)pPlayer->y - 1 ) + pPlayer->playerRect.h)/blockRect.h][((int)pPlayer->x - 1 + pPlayer->playerRect.w)/blockRect.w] == 1)  // Right edge blocked on bottom?
+    {
+        pPlayer->y -= (pPlayer->vy * deltaTime);             //Dont move
+        (*pOnGround) = true;
+    }
+    else
+    {
+        (*pOnGround) = false;
+    }
+    printf("upcounter ar: %d\n",*pUpCounter);
+    pPlayer->playerRect.x = pPlayer->x;
+    pPlayer->playerRect.y = pPlayer->y;
 }
 
 void drawPlayer(Player *pPlayer){
-    SDL_RenderCopyEx(pPlayer->pRenderer,pPlayer->pTexture,NULL,&(pPlayer->playerRect),pPlayer->angle,NULL,SDL_FLIP_NONE);
+    //SDL_RenderCopyEx(pPlayer->pRenderer,pPlayer->pTexture,NULL,&(pPlayer->playerRect),pPlayer->angle,NULL,SDL_FLIP_NONE);
+    SDL_RenderCopy(pPlayer->pRenderer,pPlayer->pTexture,NULL,&pPlayer->playerRect);
 }
 
 void destroyPlayer(Player *pPlayer){
