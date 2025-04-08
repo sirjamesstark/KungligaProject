@@ -53,14 +53,9 @@ int main(int argv, char **args) {
 
 
     DisplayMode dM={0};
-    SDL_GetWindowSize(game.pWindow, dM.window_width, dM.window_height);
+    SDL_GetWindowSize(game.pWindow, &dM.window_width, &dM.window_height);
     dM.speed_x = dM.window_width/20;
     dM.speed_y = dM.window_height/20;
-
-
-    //if (!showMenu(pGame, *pdM)) return 0;
-    //else return 1;
-
 
 
 
