@@ -13,35 +13,56 @@
 #include "../include/renderer.h"
 
 #define NUM_MENU 2
+#define MAX_NROFPLAYERS 4
 
-struct game{
+typedef struct {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     Player *pPlayer;
     // AsteroidImage *pAsteroidImage;
     // Asteroid *pAsteroids[MAX_ASTEROIDS];
-};
-typedef struct game Game;
+} Game;
 
-typedef struct
-{
+typedef struct {
     int window_width;
     int window_height;
     int speed_x;
     int speed_y;
-    bool continue_game;
 } DisplayMode;
 
-int initiate(DisplayMode *pdM,Game *pGame);
+int initiate_SDL(Game *pGame);
+int initiateProgram(Game *pGame);
+void cleanUp(Game *pGame);
+
+
+
+
 bool showMenu(Game *pGame, DisplayMode position);
 void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
                 bool*pUp,bool *pDown,bool *pLeft,bool *pRight);
 
-int main(int argv, char **args)
-{
-    DisplayMode dM = {0};
-    Game game={0}; 
-    if(!initiate(&dM,&game)) return 1;
+int main(int argv, char **args) {
+    Game game={0};
+
+    if (initiateProgram(&game)!=0) {
+        cleanUp(&game);
+        exit(EXIT_FAILURE);
+    }
+
+
+
+
+    DisplayMode dM={0};
+    SDL_GetWindowSize(game.pWindow, dM.window_width, dM.window_height);
+    dM.speed_x = dM.window_width/20;
+    dM.speed_y = dM.window_height/20;
+
+
+    //if (!showMenu(pGame, *pdM)) return 0;
+    //else return 1;
+
+
+
 
     if (!showMenu(&game, dM))
     {
@@ -159,47 +180,77 @@ int main(int argv, char **args)
     return 0;
 }
 
-int initiate(DisplayMode *pdM,Game *pGame)
-{
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        return 0;
-    }
 
-    SDL_DisplayMode windowMode;
-    if (SDL_GetCurrentDisplayMode(0, &windowMode) != 0)
-    {
-        printf("Failed to get display mode: %s\n", SDL_GetError());
-        return 0;
-    }
-    else
-    {
-        pdM->window_width = windowMode.w;
-        pdM->window_height = windowMode.h;
-        pdM->speed_x = pdM->window_width / 20;
-        pdM->speed_y = pdM->window_height / 20;
-    }
-    pGame->pWindow = SDL_CreateWindow("Meny", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, pdM->window_width, pdM->window_height, SDL_WINDOW_FULLSCREEN_DESKTOP);
-    if (!pGame->pWindow)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        SDL_Quit();
-        return 0;
-    }
 
-    pGame->pRenderer = SDL_CreateRenderer(pGame->pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!pGame->pRenderer)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        SDL_DestroyWindow(pGame->pWindow);
-        SDL_Quit();
-        return 0;
-    }
 
-    if (!showMenu(pGame, *pdM)) return 0;
-    else return 1;
+
+
+int initiate_SDL(Game *pGame) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_EVENTS) != 0) return 1; 
+    if (SDLNet_Init()!=0) return 1;
+    if (TTF_Init()!=0) return 1;
+    else return 0;
 }
+
+int initiateProgram(Game *pGame) {
+    if (initiate_SDL(pGame)!=0) {
+        printf("Error: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    SDL_DisplayMode currentDisplay;
+    if (SDL_GetCurrentDisplayMode(0, &currentDisplay)!=0) {
+        printf("Error: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    int window_width = currentDisplay.w;
+    int window_height = currentDisplay.h;
+    float aspect_ratio = (float)window_width/window_height;
+    
+    if (aspect_ratio != (16.0f / 9.0f)) {
+        if (aspect_ratio > (16.0f / 9.0f)) window_width = window_height * 16 / 9;
+        else window_height = window_width * 9 / 16;
+    }
+    
+    pGame->pWindow = SDL_CreateWindow("KungligaProjekt", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_width, window_height, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    
+    if (!pGame->pWindow) {
+        printf("Error: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    pGame->pRenderer = SDL_CreateRenderer(pGame->pWindow, -1, SDL_RENDERER_ACCELERATED);
+    if (!pGame->pRenderer) {
+        printf("Error: %s\n", SDL_GetError());
+        return 1;
+    }
+    
+    return 0;
+}
+
+void cleanUp(Game *pGame) {
+    if (pGame->pRenderer != NULL) {
+        SDL_DestroyRenderer(pGame->pRenderer);
+        pGame->pRenderer = NULL;
+    }
+    if (pGame->pWindow != NULL) {
+        SDL_DestroyWindow(pGame->pWindow);
+        pGame->pWindow = NULL;
+    }
+    for (int i=0; i<MAX_NROFPLAYERS; i++) {
+       // if (pGame->pPlayers[i]) destroyPlayer(pGame->pPlayer[i]);
+    }
+    // Här lägger vi till mer kod som frigör tidigare allokerat minne ifall det behövs (t.ex. för platforms sen)
+    TTF_Quit();
+    SDL_Quit();
+    SDLNet_Quit();
+}
+
+
+
+
+
 
 bool showMenu(Game *pGame, DisplayMode position)
 {
@@ -441,3 +492,5 @@ void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
     }
     
 }
+
+
