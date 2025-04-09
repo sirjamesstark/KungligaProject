@@ -63,7 +63,7 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
             return NULL;
             break; 
     }
-    pPlayer->frames.currentFrame_x = pPlayer->frames.currentFrame_y = 1;
+    pPlayer->frames.currentFrame_x = pPlayer->frames.currentFrame_y = 0;
 
     if (!pSurface) {
         destroyPlayer(pPlayer); 

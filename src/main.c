@@ -385,9 +385,8 @@ bool showMenu(Game *pGame, DisplayMode position)
     return startGame;
 }
 
-void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
-    bool*pUp,bool *pDown,bool *pLeft,bool *pRight)
-{
+void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
+                bool *pUp, bool *pDown, bool *pLeft, bool *pRight) {
     if(pEvent->type == SDL_KEYDOWN)
     {
         switch (pEvent->key.keysym.scancode)
