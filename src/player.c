@@ -1,5 +1,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_timer.h>
+
 #include <math.h>
 #include "../include/player.h"
 
@@ -9,6 +11,8 @@ struct frames {
     int nrOfFrames_jump;
     int currentFrame_x, currentFrame_y;
     bool is_mirrored;
+    int frameDelay;
+    Uint32 lastFrameTime; 
 };
 
 struct player {
@@ -24,7 +28,7 @@ struct player {
 static float distance(int x1, int y1, int x2, int y2);
 
 Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_width, int window_height) {
-    int player_ID = 2; // har bara nu tills vidare under testing, denna variabel bestämmer vilken spelgubbe som ska laddas in
+    int player_ID = 0; // har bara nu tills vidare under testing, denna variabel bestämmer vilken spelgubbe som ska laddas in
 
     Player *pPlayer = malloc(sizeof(struct player));
     if (pPlayer == NULL) return NULL;
@@ -66,6 +70,8 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
     }
     pPlayer->frames.currentFrame_x = pPlayer->frames.currentFrame_y = 0;
     pPlayer->frames.is_mirrored = false;
+    pPlayer->frames.frameDelay = 200; // 100 ms = 10 frames per sekund
+    pPlayer->frames.lastFrameTime = SDL_GetTicks();
 
     if (!pSurface) {
         destroyPlayer(pPlayer); 
@@ -89,14 +95,13 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
     pPlayer->srcRect.x = (pPlayer->frames.currentFrame_x) * pPlayer->srcRect.w;
     pPlayer->srcRect.y =  (pPlayer->frames.currentFrame_y) * pPlayer->srcRect.h;
 
-
     float scaleFactor = (pPlayer->window_width * 0.04) / pPlayer->srcRect.w; 
     pPlayer->dstRect.w = (int)(pPlayer->srcRect.w * scaleFactor);
     pPlayer->dstRect.h = (int)(pPlayer->srcRect.h * scaleFactor);
 
-
-    //pPlayer->dstRect.w = ((pPlayer->window_width)/BOX_COL)/2;
-    //pPlayer->dstRect.h = ((pPlayer->window_height)/BOX_ROW)/2;
+    //pPlayer->dstRect.w = ((pPlayer->window_width)/BOX_COL);
+    //pPlayer->dstRect.h = ((pPlayer->window_height)/BOX_ROW);
+    
     pPlayer->x = blockRect.w * 2;
     pPlayer->y = pPlayer->window_height - (pPlayer->window_height - (BOX_ROW * blockRect.h)) - blockRect.h - pPlayer->dstRect.h;
 
@@ -108,39 +113,44 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
     return pPlayer;
 }
 
-void turnLeft(Player *pPlayer) {
-    // pPlayer->angle-=5;
-}
-
-void turnRight(Player *pPlayer) {
-    // pPlayer->angle+=5;
-}
-
 void setSpeed(bool up, bool down, bool left, bool right, int *pUpCounter,
                 bool onGround, Player *pPlayer, int speedX, int speedY) {
     pPlayer->vx = pPlayer->vy = 0;
+    pPlayer->frames.currentFrame_y = 0;
+    
     if (up && !down && onGround) {
-        pPlayer->frames.currentFrame_x = 0;
         (*pUpCounter) = COUNTER;
     }
+
     if ((*pUpCounter) > 0) {
-        pPlayer->frames.currentFrame_x = 2;
         pPlayer->vy = -(speedY * 5); 
         (*pUpCounter)--;
     }
     else if (!onGround) {
-        pPlayer->frames.currentFrame_x = 2;
-        pPlayer->vy = (speedY) * 5; 
+        pPlayer->vy = (speedY) * 5;
     }
+
     if (left && !right) {
-        pPlayer->frames.currentFrame_x = 1;
-        pPlayer->frames.is_mirrored = true;
         pPlayer->vx = -(speedX);
+        if (!onGround || (*pUpCounter)>0) {
+            pPlayer->frames.currentFrame_y = 2;
+            pPlayer->frames.is_mirrored = true;
+        }
+        else {
+            pPlayer->frames.currentFrame_y = 1;
+            pPlayer->frames.is_mirrored = true;
+        }
     }
-    if(!left && right) {
-        pPlayer->frames.currentFrame_x = 1;
-        pPlayer->frames.is_mirrored = false;
+    else if (!left && right) {
         pPlayer->vx = speedX;
+        if (!onGround || (*pUpCounter)>0) {
+            pPlayer->frames.currentFrame_y = 2;
+            pPlayer->frames.is_mirrored = false;
+        }
+        else {
+            pPlayer->frames.currentFrame_y = 1;
+            pPlayer->frames.is_mirrored = false;
+        }
     }
 }
 
@@ -149,9 +159,10 @@ void updatePlayer(Player *pPlayer, float deltaTime, int gameMap[BOX_ROW][BOX_COL
     pPlayer->x += pPlayer->vx * 5 * deltaTime;
     pPlayer->y += pPlayer->vy * deltaTime;
     // Check Collision
+
     if (gameMap[(((int)pPlayer->y - 1) + pPlayer->dstRect.h)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1)  // Bottom edge blocked on left?
     {
-        pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         //Dont move
+        pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         // Dont move
     }
     if (gameMap[((int)pPlayer->y + 1)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1)     // Top edge blocked on left?
     {
@@ -160,7 +171,7 @@ void updatePlayer(Player *pPlayer, float deltaTime, int gameMap[BOX_ROW][BOX_COL
     if(gameMap[(((int)pPlayer->y - 1) + pPlayer->dstRect.h)/blockRect.h][(((int)pPlayer->x - 1) + pPlayer->dstRect.w) / blockRect.w] == 1 || // Bottom edge blocked on right?
     gameMap[((int)pPlayer->y + 1)/blockRect.h][(((int)pPlayer->x - 1) + pPlayer->dstRect.w) / blockRect.w] == 1)  // Top edge blocked on right?
     {
-        pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         //Dont move
+        pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         // Dont move
     }
     if (gameMap[((int)pPlayer->y + 1)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1 ||   // Left edge blocked on top?
         gameMap[((int)pPlayer->y + 1)/blockRect.h][((int)pPlayer->x- 1 + pPlayer->dstRect.w)/blockRect.w] == 1) // Right edge blocked on top?
@@ -184,27 +195,33 @@ void updatePlayer(Player *pPlayer, float deltaTime, int gameMap[BOX_ROW][BOX_COL
 }
 
 void updatePlayerRect(Player *pPlayer) {
-    if (pPlayer->frames.currentFrame_x == 0) {
-        if (pPlayer->frames.currentFrame_y < pPlayer->frames.nrOfFrames_idle) {
-            pPlayer->frames.currentFrame_y += 1; 
-        }
-        else pPlayer->frames.currentFrame_y = 0;
-    } 
-    else if (pPlayer->frames.currentFrame_x == 1) {
-        if (pPlayer->frames.currentFrame_y < pPlayer->frames.nrOfFrames_sprint) {
-            pPlayer->frames.currentFrame_y += 1; 
-        }
-        else pPlayer->frames.currentFrame_y = 0;
+    Uint32 currentTime = SDL_GetTicks();
+    if (currentTime - pPlayer->frames.lastFrameTime < pPlayer->frames.frameDelay) {
+        return;
     }
-    else if (pPlayer->frames.currentFrame_x == 2) {
-        if (pPlayer->frames.currentFrame_y < pPlayer->frames.nrOfFrames_jump) {
-            pPlayer->frames.currentFrame_y += 1; 
-        }
-        else pPlayer->frames.currentFrame_y = 0; 
-    }
+    pPlayer->frames.lastFrameTime = currentTime;
 
-    pPlayer->srcRect.x = (pPlayer->frames.currentFrame_x) * pPlayer->srcRect.w;
-    pPlayer->srcRect.y =  (pPlayer->frames.currentFrame_y) * pPlayer->srcRect.h;
+    if (pPlayer->frames.currentFrame_y == 0) {
+        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_idle-1) {
+            pPlayer->frames.currentFrame_x +=1;
+        }
+        else pPlayer->frames.currentFrame_x = 0;
+    } 
+    else if (pPlayer->frames.currentFrame_y == 1) {
+        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_sprint-1) {
+            pPlayer->frames.currentFrame_x +=1;
+        }
+        else pPlayer->frames.currentFrame_x = 0;
+    }
+    else if (pPlayer->frames.currentFrame_y == 2) {
+        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_jump-1) {
+            pPlayer->frames.currentFrame_x +=1;
+        }
+        else pPlayer->frames.currentFrame_x = 0; 
+    }
+    
+    pPlayer->srcRect.x = pPlayer->frames.currentFrame_x * pPlayer->srcRect.w;
+    pPlayer->srcRect.y = pPlayer->frames.currentFrame_y * pPlayer->srcRect.h;
 }
 
 void drawPlayer(Player *pPlayer) {
