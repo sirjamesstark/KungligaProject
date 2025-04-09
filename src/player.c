@@ -3,9 +3,10 @@
 #include <math.h>
 #include "../include/player.h"
 
-struct player{
+struct player
+{
     float x, y, vx, vy;
-    int window_width,window_height;
+    int window_width, window_height;
     SDL_Renderer *pRenderer;
     SDL_Texture *pTexture;
     SDL_Rect playerRect;
@@ -13,114 +14,173 @@ struct player{
 
 static float distance(int x1, int y1, int x2, int y2);
 
-Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_width, int window_height){
+Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_width, int window_height)
+{
     Player *pPlayer = malloc(sizeof(struct player));
-    pPlayer->vx=pPlayer->vy=0;
+    pPlayer->vx = pPlayer->vy = 0;
     pPlayer->window_width = window_width;
     pPlayer->window_height = window_height;
     SDL_Surface *pSurface = IMG_Load("resources/Ship.png");
-    if(!pSurface){
-        printf("Error: %s\n",SDL_GetError());
+    if (!pSurface)
+    {
+        printf("Error: %s\n", SDL_GetError());
         return NULL;
     }
     pPlayer->pRenderer = pRenderer;
     pPlayer->pTexture = SDL_CreateTextureFromSurface(pRenderer, pSurface);
     SDL_FreeSurface(pSurface);
-    if(!pPlayer->pTexture){
-        printf("Error: %s\n",SDL_GetError());
+    if (!pPlayer->pTexture)
+    {
+        printf("Error: %s\n", SDL_GetError());
         return NULL;
     }
-    SDL_QueryTexture(pPlayer->pTexture,NULL,NULL,&(pPlayer->playerRect.w),&(pPlayer->playerRect.h));
-    pPlayer->playerRect.w = ((pPlayer->window_width)/BOX_COL)/2;
-    pPlayer->playerRect.h = ((pPlayer->window_height)/BOX_ROW)/2;
+    SDL_QueryTexture(pPlayer->pTexture, NULL, NULL, &(pPlayer->playerRect.w), &(pPlayer->playerRect.h));
+    pPlayer->playerRect.w = ((pPlayer->window_width) / BOX_COL) / 2;
+    pPlayer->playerRect.h = ((pPlayer->window_height) / BOX_ROW) / 2;
     pPlayer->x = blockRect.w * 2;
-    pPlayer->y = pPlayer->window_height - (pPlayer->window_height - (BOX_ROW * blockRect.h)) - blockRect.h - pPlayer->playerRect.h ;
+    pPlayer->y = pPlayer->window_height - (pPlayer->window_height - (BOX_ROW * blockRect.h)) - blockRect.h - pPlayer->playerRect.h;
+    printf("w:%d\n", pPlayer->playerRect.w);
     return pPlayer;
 }
 
-void turnLeft(Player *pPlayer){
+void turnLeft(Player *pPlayer)
+{
     // pPlayer->angle-=5;
 }
 
-void turnRight(Player *pPlayer){
+void turnRight(Player *pPlayer)
+{
     // pPlayer->angle+=5;
 }
 
-void setSpeed(bool up,bool down,bool left,bool right,int *pUpCounter,
-                bool onGround,Player *pPlayer,int speedX,int speedY)
+void setSpeed(bool up, bool down, bool left, bool right, int *pUpCounter,
+              bool onGround, Player *pPlayer, int speedX, int speedY)
 {
     pPlayer->vx = pPlayer->vy = 0;
-    if (up && !down && onGround) 
+    if (up && !down && onGround)
     {
         (*pUpCounter) = COUNTER;
     }
     if ((*pUpCounter) > 0)
     {
-        pPlayer->vy = -(speedY * 5); 
+        pPlayer->vy = -(speedY * 5);
         (*pUpCounter)--;
     }
     else if (!onGround)
     {
-        pPlayer->vy = (speedY) * 5; 
+        pPlayer->vy = (speedY) * 5;
     }
-    if(left && !right) pPlayer->vx = -(speedX);
-    if(right && !left) pPlayer->vx = speedX;
+    if (left && !right)
+        pPlayer->vx = -(speedX);
+    if (right && !left)
+        pPlayer->vx = speedX;
 }
 
-void updatePlayer(Player *pPlayer,float deltaTime,int gameMap[BOX_ROW][BOX_COL],SDL_Rect blockRect,int *pUpCounter,bool *pOnGround){
-    //printf("y,x: %f,%f\n", pPlayer->y,pPlayer->x);
-    pPlayer->x += pPlayer->vx * 5 * deltaTime;
-    pPlayer->y += pPlayer->vy * deltaTime;
-    // Check Collision
-    if (gameMap[(((int)pPlayer->y - 1) + pPlayer->playerRect.h)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1)  // Bottom edge blocked on left?
+void updatePlayer(Player *pPlayer, float deltaTime, int gameMap[BOX_ROW][BOX_COL], SDL_Rect blockRect, int *pUpCounter, bool *pOnGround)
+{
+    float nextX = pPlayer->x + pPlayer->vx * 5 * deltaTime;
+    float nextY = pPlayer->y + pPlayer->vy * deltaTime;
+
+    SDL_Rect nextRect = {
+        .x = (int)nextX,
+        .y = (int)nextY,
+        .w = pPlayer->playerRect.w,
+        .h = pPlayer->playerRect.h};
+
+    // Kolla kollisioner i Y-led (fall / hopp)
+    SDL_Rect verticalRect = {.x = (int)pPlayer->x, .w = pPlayer->playerRect.w, .h = pPlayer->playerRect.h, .y = (int)nextY};
+    bool verticalCollision = false;
+
+    for (int row = 0; row < BOX_ROW; row++)
     {
-        pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         //Dont move
+        for (int col = 0; col < BOX_COL; col++)
+        {
+            if (gameMap[row][col] == 1)
+            {
+                SDL_Rect tileRect = {
+                    .x = col * blockRect.w,
+                    .y = row * blockRect.h,
+                    .w = blockRect.w,
+                    .h = blockRect.h};
+
+                if (SDL_HasIntersection(&verticalRect, &tileRect))
+                {
+                    verticalCollision = true;
+                    break;
+                }
+            }
+        }
+        if (verticalCollision)
+            break;
     }
-    if (gameMap[((int)pPlayer->y + 1)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1)     // Top edge blocked on left?
+
+    if (!verticalCollision)
     {
-        pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         //Dont move
-    }
-    if(gameMap[(((int)pPlayer->y - 1) + pPlayer->playerRect.h)/blockRect.h][(((int)pPlayer->x - 1) + pPlayer->playerRect.w) / blockRect.w] == 1 || // Bottom edge blocked on right?
-    gameMap[((int)pPlayer->y + 1)/blockRect.h][(((int)pPlayer->x - 1) + pPlayer->playerRect.w) / blockRect.w] == 1)  // Top edge blocked on right?
-    {
-        pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         //Dont move
-    }
-    if (gameMap[((int)pPlayer->y + 1)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1 ||   // Left edge blocked on top?
-        gameMap[((int)pPlayer->y + 1)/blockRect.h][((int)pPlayer->x- 1 + pPlayer->playerRect.w)/blockRect.w] == 1) // Right edge blocked on top?
-    {
-        pPlayer->y -= (pPlayer->vy * deltaTime);             //Dont move
-        (*pUpCounter) = 0;
-    }
-    if (gameMap[(((int)pPlayer->y - 1) + pPlayer->playerRect.h)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1 || // Left edge blocked on bottom?
-        gameMap[(((int)pPlayer->y - 1 ) + pPlayer->playerRect.h)/blockRect.h][((int)pPlayer->x - 1 + pPlayer->playerRect.w)/blockRect.w] == 1)  // Right edge blocked on bottom?
-    {
-        pPlayer->y -= (pPlayer->vy * deltaTime);             //Dont move
-        (*pOnGround) = true;
+        pPlayer->y = nextY;
+        *pOnGround = false;
     }
     else
     {
-        (*pOnGround) = false;
+        *pUpCounter = 0;
+        *pOnGround = true;
     }
-    printf("upcounter ar: %d\n",*pUpCounter);
-    pPlayer->playerRect.x = pPlayer->x;
-    pPlayer->playerRect.y = pPlayer->y;
+
+    // Kolla kollisioner i X-led (vänster/höger)
+    SDL_Rect horizontalRect = {.y = (int)pPlayer->y, .w = pPlayer->playerRect.w, .h = pPlayer->playerRect.h, .x = (int)nextX};
+    bool horizontalCollision = false;
+
+    for (int row = 0; row < BOX_ROW; row++)
+    {
+        for (int col = 0; col < BOX_COL; col++)
+        {
+            if (gameMap[row][col] == 1)
+            {
+                SDL_Rect tileRect = {
+                    .x = col * blockRect.w,
+                    .y = row * blockRect.h,
+                    .w = blockRect.w,
+                    .h = blockRect.h};
+
+                if (SDL_HasIntersection(&horizontalRect, &tileRect))
+                {
+                    horizontalCollision = true;
+                    break;
+                }
+            }
+        }
+        if (horizontalCollision)
+            break;
+    }
+
+    if (!horizontalCollision)
+    {
+        pPlayer->x = nextX;
+    }
+
+    // Uppdatera renderingsposition
+    pPlayer->playerRect.x = (int)pPlayer->x;
+    pPlayer->playerRect.y = (int)pPlayer->y;
 }
 
-void drawPlayer(Player *pPlayer){
-    //SDL_RenderCopyEx(pPlayer->pRenderer,pPlayer->pTexture,NULL,&(pPlayer->playerRect),pPlayer->angle,NULL,SDL_FLIP_NONE);
-    SDL_RenderCopy(pPlayer->pRenderer,pPlayer->pTexture,NULL,&pPlayer->playerRect);
+void drawPlayer(Player *pPlayer)
+{
+    // SDL_RenderCopyEx(pPlayer->pRenderer,pPlayer->pTexture,NULL,&(pPlayer->playerRect),pPlayer->angle,NULL,SDL_FLIP_NONE);
+    SDL_RenderCopy(pPlayer->pRenderer, pPlayer->pTexture, NULL, &pPlayer->playerRect);
 }
 
-void destroyPlayer(Player *pPlayer){
+void destroyPlayer(Player *pPlayer)
+{
     SDL_DestroyTexture(pPlayer->pTexture);
     free(pPlayer);
 }
 
-int collidePlayer(Player *pPlayer, SDL_Rect rect){
-    //return SDL_HasIntersection(&(pPlayer->playerRect),&rect);
-    return distance(pPlayer->playerRect.x+pPlayer->playerRect.w/2,pPlayer->playerRect.y+pPlayer->playerRect.h/2,rect.x+rect.w/2,rect.y+rect.h/2)<(pPlayer->playerRect.w+rect.w)/2;
+int collidePlayer(Player *pPlayer, SDL_Rect rect)
+{
+    // return SDL_HasIntersection(&(pPlayer->playerRect),&rect);
+    return distance(pPlayer->playerRect.x + pPlayer->playerRect.w / 2, pPlayer->playerRect.y + pPlayer->playerRect.h / 2, rect.x + rect.w / 2, rect.y + rect.h / 2) < (pPlayer->playerRect.w + rect.w) / 2;
 }
 
-static float distance(int x1, int y1, int x2, int y2){
-    return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+static float distance(int x1, int y1, int x2, int y2)
+{
+    return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }

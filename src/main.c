@@ -14,7 +14,8 @@
 
 #define NUM_MENU 2
 
-struct game{
+struct game
+{
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     Player *pPlayer;
@@ -23,7 +24,8 @@ struct game{
 };
 typedef struct game Game;
 
-typedef struct {
+typedef struct
+{
     int window_width;
     int window_height;
     int speed_x;
@@ -31,16 +33,17 @@ typedef struct {
     bool continue_game;
 } DisplayMode;
 
-int initiate(DisplayMode *pdM,Game *pGame);
+int initiate(DisplayMode *pdM, Game *pGame);
 bool showMenu(Game *pGame, DisplayMode position);
-void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
-                bool*pUp,bool *pDown,bool *pLeft,bool *pRight);
+void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
+                 bool *pUp, bool *pDown, bool *pLeft, bool *pRight);
 
 int main(int argv, char **args)
 {
     DisplayMode dM = {0};
-    Game game={0}; 
-    if(!initiate(&dM,&game)) return 1;
+    Game game = {0};
+    if (!initiate(&dM, &game))
+        return 1;
 
     if (!showMenu(&game, dM))
     {
@@ -73,12 +76,12 @@ int main(int argv, char **args)
     }
 
     SDL_Rect blockRect;
-    blockRect.w = ((dM.window_width)/BOX_COL);
-    blockRect.h = ((dM.window_height)/BOX_ROW);
-    blockRect.x = (dM.window_width - blockRect.w)/2 + blockRect.w*5;
-    blockRect.y = ((dM.window_height - blockRect.h)/2);
+    blockRect.w = ((dM.window_width) / BOX_COL);
+    blockRect.h = ((dM.window_height) / BOX_ROW);
+    blockRect.x = (dM.window_width - blockRect.w) / 2 + blockRect.w * 5;
+    blockRect.y = ((dM.window_height - blockRect.h) / 2);
 
-    (&game)->pPlayer = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height);
+    (&game)->pPlayer = createPlayer(blockRect, (&game)->pRenderer, dM.window_width, dM.window_height);
 
     bool closeWindow = false;
     bool up, down, left, right;
@@ -90,28 +93,28 @@ int main(int argv, char **args)
     Uint32 currentTime;
     float deltaTime;
 
-    int gameMap[BOX_ROW][BOX_COL] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
-                                     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,
-                                     1,1,0,0,0,1,1,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,1,0,
-                                     0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,0,
-                                     0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,1,0,
-                                     0,1,0,0,0,0,0,1,1,0,0,1,1,1,1,0,0,0,0,1,0,0,0,1,1,0,
-                                     0,1,0,0,1,1,0,0,0,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,
-                                     0,1,1,0,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,1,0,
-                                     0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,
-                                     0,1,1,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,1,0,
-                                     0,1,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,1,1,0,
-                                     0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
-                                     0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,
-                                     0,1,0,1,1,1,0,0,1,1,1,1,0,0,0,0,0,1,1,1,1,1,0,0,1,0,
-                                     0,1,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,0,0,0,1,0,0,1,1,0,
-                                     0,1,0,0,1,1,1,0,0,0,1,1,1,0,0,0,0,1,0,0,0,0,1,1,1,0,
-                                     0,1,1,0,0,1,1,0,1,0,0,0,0,0,0,1,1,1,0,0,0,1,1,1,1,0,
-                                     0,1,1,1,0,0,0,0,0,1,0,1,1,1,0,0,0,0,0,1,0,0,0,0,1,0,
-                                     0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,0,
-                                     0,1,0,0,0,0,1,1,0,0,0,1,1,0,0,0,0,0,1,1,0,0,0,1,1,0,
-                                     0,1,0,0,1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,1,1,1,0,
-                                     0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0};
+    int gameMap[BOX_ROW][BOX_COL] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+                                     1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0,
+                                     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0,
+                                     0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0,
+                                     0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0,
+                                     0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+                                     0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0,
+                                     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0,
+                                     0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0,
+                                     0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0,
+                                     0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+                                     0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+                                     0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0,
+                                     0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0,
+                                     0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0,
+                                     0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0,
+                                     0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0,
+                                     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0,
+                                     0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0,
+                                     0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0,
+                                     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0};
     while (!closeWindow)
     {
         // Beräkna tid sedan senaste frame
@@ -121,25 +124,29 @@ int main(int argv, char **args)
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
-            if(event.type==SDL_QUIT) closeWindow = true;
-            else handleInput(&game,&event,&closeWindow,&up,&down,&left,&right);
+            if (event.type == SDL_QUIT)
+                closeWindow = true;
+            else
+                handleInput(&game, &event, &closeWindow, &up, &down, &left, &right);
         }
-        setSpeed(up,down,left,right,&upCounter,onGround,game.pPlayer,dM.speed_x,dM.speed_y);
-        updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround);
+        setSpeed(up, down, left, right, &upCounter, onGround, game.pPlayer, dM.speed_x, dM.speed_y);
+        updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround);
         SDL_RenderClear(game.pRenderer);
         drawPlayer(game.pPlayer);
 
-        int numBlocksX = dM.window_width / blockRect.w;  // Antal lådor per rad
-        int numBlocksY = (dM.window_height / blockRect.h);  // Antal rader 
+        int numBlocksX = dM.window_width / blockRect.w;    // Antal lådor per rad
+        int numBlocksY = (dM.window_height / blockRect.h); // Antal rader
 
         // Loopa över rader (Y-led)
-        for (int row = 0; row < numBlocksY; row++) {
+        for (int row = 0; row < numBlocksY; row++)
+        {
             // Loopa över kolumner (X-led)
-            for (int col = 0; col < numBlocksX; col++) {
+            for (int col = 0; col < numBlocksX; col++)
+            {
                 if (gameMap[row][col] == 1)
                 {
-                    blockRect.x = col * blockRect.w;  // Placera lådan horisontellt
-                    blockRect.y = row * blockRect.h;  // Placera lådan vertikalt (från botten uppåt)
+                    blockRect.x = col * blockRect.w; // Placera lådan horisontellt
+                    blockRect.y = row * blockRect.h; // Placera lådan vertikalt (från botten uppåt)
 
                     SDL_RenderCopy(game.pRenderer, pBlockTexture, NULL, &blockRect);
                 }
@@ -158,7 +165,7 @@ int main(int argv, char **args)
     return 0;
 }
 
-int initiate(DisplayMode *pdM,Game *pGame)
+int initiate(DisplayMode *pdM, Game *pGame)
 {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
     {
@@ -195,7 +202,8 @@ int initiate(DisplayMode *pdM,Game *pGame)
         SDL_Quit();
         return 0;
     }
-    else return 1;
+    else
+        return 1;
 }
 
 bool showMenu(Game *pGame, DisplayMode position)
@@ -263,7 +271,7 @@ bool showMenu(Game *pGame, DisplayMode position)
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
-           if (event.type == SDL_QUIT)
+            if (event.type == SDL_QUIT)
             {
                 menuRunning = false;
             }
@@ -385,56 +393,55 @@ bool showMenu(Game *pGame, DisplayMode position)
     return startGame;
 }
 
-void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
-    bool*pUp,bool *pDown,bool *pLeft,bool *pRight)
+void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
+                 bool *pUp, bool *pDown, bool *pLeft, bool *pRight)
 {
-    if(pEvent->type == SDL_KEYDOWN)
+    if (pEvent->type == SDL_KEYDOWN)
     {
         switch (pEvent->key.keysym.scancode)
         {
-            case SDL_SCANCODE_W:
-            case SDL_SCANCODE_UP:
-            case SDL_SCANCODE_SPACE:
-                (*pUp) = true;
-                break;
-            case SDL_SCANCODE_A:
-            case SDL_SCANCODE_LEFT:
-                (*pLeft) = true;
-                break;
-            case SDL_SCANCODE_S:
-            case SDL_SCANCODE_DOWN:
-                (*pDown) = true;
-                break;
-            case SDL_SCANCODE_D:
-            case SDL_SCANCODE_RIGHT:
-                (*pRight) = true;
-                break;
-            case SDL_SCANCODE_ESCAPE:
-                (*pCloseWindow) = true;
-                return;
+        case SDL_SCANCODE_W:
+        case SDL_SCANCODE_UP:
+        case SDL_SCANCODE_SPACE:
+            (*pUp) = true;
+            break;
+        case SDL_SCANCODE_A:
+        case SDL_SCANCODE_LEFT:
+            (*pLeft) = true;
+            break;
+        case SDL_SCANCODE_S:
+        case SDL_SCANCODE_DOWN:
+            (*pDown) = true;
+            break;
+        case SDL_SCANCODE_D:
+        case SDL_SCANCODE_RIGHT:
+            (*pRight) = true;
+            break;
+        case SDL_SCANCODE_ESCAPE:
+            (*pCloseWindow) = true;
+            return;
         }
     }
     else if (pEvent->type == SDL_KEYUP)
     {
         switch (pEvent->key.keysym.scancode)
         {
-            case SDL_SCANCODE_W:
-            case SDL_SCANCODE_UP:
-                (*pUp) = false;
-                break;
-            case SDL_SCANCODE_A:
-            case SDL_SCANCODE_LEFT:
-                (*pLeft) = false;
-                break;
-            case SDL_SCANCODE_S:
-            case SDL_SCANCODE_DOWN:
-                (*pDown) = false;
-                break;
-            case SDL_SCANCODE_D:
-            case SDL_SCANCODE_RIGHT:
-                (*pRight) = false;
-                break;
+        case SDL_SCANCODE_W:
+        case SDL_SCANCODE_UP:
+            (*pUp) = false;
+            break;
+        case SDL_SCANCODE_A:
+        case SDL_SCANCODE_LEFT:
+            (*pLeft) = false;
+            break;
+        case SDL_SCANCODE_S:
+        case SDL_SCANCODE_DOWN:
+            (*pDown) = false;
+            break;
+        case SDL_SCANCODE_D:
+        case SDL_SCANCODE_RIGHT:
+            (*pRight) = false;
+            break;
         }
     }
-    
 }
