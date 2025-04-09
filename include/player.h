@@ -11,6 +11,7 @@ typedef struct player Player;
 typedef struct frames Frames;
 
 Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_width, int window_height);
+void updatePlayerRect(Player *pPlayer);
 void updatePlayer(Player *pPlayer,float deltaTime,int gameMap[BOX_ROW][BOX_COL],SDL_Rect blockRect,int *pUpCounter,bool *pOnGround);
 void drawPlayer(Player *pRocket);
 void destroyPlayer(Player *pRocket);
