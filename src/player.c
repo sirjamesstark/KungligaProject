@@ -114,8 +114,8 @@ void turnRight(Player *pPlayer) {
     // pPlayer->angle+=5;
 }
 
-void setSpeed(bool up,bool down,bool left,bool right,int *pUpCounter,
-                bool onGround,Player *pPlayer,int speedX,int speedY) {
+void setSpeed(bool up, bool down, bool left, bool right, int *pUpCounter,
+                bool onGround, Player *pPlayer, int speedX, int speedY) {
     pPlayer->vx = pPlayer->vy = 0;
     if (up && !down && onGround) 
     {

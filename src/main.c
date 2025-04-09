@@ -14,14 +14,13 @@
 
 #define NUM_MENU 2
 
-struct game{
+typedef struct {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     Player *pPlayer;
     // AsteroidImage *pAsteroidImage;
     // Asteroid *pAsteroids[MAX_ASTEROIDS];
-};
-typedef struct game Game;
+} Game;
 
 typedef struct {
     int window_width;
