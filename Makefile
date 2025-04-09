@@ -42,7 +42,7 @@ else
 endif
 
 # Skapar en exekverbar fil utifrån .o-filerna
-KungligaProjekt: $(OBJS)
+KungligaProject: $(OBJS)
 	$(CC) $(OBJS) -o KungligaProject $(LDFLAGS)
 
 # Kompilerar källfiler till objektfiler
