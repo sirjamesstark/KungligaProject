@@ -14,16 +14,7 @@
 
 #define NUM_MENU 2
 
-struct game{
-    SDL_Window *pWindow;
-    SDL_Renderer *pRenderer;
-    Player *pPlayer;
-    // AsteroidImage *pAsteroidImage;
-    // Asteroid *pAsteroids[MAX_ASTEROIDS];
-};
-typedef struct game Game;
-
-typedef struct {
+typedef struct{
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     Player *pPlayer;
