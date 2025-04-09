@@ -23,8 +23,7 @@ struct game{
 };
 typedef struct game Game;
 
-typedef struct
-{
+typedef struct {
     int window_width;
     int window_height;
     int speed_x;
@@ -82,7 +81,7 @@ int main(int argv, char **args)
     (&game)->pPlayer = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height);
 
     bool closeWindow = false;
-    bool up, down, left, right;
+    bool up, down, left, right, goUp, goDown, goLeft, goRight;
     bool onGround = true;
     up = down = left = right = false;
     int upCounter = 0;
@@ -125,8 +124,9 @@ int main(int argv, char **args)
             if(event.type==SDL_QUIT) closeWindow = true;
             else handleInput(&game,&event,&closeWindow,&up,&down,&left,&right);
         }
-        setSpeed(up,down,left,right,&upCounter,onGround,game.pPlayer,dM.speed_x,dM.speed_y);
-        updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround);
+        goDown = goLeft = goRight = goUp = 0;
+        setSpeed(up,down,left,right,&goUp,&goDown,&goLeft,&goRight,&upCounter,onGround,game.pPlayer,dM.speed_x,dM.speed_y);
+        updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight);
         SDL_RenderClear(game.pRenderer);
         drawPlayer(game.pPlayer);
 
@@ -196,8 +196,6 @@ int initiate(DisplayMode *pdM,Game *pGame)
         SDL_Quit();
         return 0;
     }
-
-    if (!showMenu(pGame, *pdM)) return 0;
     else return 1;
 }
 
