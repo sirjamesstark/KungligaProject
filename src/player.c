@@ -7,7 +7,8 @@ struct frames {
     int nrOfFrames_idle;
     int nrOfFrames_sprint;
     int nrOfFrames_jump;
-    int currentFrame_x, currentFrame_y; 
+    int currentFrame_x, currentFrame_y;
+    bool is_mirrored;
 };
 
 struct player {
@@ -64,6 +65,7 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
             break; 
     }
     pPlayer->frames.currentFrame_x = pPlayer->frames.currentFrame_y = 0;
+    pPlayer->frames.is_mirrored = false;
 
     if (!pSurface) {
         destroyPlayer(pPlayer); 
@@ -117,21 +119,29 @@ void turnRight(Player *pPlayer) {
 void setSpeed(bool up, bool down, bool left, bool right, int *pUpCounter,
                 bool onGround, Player *pPlayer, int speedX, int speedY) {
     pPlayer->vx = pPlayer->vy = 0;
-    if (up && !down && onGround) 
-    {
+    if (up && !down && onGround) {
+        pPlayer->frames.currentFrame_x = 0;
         (*pUpCounter) = COUNTER;
     }
-    if ((*pUpCounter) > 0)
-    {
+    if ((*pUpCounter) > 0) {
+        pPlayer->frames.currentFrame_x = 2;
         pPlayer->vy = -(speedY * 5); 
         (*pUpCounter)--;
     }
-    else if (!onGround)
-    {
+    else if (!onGround) {
+        pPlayer->frames.currentFrame_x = 2;
         pPlayer->vy = (speedY) * 5; 
     }
-    if(left && !right) pPlayer->vx = -(speedX);
-    if(right && !left) pPlayer->vx = speedX;
+    if (left && !right) {
+        pPlayer->frames.currentFrame_x = 1;
+        pPlayer->frames.is_mirrored = true;
+        pPlayer->vx = -(speedX);
+    }
+    if(!left && right) {
+        pPlayer->frames.currentFrame_x = 1;
+        pPlayer->frames.is_mirrored = false;
+        pPlayer->vx = speedX;
+    }
 }
 
 void updatePlayer(Player *pPlayer, float deltaTime, int gameMap[BOX_ROW][BOX_COL], SDL_Rect blockRect, int *pUpCounter, bool *pOnGround) {
@@ -173,10 +183,38 @@ void updatePlayer(Player *pPlayer, float deltaTime, int gameMap[BOX_ROW][BOX_COL
     pPlayer->dstRect.y = pPlayer->y;
 }
 
+void updatePlayerRect(Player *pPlayer) {
+    if (pPlayer->frames.currentFrame_x == 0) {
+        if (pPlayer->frames.currentFrame_y < pPlayer->frames.nrOfFrames_idle) {
+            pPlayer->frames.currentFrame_y += 1; 
+        }
+        else pPlayer->frames.currentFrame_y = 0;
+    } 
+    else if (pPlayer->frames.currentFrame_x == 1) {
+        if (pPlayer->frames.currentFrame_y < pPlayer->frames.nrOfFrames_sprint) {
+            pPlayer->frames.currentFrame_y += 1; 
+        }
+        else pPlayer->frames.currentFrame_y = 0;
+    }
+    else if (pPlayer->frames.currentFrame_x == 2) {
+        if (pPlayer->frames.currentFrame_y < pPlayer->frames.nrOfFrames_jump) {
+            pPlayer->frames.currentFrame_y += 1; 
+        }
+        else pPlayer->frames.currentFrame_y = 0; 
+    }
+
+    pPlayer->srcRect.x = (pPlayer->frames.currentFrame_x) * pPlayer->srcRect.w;
+    pPlayer->srcRect.y =  (pPlayer->frames.currentFrame_y) * pPlayer->srcRect.h;
+}
+
 void drawPlayer(Player *pPlayer) {
-    //SDL_RenderCopyEx(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect, 0, NULL, SDL_FLIP_HORIZONTAL); <-- spegelvänd
-    
-    SDL_RenderCopy(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect);
+    updatePlayerRect(pPlayer);
+    if (pPlayer->frames.is_mirrored == true) {
+        SDL_RenderCopyEx(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect, 0, NULL, SDL_FLIP_HORIZONTAL);
+    }
+    else {
+        SDL_RenderCopy(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect);
+    }
 }
 
 void destroyPlayer(Player *pPlayer) {

@@ -33,7 +33,7 @@ typedef struct {
 int initiate(DisplayMode *pdM,Game *pGame);
 bool showMenu(Game *pGame, DisplayMode position);
 void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
-                bool*pUp,bool *pDown,bool *pLeft,bool *pRight);
+                bool *pUp,bool *pDown,bool *pLeft,bool *pRight);
 
 int main(int argv, char **args)
 {
