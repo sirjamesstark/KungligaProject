@@ -8,13 +8,16 @@
 #define COUNTER 20
 
 typedef struct player Player;
+typedef struct frames Frames;
 
 Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_width, int window_height);
-void updatePlayer(Player *pPlayer,float deltaTime,int gameMap[BOX_ROW][BOX_COL],SDL_Rect blockRect,int *pUpCounter,bool *pOnGround);
+void updatePlayer(Player *pPlayer,float deltaTime,int gameMap[BOX_ROW][BOX_COL],SDL_Rect blockRect,int *pUpCounter,bool *pOnGround,
+                    bool *pGoUp,bool *pGoDown,bool *pGoLeft,bool *pGoRight);
+void updatePlayerRect(Player *pPlayer);
 void drawPlayer(Player *pRocket);
 void destroyPlayer(Player *pRocket);
-void setSpeed(bool up,bool down,bool left,bool right,int *pUpCounter,
-    bool onGround,Player *pPlayer,int speedX,int speedY);
+void setSpeed(bool up,bool down,bool left,bool right,bool *pGoUp,bool *pGoDown,bool *pGoLeft,bool *pGoRight
+    ,int *pUpCounter, bool onGround,Player *pPlayer,int speedX,int speedY);
 
 
 void turnLeft(Player *pRocket);

@@ -56,10 +56,10 @@ $(OBJDIR):
 
 # Städar upp genererade filer och tar bort obj-mappen
 clean:
-ifeq ($(UNAME_S),Windows)
-	@if exist KungligaProject.exe del /Q KungligaProject.exe
-	@for %%f in ($(OBJDIR)\*.o) do @if exist "%%f" del /Q "%%f"
-	@if exist $(OBJDIR) rmdir /S /Q $(OBJDIR)
+ifeq ($(UNAME_S), Windows)
+	@if exist KungligaProject.exe $(RM) KungligaProject.exe
+	@if exist $(NULLCHECK) $(RM) $(OBJDIR)\*.o
+	@if exist $(NULLCHECK) $(RMDIR) $(OBJDIR)
 else
 	$(RM) KungligaProject
 	$(RM) $(OBJS)
