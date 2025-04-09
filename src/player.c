@@ -3,12 +3,20 @@
 #include <math.h>
 #include "../include/player.h"
 
-struct player{
+struct frames {
+    int nrOfFrames_idle;
+    int nrOfFrames_sprint;
+    int nrOfFrames_jump;
+    int currentFrame_x, currentFrame_y; 
+};
+
+struct player {
     float x, y, vx, vy;
     int window_width,window_height;
     SDL_Renderer *pRenderer;
     SDL_Texture *pTexture;
-    SDL_Rect playerRect;
+    SDL_Rect srcRect;   // srcRect.w och srcRect.h lagrar den verkliga storleken av en frame i spritesheetet, srcRect.x och srcRect.y anger vilken frame i spritesheetet som väljs
+    SDL_Rect dstRect;   // dstRect.w och dstRect.h är en nerskalad variant av srcRect.w och srcRect.h, srcRect.x och srcRect.y anger var i fönstret som den aktuella framen i srcRect.x och srcRect.y ska ritas upp
 };
 
 static float distance(int x1, int y1, int x2, int y2);
@@ -18,15 +26,52 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
     pPlayer->vx=pPlayer->vy=0;
     pPlayer->window_width = window_width;
     pPlayer->window_height = window_height;
-    SDL_Surface *pSurface = IMG_Load("resources/Ship.png");
-    if(!pSurface){
+
+    SDL_Surface* pSurface = NULL; 
+    switch (player_ID) {
+        case 0:
+            pSurface = IMG_Load("resources/player_0.png");
+            pPlayer->frames.nrOfFrames_idle = 5;
+            pPlayer->frames.nrOfFrames_sprint = 8; 
+            pPlayer->frames.nrOfFrames_jump = 11; 
+            break; 
+        case 1:
+            pSurface = IMG_Load("resources/player_1.png");
+            pPlayer->frames.nrOfFrames_idle = 5;
+            pPlayer->frames.nrOfFrames_sprint = 8; 
+            pPlayer->frames.nrOfFrames_jump = 8; 
+            break; 
+        case 2:
+            pSurface = IMG_Load("resources/player_2.png");
+            pPlayer->frames.nrOfFrames_idle = 5;
+            pPlayer->frames.nrOfFrames_sprint = 8; 
+            pPlayer->frames.nrOfFrames_jump = 7;  
+            break;
+        case 3:
+            pSurface = IMG_Load("resources/player_3.png");
+            pPlayer->frames.nrOfFrames_idle = 8;
+            pPlayer->frames.nrOfFrames_sprint = 8; 
+            pPlayer->frames.nrOfFrames_jump = 8;  
+            break;
+        default:
+            destroyPlayer(pPlayer);
+            return NULL;
+            break; 
+    }
+    pPlayer->frames.currentFrame_x = pPlayer->frames.currentFrame_y = 0;
+
+    if (!pSurface) {
+        destroyPlayer(pPlayer); 
         printf("Error: %s\n",SDL_GetError());
         return NULL;
     }
+
     pPlayer->pRenderer = pRenderer;
     pPlayer->pTexture = SDL_CreateTextureFromSurface(pRenderer, pSurface);
     SDL_FreeSurface(pSurface);
-    if(!pPlayer->pTexture){
+
+    if (!pPlayer->pTexture) {
+        destroyPlayer(pPlayer); 
         printf("Error: %s\n",SDL_GetError());
         return NULL;
     }
@@ -134,16 +179,27 @@ void drawPlayer(Player *pPlayer){
     SDL_RenderCopy(pPlayer->pRenderer,pPlayer->pTexture,NULL,&pPlayer->playerRect);
 }
 
-void destroyPlayer(Player *pPlayer){
-    SDL_DestroyTexture(pPlayer->pTexture);
+void drawPlayer(Player *pPlayer) {
+    //SDL_RenderCopyEx(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect, 0, NULL, SDL_FLIP_HORIZONTAL); <-- spegelvänd
+    
+    SDL_RenderCopy(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect);
+}
+
+void destroyPlayer(Player *pPlayer) {
+    if (pPlayer == NULL) return;
+    if (pPlayer->pTexture != NULL) {
+        SDL_DestroyTexture(pPlayer->pTexture);
+        pPlayer->pTexture = NULL; 
+    }
     free(pPlayer);
+    pPlayer = NULL;
 }
 
-int collidePlayer(Player *pPlayer, SDL_Rect rect){
+int collidePlayer(Player *pPlayer, SDL_Rect rect) {
     //return SDL_HasIntersection(&(pPlayer->playerRect),&rect);
-    return distance(pPlayer->playerRect.x+pPlayer->playerRect.w/2,pPlayer->playerRect.y+pPlayer->playerRect.h/2,rect.x+rect.w/2,rect.y+rect.h/2)<(pPlayer->playerRect.w+rect.w)/2;
+    return distance(pPlayer->dstRect.x+pPlayer->dstRect.w/2,pPlayer->dstRect.y+pPlayer->dstRect.h/2,rect.x+rect.w/2,rect.y+rect.h/2)<(pPlayer->dstRect.w+rect.w)/2;
 }
 
-static float distance(int x1, int y1, int x2, int y2){
+static float distance(int x1, int y1, int x2, int y2) {
     return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
 }

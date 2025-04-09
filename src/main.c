@@ -24,6 +24,14 @@ struct game{
 typedef struct game Game;
 
 typedef struct {
+    SDL_Window *pWindow;
+    SDL_Renderer *pRenderer;
+    Player *pPlayer;
+    // AsteroidImage *pAsteroidImage;
+    // Asteroid *pAsteroids[MAX_ASTEROIDS];
+} Game;
+
+typedef struct {
     int window_width;
     int window_height;
     int speed_x;
