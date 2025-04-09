@@ -1,7 +1,6 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_timer.h>
-
 #include <math.h>
 #include "../include/player.h"
 
@@ -9,7 +8,7 @@ struct frames {
     int nrOfFrames_idle;
     int nrOfFrames_sprint;
     int nrOfFrames_jump;
-    int currentFrame_x, currentFrame_y;
+    int currentFrame_x, currentFrame_y; 
     bool is_mirrored;
     int frameDelay;
     Uint32 lastFrameTime; 
@@ -33,7 +32,7 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
     Player *pPlayer = malloc(sizeof(struct player));
     if (pPlayer == NULL) return NULL;
 
-    pPlayer->vx = pPlayer->vy = 0;
+    pPlayer->vx=pPlayer->vy=0;
     pPlayer->window_width = window_width;
     pPlayer->window_height = window_height;
 
@@ -55,13 +54,13 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
             pSurface = IMG_Load("resources/player_2.png");
             pPlayer->frames.nrOfFrames_idle = 5;
             pPlayer->frames.nrOfFrames_sprint = 8; 
-            pPlayer->frames.nrOfFrames_jump = 7;  
+            pPlayer->frames.nrOfFrames_jump = 7;
             break;
         case 3:
             pSurface = IMG_Load("resources/player_3.png");
             pPlayer->frames.nrOfFrames_idle = 8;
             pPlayer->frames.nrOfFrames_sprint = 8; 
-            pPlayer->frames.nrOfFrames_jump = 8;  
+            pPlayer->frames.nrOfFrames_jump = 8;
             break;
         default:
             destroyPlayer(pPlayer);
@@ -73,7 +72,7 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
     pPlayer->frames.frameDelay = 200; // 100 ms = 10 frames per sekund
     pPlayer->frames.lastFrameTime = SDL_GetTicks();
 
-    if (!pSurface) {
+    if(!pSurface) {
         destroyPlayer(pPlayer); 
         printf("Error: %s\n",SDL_GetError());
         return NULL;
@@ -91,7 +90,7 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
 
     int spritesheet_w, spritesheet_h; 
     SDL_QueryTexture(pPlayer->pTexture, NULL, NULL, &spritesheet_w, &spritesheet_h);
-    pPlayer->srcRect.w = pPlayer->srcRect.h = spritesheet_h/3;                   
+    pPlayer->srcRect.w = pPlayer->srcRect.h = spritesheet_h/3;
     pPlayer->srcRect.x = (pPlayer->frames.currentFrame_x) * pPlayer->srcRect.w;
     pPlayer->srcRect.y =  (pPlayer->frames.currentFrame_y) * pPlayer->srcRect.h;
 
@@ -113,83 +112,108 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
     return pPlayer;
 }
 
-void setSpeed(bool up, bool down, bool left, bool right, int *pUpCounter,
-                bool onGround, Player *pPlayer, int speedX, int speedY) {
+void setSpeed(bool up,bool down,bool left,bool right,bool *pGoUp,bool *pGoDown,bool *pGoLeft,bool *pGoRight,
+                int *pUpCounter, bool onGround,Player *pPlayer,int speedX,int speedY) 
+{
     pPlayer->vx = pPlayer->vy = 0;
     pPlayer->frames.currentFrame_y = 0;
-    
-    if (up && !down && onGround) {
+
+    if (up && !down && onGround) 
+    {
         (*pUpCounter) = COUNTER;
     }
 
-    if ((*pUpCounter) > 0) {
+    if ((*pUpCounter) > 0)
+    {
+        (*pGoUp) = 1;
         pPlayer->vy = -(speedY * 5); 
         (*pUpCounter)--;
     }
-    else if (!onGround) {
-        pPlayer->vy = (speedY) * 5;
+    else if (!onGround)
+    {
+        (*pGoDown) = 1;
+        pPlayer->vy = (speedY) * 5; 
     }
 
-    if (left && !right) {
+    if (left && !right)
+    {
         pPlayer->vx = -(speedX);
-        if (!onGround || (*pUpCounter)>0) {
-            pPlayer->frames.currentFrame_y = 2;
-            pPlayer->frames.is_mirrored = true;
-        }
-        else {
-            pPlayer->frames.currentFrame_y = 1;
-            pPlayer->frames.is_mirrored = true;
-        }
-    }
-    else if (!left && right) {
+        (*pGoLeft) = 1;
+        pPlayer->frames.is_mirrored = true;
+        if (!onGround || (*pUpCounter)>0) pPlayer->frames.currentFrame_y = 2;
+        else pPlayer->frames.currentFrame_y = 1;
+    } 
+    else if (right && !left) 
+    {
         pPlayer->vx = speedX;
-        if (!onGround || (*pUpCounter)>0) {
-            pPlayer->frames.currentFrame_y = 2;
-            pPlayer->frames.is_mirrored = false;
-        }
-        else {
-            pPlayer->frames.currentFrame_y = 1;
-            pPlayer->frames.is_mirrored = false;
-        }
+        (*pGoRight) = 1;
+        pPlayer->frames.is_mirrored = false;
+        if (!onGround || (*pUpCounter)>0) pPlayer->frames.currentFrame_y = 2;
+        else pPlayer->frames.currentFrame_y = 1;
     }
 }
 
-void updatePlayer(Player *pPlayer, float deltaTime, int gameMap[BOX_ROW][BOX_COL], SDL_Rect blockRect, int *pUpCounter, bool *pOnGround) {
-    //printf("y,x: %f,%f\n", pPlayer->y,pPlayer->x);
+void updatePlayer(Player *pPlayer,float deltaTime,int gameMap[BOX_ROW][BOX_COL],SDL_Rect blockRect,int *pUpCounter,bool *pOnGround,
+                    bool *pGoUp,bool *pGoDown,bool *pGoLeft,bool *pGoRight)
+{
     pPlayer->x += pPlayer->vx * 5 * deltaTime;
     pPlayer->y += pPlayer->vy * deltaTime;
     // Check Collision
+    if ((*pGoLeft) == 1)
+    {
+        // printf("y: %d\n", (((int)pPlayer->y - 4) + pPlayer->playerRect.h)/blockRect.h);
+        // printf("x: %d\n", ((int)pPlayer->x)/blockRect.w);
+        if (gameMap[(((int)pPlayer->y - 4) + pPlayer->dstRect.h)/blockRect.h][((int)pPlayer->x + 25)/blockRect.w] == 1)  // Bottom edge blocked on left?
+        {
+            pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         //Dont move
+        }
+        else if (gameMap[((int)pPlayer->y + 25)/blockRect.h][((int)pPlayer->x + 25)/blockRect.w] == 1)     // Top edge blocked on left?
+        {
+            pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         //Dont move
+        }
+    }
+    
+    if ((*pGoRight) == 1)
+    {
+        // printf("y: %d\n", (((int)pPlayer->y - 4) + pPlayer->playerRect.h)/blockRect.h);
+        // printf("x: %d\n", (((int)pPlayer->x) + pPlayer->playerRect.w) / blockRect.w);
+        if(gameMap[(((int)pPlayer->y - 4) + pPlayer->dstRect.h)/blockRect.h][(((int)pPlayer->x - 20) + pPlayer->dstRect.w) / blockRect.w] == 1 || // Bottom edge blocked on right?
+        gameMap[((int)pPlayer->y + 25)/blockRect.h][(((int)pPlayer->x - 20) + pPlayer->dstRect.w) / blockRect.w] == 1)  // Top edge blocked on right?
+        {
+            pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         //Dont move
+        }
+    }
 
-    if (gameMap[(((int)pPlayer->y - 1) + pPlayer->dstRect.h)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1)  // Bottom edge blocked on left?
+    if ((*pGoUp) == 1)
     {
-        pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         // Dont move
+        // printf("y: %d,\n", ((int)pPlayer->y + 1)/blockRect.h);
+        // printf("x: %d,\n", ((int)pPlayer->x + 1)/blockRect.w);
+        if (gameMap[((int)pPlayer->y + 25)/blockRect.h][((int)pPlayer->x + 25)/blockRect.w] == 1 ||   // Left edge blocked on top?
+        gameMap[((int)pPlayer->y + 25)/blockRect.h][((int)pPlayer->x - 20 + pPlayer->dstRect.w)/blockRect.w] == 1) // Right edge blocked on top?
+        {
+
+            pPlayer->y -= (pPlayer->vy * deltaTime);             //Dont move
+            (*pUpCounter) = 0;
+        }
     }
-    if (gameMap[((int)pPlayer->y + 1)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1)     // Top edge blocked on left?
+
+    if ((*pGoDown) == 1)
     {
-        pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         //Dont move
+        if (gameMap[(((int)pPlayer->y - 3) + pPlayer->dstRect.h)/blockRect.h][((int)pPlayer->x + 25)/blockRect.w] == 1 || // Left edge blocked on bottom?
+        gameMap[(((int)pPlayer->y - 3) + pPlayer->dstRect.h)/blockRect.h][((int)pPlayer->x - 20 + pPlayer->dstRect.w)/blockRect.w] == 1)  // Right edge blocked on bottom?
+        {
+            pPlayer->y -= (pPlayer->vy * deltaTime);             //Dont move
+            (*pOnGround) = true;
+
+        }
     }
-    if(gameMap[(((int)pPlayer->y - 1) + pPlayer->dstRect.h)/blockRect.h][(((int)pPlayer->x - 1) + pPlayer->dstRect.w) / blockRect.w] == 1 || // Bottom edge blocked on right?
-    gameMap[((int)pPlayer->y + 1)/blockRect.h][(((int)pPlayer->x - 1) + pPlayer->dstRect.w) / blockRect.w] == 1)  // Top edge blocked on right?
-    {
-        pPlayer->x -= (pPlayer->vx * 5 * deltaTime);         // Dont move
-    }
-    if (gameMap[((int)pPlayer->y + 1)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1 ||   // Left edge blocked on top?
-        gameMap[((int)pPlayer->y + 1)/blockRect.h][((int)pPlayer->x- 1 + pPlayer->dstRect.w)/blockRect.w] == 1) // Right edge blocked on top?
-    {
-        pPlayer->y -= (pPlayer->vy * deltaTime);             //Dont move
-        (*pUpCounter) = 0;
-    }
-    if (gameMap[(((int)pPlayer->y - 1) + pPlayer->dstRect.h)/blockRect.h][((int)pPlayer->x + 1)/blockRect.w] == 1 || // Left edge blocked on bottom?
-        gameMap[(((int)pPlayer->y - 1 ) + pPlayer->dstRect.h)/blockRect.h][((int)pPlayer->x - 1 + pPlayer->dstRect.w)/blockRect.w] == 1)  // Right edge blocked on bottom?
-    {
-        pPlayer->y -= (pPlayer->vy * deltaTime);             //Dont move
-        (*pOnGround) = true;
-    }
-    else
+    if (gameMap[(((int)pPlayer->y + 3) + pPlayer->dstRect.h)/blockRect.h][((int)pPlayer->x +25 )/blockRect.w] == 0 && // Left edge blocked on bottom?
+        gameMap[(((int)pPlayer->y + 3) + pPlayer->dstRect.h)/blockRect.h][((int)pPlayer->x - 20 + pPlayer->dstRect.w)/blockRect.w] == 0)  // Right edge blocked on bottom?
     {
         (*pOnGround) = false;
     }
-    printf("upcounter ar: %d\n",*pUpCounter);
+    //pPlayer->dstRect.x = pPlayer->x;
+    //pPlayer->dstRect.y = pPlayer->y - 3;
     pPlayer->dstRect.x = pPlayer->x;
     pPlayer->dstRect.y = pPlayer->y;
 }
@@ -219,7 +243,7 @@ void updatePlayerRect(Player *pPlayer) {
         }
         else pPlayer->frames.currentFrame_x = 0; 
     }
-    
+
     pPlayer->srcRect.x = pPlayer->frames.currentFrame_x * pPlayer->srcRect.w;
     pPlayer->srcRect.y = pPlayer->frames.currentFrame_y * pPlayer->srcRect.h;
 }
@@ -242,11 +266,6 @@ void destroyPlayer(Player *pPlayer) {
     }
     free(pPlayer);
     pPlayer = NULL;
-}
-
-int collidePlayer(Player *pPlayer, SDL_Rect rect) {
-    //return SDL_HasIntersection(&(pPlayer->playerRect),&rect);
-    return distance(pPlayer->dstRect.x+pPlayer->dstRect.w/2,pPlayer->dstRect.y+pPlayer->dstRect.h/2,rect.x+rect.w/2,rect.y+rect.h/2)<(pPlayer->dstRect.w+rect.w)/2;
 }
 
 static float distance(int x1, int y1, int x2, int y2) {
