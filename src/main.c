@@ -5,12 +5,14 @@
 #include <SDL_image.h>
 #include <SDL_timer.h>
 #include <SDL_mixer.h>
+#include <SDL_net.h>
 
 #include "../include/game.h"
 #include "../include/menu.h"
 #include "../include/platform.h"
 #include "../include/player.h"
 #include "../include/renderer.h"
+#include "../include/net.h"
 
 #define NUM_MENU 2
 
@@ -20,6 +22,9 @@ struct game{
     Player *pPlayer;
     // AsteroidImage *pAsteroidImage;
     // Asteroid *pAsteroids[MAX_ASTEROIDS];
+
+    bool is_server;
+    Server *pServer;
 };
 typedef struct game Game;
 
@@ -31,7 +36,7 @@ typedef struct {
     bool continue_game;
 } DisplayMode;
 
-int initiate(DisplayMode *pdM,Game *pGame);
+int initiate(DisplayMode *pdM,Game *pGame, int argv, char **args);
 bool showMenu(Game *pGame, DisplayMode position);
 void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
                 bool*pUp,bool *pDown,bool *pLeft,bool *pRight);
@@ -40,7 +45,7 @@ int main(int argv, char **args)
 {
     DisplayMode dM = {0};
     Game game={0}; 
-    if(!initiate(&dM,&game)) return 1;
+    if(!initiate(&dM,&game, argv, args)) return 1;
 
     if (!showMenu(&game, dM))
     {
@@ -158,8 +163,20 @@ int main(int argv, char **args)
     return 0;
 }
 
-int initiate(DisplayMode *pdM,Game *pGame)
+int initiate(DisplayMode *pdM,Game *pGame, int argv, char **args)
 {
+    if (argv > 1 && strcmp(args[1], "server") == 0) { // UDP prototyp
+        pGame->is_server = true; 
+    }
+
+    pGame->pServer = NET_INIT(pGame->is_server);
+
+    bindPort(pGame->is_server, pGame->pServer);
+
+    if (!pGame->is_server) setSrvAdd_client(args, argv, pGame->pServer);
+    
+    
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
     {
         printf("Error: %s\n", SDL_GetError());
