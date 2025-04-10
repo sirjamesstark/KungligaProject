@@ -11,7 +11,7 @@ Server *NET_INIT(bool is_server);
 void bindPort(bool is_server, Server *pServer);
 void setPacketSize(Server *pSrv);
 void setSrvAdd_client(char **args, int argv, Server *pSrv);
-void sendPaket(SDL_Rect player, Server *pSrv, bool is_server);
+void sendPaket(SDL_Rect *player, Server *pSrv, bool is_server);
 void recivePaket(Server *pSrv, bool is_server, SDL_Rect *pDest, SDL_Rect *pSrvEco);
 void NET_Quit(Server *pSrv);
 

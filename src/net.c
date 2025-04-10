@@ -53,8 +53,8 @@ void setPacketSize(Server *pSrv){
     }
 }
 
-void sendPaket(SDL_Rect player, Server *pSrv, bool is_server){
-    sprintf((char*)pSrv->p->data, "%d %d", player.x, player.y);
+void sendPaket(SDL_Rect *player, Server *pSrv, bool is_server){
+    sprintf((char*)pSrv->p->data, "%d %d", player->x, player->y);
     pSrv->p->len = strlen((char*)pSrv->p->data) + 1;
 
     if (!is_server) {

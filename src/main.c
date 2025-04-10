@@ -26,6 +26,7 @@ struct game{
 
     bool is_server;
     Server *pServer;
+    int pPlayerID
 };
 typedef struct game Game;
 
@@ -46,7 +47,7 @@ int main(int argc, char *argv[])
 {
     DisplayMode dM = {0};
     Game game={0}; 
-    if(!initiate(&dM,&game)) return 1;
+    if(!initiate(&dM,&game,argv,argc)) return 1;
 
     if (!showMenu(&game, dM))
     {
@@ -81,7 +82,16 @@ int main(int argc, char *argv[])
     blockRect.x = (dM.window_width - blockRect.w)/2 + blockRect.w*5;
     blockRect.y = ((dM.window_height - blockRect.h)/2);
 
-    (&game)->pPlayer = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height);
+    if (game.is_server){
+        game.pPlayerID = 0;
+        (&game)->pPlayer[0] = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height, game.pPlayerID);
+        (&game)->pPlayer[1] = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height, 1);
+    }
+    else {
+        game.pPlayerID = 1;
+        (&game)->pPlayer[0] = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height, 0);
+        (&game)->pPlayer[1] = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height, game.pPlayerID);
+    }
 
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
@@ -128,11 +138,23 @@ int main(int argc, char *argv[])
             else handleInput(&game,&event,&closeWindow,&up,&down,&left,&right);
         }
         goDown = goLeft = goRight = goUp = 0;
-        setSpeed(up,down,left,right,&goUp,&goDown,&goLeft,&goRight,&upCounter,onGround,game.pPlayer,dM.speed_x,dM.speed_y);
-        updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight);
-        sendPaket(getPlayerRect(game.pPlayer), game.pServer, game.is_server);
+        setSpeed(up,down,left,right,&goUp,&goDown,&goLeft,&goRight,&upCounter,onGround,game.pPlayer[game.pPlayerID],dM.speed_x,dM.speed_y);
+        updatePlayer(game.pPlayer[game.pPlayerID],deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight);
+
+        if (!game.is_server)
+        {
+            sendPaket(getPlayerRect(game.pPlayer[1]), game.pServer, game.is_server);
+            recivePaket(game.pServer, game.is_server, getPlayerRect(game.pPlayer[0]), getPlayerRect(game.pPlayer[1]));
+        } 
+        else{
+            recivePaket(game.pServer, game.is_server, getPlayerRect(game.pPlayer[1]), getPlayerRect(game.pPlayer[0]));
+        }
+
         SDL_RenderClear(game.pRenderer);
-        drawPlayer(game.pPlayer);
+        for (int i = 0; i < NROFPLAYERS; i++)
+        {
+            drawPlayer(game.pPlayer[i]);
+        }
 
         int numBlocksX = dM.window_width / blockRect.w;  // Antal lådor per rad
         int numBlocksY = (dM.window_height / blockRect.h);  // Antal rader 
@@ -155,7 +177,10 @@ int main(int argc, char *argv[])
     }
 
     NET_Quit(game.pServer);
-    destroyPlayer(game.pPlayer);
+    for (int i = 0; i < NROFPLAYERS; i++)
+    {
+        destroyPlayer(game.pPlayer[i]);
+    }
     SDL_DestroyRenderer(game.pRenderer);
     SDL_DestroyWindow(game.pWindow);
     SDL_Quit();
@@ -459,6 +484,7 @@ bool showMenu(Game *pGame, DisplayMode position)
                         Mix_PlayChannel(-1, buttonSound, 0);  // Play click sound
                         menuRunning = false;
                     }
+                }
             }
             else if (event.type == SDL_KEYDOWN)
             {
