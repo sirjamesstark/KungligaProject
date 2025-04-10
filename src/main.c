@@ -18,6 +18,7 @@ typedef struct{
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     Player *pPlayer;
+    Mix_Chunk *jumpSound;
     // AsteroidImage *pAsteroidImage;
     // Asteroid *pAsteroids[MAX_ASTEROIDS];
 } Game;
@@ -58,6 +59,28 @@ int main(int argc, char *argv[])
         SDL_Quit();
         return 1;
     }
+
+    // Load game background
+    SDL_Surface *pBackgroundSurface = IMG_Load("resources/game_background.png");
+    if (!pBackgroundSurface)
+    {
+        printf("Error loading background: %s\n", SDL_GetError());
+        return 0;
+    }
+    SDL_Texture *pBackgroundTexture = SDL_CreateTextureFromSurface(game.pRenderer, pBackgroundSurface);
+    SDL_FreeSurface(pBackgroundSurface);
+    if (!pBackgroundTexture)
+    {
+        printf("Error creating background texture: %s\n", SDL_GetError());
+        return 0;
+    }
+
+    // Create background rect
+    SDL_Rect backgroundRect;
+    backgroundRect.x = 0;
+    backgroundRect.y = 0;
+    backgroundRect.w = dM.window_width;
+    backgroundRect.h = dM.window_height;
 
     // Load platform blocks
     SDL_Surface *pBlockSurface = IMG_Load("resources/box1.png");
@@ -134,12 +157,12 @@ int main(int argc, char *argv[])
         setSpeed(up,down,left,right,&goUp,&goDown,&goLeft,&goRight,&upCounter,onGround,game.pPlayer,dM.speed_x,dM.speed_y);
         updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight);
         SDL_RenderClear(game.pRenderer);
-        drawPlayer(game.pPlayer);
+        
+        // Draw background first
+        SDL_RenderCopy(game.pRenderer, pBackgroundTexture, NULL, &backgroundRect);
 
         int numBlocksX = dM.window_width / blockRect.w;  // Antal lådor per rad
-        int numBlocksY = (dM.window_height / blockRect.h);  // Antal rader 
-
-        SDL_RenderClear(game.pRenderer);
+        int numBlocksY = (dM.window_height / blockRect.h);  // Antal rader
         for (int row = 0; row < numBlocksY; row++) {
             for (int col = 0; col < numBlocksX; col++) {
                 if (gameMap[row][col] == 1)
@@ -152,11 +175,15 @@ int main(int argc, char *argv[])
             }
         }
 
+        // Draw player on top of platforms
+        drawPlayer(game.pPlayer);
+
         SDL_RenderPresent(game.pRenderer);
         SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
     }
 
     destroyPlayer(game.pPlayer);
+    SDL_DestroyTexture(pBackgroundTexture);
     SDL_DestroyRenderer(game.pRenderer);
     SDL_DestroyWindow(game.pWindow);
     SDL_Quit();
@@ -193,6 +220,8 @@ int initiate(DisplayMode *pdM,Game *pGame)
         SDL_Quit();
         return 0;
     }
+    
+    pGame->jumpSound = NULL;  // Initialize jump sound to NULL
 
     pGame->pRenderer = SDL_CreateRenderer(pGame->pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!pGame->pRenderer)
@@ -449,6 +478,7 @@ bool showMenu(Game *pGame, DisplayMode position)
                         Mix_PlayChannel(-1, buttonSound, 0);  // Play click sound
                         menuRunning = false;
                     }
+                }
             }
             else if (event.type == SDL_KEYDOWN)
             {
@@ -492,6 +522,10 @@ bool showMenu(Game *pGame, DisplayMode position)
                 }
             }
         }
+
+        // Clear renderer and draw background first
+        SDL_RenderClear(pGame->pRenderer);
+        SDL_RenderCopy(pGame->pRenderer, pBackgroundTexture, NULL, &backgroundRect);
 
         // Render sound icon based on state
         if (soundgame) {
@@ -538,28 +572,18 @@ bool showMenu(Game *pGame, DisplayMode position)
     // Wait a tiny bit to ensure sound effects finish playing
     SDL_Delay(100);
     Mix_FreeChunk(buttonSound);
-    
-    // Time to clean up my audio stuff - always clean up after yourself!
-    if (!startGame) {
-        Mix_HaltMusic();
-        Mix_FreeMusic(menuMusic);
-    }
-    SDL_Delay(100);  // Ensure sounds finish playing
-    Mix_FreeChunk(buttonSound);
+    Mix_CloseAudio();
     
     return startGame;
 }
-
-// I'm keeping the jump sound ready to go - it needs to be quick!
-Mix_Chunk *jumpSound = NULL;
 
 void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
     bool*pUp,bool *pDown,bool *pLeft,bool *pRight)
 {
     // First time jumping? I'll load the sound - then it's ready for next time
-    if (!jumpSound) {
-        jumpSound = Mix_LoadWAV("resources/jump_sound.wav");
-        if (!jumpSound) {
+    if (!pGame->jumpSound) {
+        pGame->jumpSound = Mix_LoadWAV("resources/jump_sound.wav");
+        if (!pGame->jumpSound) {
             printf("Failed to load jump sound! SDL_mixer Error: %s\n", Mix_GetError());
         }
     }
@@ -575,8 +599,8 @@ void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
             case SDL_SCANCODE_UP:
             case SDL_SCANCODE_SPACE:
                 (*pUp) = true;
-                if (jumpSound) {
-                    Mix_PlayChannel(-1, jumpSound, 0);  // Play jump sound
+                if (pGame->jumpSound) {
+                    Mix_PlayChannel(-1, pGame->jumpSound, 0);  // Play jump sound
                 }
                 break;
             case SDL_SCANCODE_A:
@@ -592,9 +616,9 @@ void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
                 (*pRight) = true;
                 break;
             case SDL_SCANCODE_ESCAPE:
-                if (jumpSound) {
-                    Mix_FreeChunk(jumpSound);  // Clean up jump sound
-                    jumpSound = NULL;
+                if (pGame->jumpSound) {
+                    Mix_FreeChunk(pGame->jumpSound);  // Clean up jump sound
+                    pGame->jumpSound = NULL;
                 }
                 (*pCloseWindow) = true;
                 break;
