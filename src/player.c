@@ -96,7 +96,7 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
 
     float scaleFactor = (pPlayer->window_width * 0.04) / pPlayer->srcRect.w; 
     pPlayer->dstRect.w = (int)(pPlayer->srcRect.w * scaleFactor);
-    pPlayer->dstRect.h = (int)(pPlayer->srcRect.h * scaleFactor);
+    pPlayer->dstRect.h = (int)((pPlayer->srcRect.h * scaleFactor));
 
     //pPlayer->dstRect.w = ((pPlayer->window_width)/BOX_COL);
     //pPlayer->dstRect.h = ((pPlayer->window_height)/BOX_ROW);
