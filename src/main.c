@@ -42,11 +42,11 @@ bool showMenu(Game *pGame, DisplayMode position);
 void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
                 bool *pUp,bool *pDown,bool *pLeft,bool *pRight);
 
-int main(int argv, char **args)
+int main(int argc, char *argv[])
 {
     DisplayMode dM = {0};
     Game game={0}; 
-    if(!initiate(&dM,&game, argv, args)) return 1;
+    if(!initiate(&dM,&game)) return 1;
 
     if (!showMenu(&game, dM))
     {
@@ -56,15 +56,12 @@ int main(int argv, char **args)
         return 1;
     }
 
-    // Här startar spelet om man väljer "Start"
-    SDL_Surface *pBlockSurface = IMG_Load("resources/boxPaint.png");
+    // Load platform blocks
+    SDL_Surface *pBlockSurface = IMG_Load("resources/box1.png");
     if (!pBlockSurface)
     {
         printf("Error: %s\n", SDL_GetError());
-        SDL_DestroyRenderer(game.pRenderer);
-        SDL_DestroyWindow(game.pWindow);
-        SDL_Quit();
-        return 1;
+        return 0;
     }
 
     SDL_Texture *pBlockTexture = SDL_CreateTextureFromSurface(game.pRenderer, pBlockSurface);
@@ -140,14 +137,13 @@ int main(int argv, char **args)
         int numBlocksX = dM.window_width / blockRect.w;  // Antal lådor per rad
         int numBlocksY = (dM.window_height / blockRect.h);  // Antal rader 
 
-        // Loopa över rader (Y-led)
+        SDL_RenderClear(game.pRenderer);
         for (int row = 0; row < numBlocksY; row++) {
-            // Loopa över kolumner (X-led)
             for (int col = 0; col < numBlocksX; col++) {
                 if (gameMap[row][col] == 1)
                 {
-                    blockRect.x = col * blockRect.w;  // Placera lådan horisontellt
-                    blockRect.y = row * blockRect.h;  // Placera lådan vertikalt (från botten uppåt)
+                    blockRect.x = col * blockRect.w;  // Platform horizontal position
+                    blockRect.y = row * blockRect.h;  // Platform vertical position
 
                     SDL_RenderCopy(game.pRenderer, pBlockTexture, NULL, &blockRect);
                 }
@@ -199,6 +195,7 @@ int initiate(DisplayMode *pdM,Game *pGame, int argv, char **args)
         pdM->speed_x = pdM->window_width / 20;
         pdM->speed_y = pdM->window_height / 20;
     }
+    // Create window with explicit cursor support
     pGame->pWindow = SDL_CreateWindow("Meny", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, pdM->window_width, pdM->window_height, SDL_WINDOW_FULLSCREEN_DESKTOP);
     if (!pGame->pWindow)
     {
@@ -215,62 +212,180 @@ int initiate(DisplayMode *pdM,Game *pGame, int argv, char **args)
         SDL_Quit();
         return 0;
     }
-    else return 1;
+
+    // Initialize SDL_image for cursor loading
+    int imgFlags = IMG_INIT_PNG;
+    if (!(IMG_Init(imgFlags) & imgFlags)) {
+        printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+        return 0;
+    }
+
+    // Force cursor to be visible first
+    SDL_ShowCursor(SDL_ENABLE);
+
+    // Load and set custom cursor
+    SDL_Surface* cursorSurface = IMG_Load("resources/cursor.png");
+    if (!cursorSurface)
+    {
+        printf("Failed to load cursor image! SDL_image Error: %s\n", IMG_GetError());
+    }
+    else
+    {
+        // Create cursor with hotspot at top-left for better precision
+        SDL_Cursor* cursor = SDL_CreateColorCursor(cursorSurface, 0, 0);
+        if (!cursor)
+        {
+            printf("Failed to create cursor! SDL Error: %s\n", SDL_GetError());
+        }
+        else
+        {
+            SDL_SetCursor(cursor);
+            // Make sure cursor stays visible
+            SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
+        }
+        SDL_FreeSurface(cursorSurface);
+    }
+
+    // Double check cursor visibility
+    if (SDL_ShowCursor(-1) != SDL_ENABLE) {
+        SDL_ShowCursor(SDL_ENABLE);
+    }
+
+    return 1;
 }
 
+// I'm setting up the audio system here - this is where all the menu magic happens
 bool showMenu(Game *pGame, DisplayMode position)
 {
-    int menuChoice = 1;
-    SDL_Surface *pStartSurface = IMG_Load("resources/menu_start.png");
-    SDL_Surface *pExitSurface = IMG_Load("resources/menu_exit.png");
-    SDL_Surface *pStartBlueSurface = IMG_Load("resources/menu_start_blue.png");
-    SDL_Surface *pExitBlueSurface = IMG_Load("resources/menu_exit_blue.png");
-
-    SDL_Surface *pSoundOnSurface = IMG_Load("resources/soundon.png");
-    SDL_Surface *pSoundOffSurface = IMG_Load("resources/soundoff.png");
-
-    if (!pStartSurface || !pExitSurface || !pStartBlueSurface || !pExitBlueSurface ||
-        !pSoundOnSurface || !pSoundOffSurface)
-    {
-        printf("Error loading menu images: %s\n", SDL_GetError());
+    // Let me set up our audio system first - we need this for all our cool sounds
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
         return false;
     }
 
-    SDL_Texture *pStartTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, pStartSurface);
-    SDL_Texture *pExitTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, pExitSurface);
-    SDL_Texture *pStartBlueTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, pStartBlueSurface);
-    SDL_Texture *pExitBlueTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, pExitBlueSurface);
+    // Let's get that sweet background music going - it'll loop forever with -1
+    Mix_Music *menuMusic = Mix_LoadMUS("resources/menu_music.wav");
+    if (!menuMusic) {
+        printf("Failed to load menu music! SDL_mixer Error: %s\n", Mix_GetError());
+        return false;
+    }
+    Mix_PlayMusic(menuMusic, -1);  // -1 means loop infinitely
+
+    // Load button click sound effect
+    Mix_Chunk *buttonSound = Mix_LoadWAV("resources/button_selection_sound.wav");
+    if (!buttonSound) {
+        printf("Failed to load button sound! SDL_mixer Error: %s\n", Mix_GetError());
+        Mix_FreeMusic(menuMusic);
+        return false;
+    }
+
+    int menuChoice = 1;
+    SDL_Surface *pBackgroundSurface = IMG_Load("resources/main_background.png");
+    if (!pBackgroundSurface) {
+        printf("Failed to load main_background.png: %s\n", IMG_GetError());
+        return false;
+    }
+
+    SDL_Surface *pStart0Surface = IMG_Load("resources/menu_start0.png");
+    if (!pStart0Surface) {
+        printf("Failed to load menu_start0.png: %s\n", IMG_GetError());
+        SDL_FreeSurface(pBackgroundSurface);
+        return false;
+    }
+
+    SDL_Surface *pStart1Surface = IMG_Load("resources/menu_start1.png");
+    if (!pStart1Surface) {
+        printf("Failed to load menu_start1.png: %s\n", IMG_GetError());
+        SDL_FreeSurface(pBackgroundSurface);
+        SDL_FreeSurface(pStart0Surface);
+        return false;
+    }
+
+    SDL_Surface *pExit0Surface = IMG_Load("resources/menu_exit0.png");
+    if (!pExit0Surface) {
+        printf("Failed to load menu_exit0.png: %s\n", IMG_GetError());
+        SDL_FreeSurface(pBackgroundSurface);
+        SDL_FreeSurface(pStart0Surface);
+        SDL_FreeSurface(pStart1Surface);
+        return false;
+    }
+
+    SDL_Surface *pExit1Surface = IMG_Load("resources/menu_exit1.png");
+    if (!pExit1Surface) {
+        printf("Failed to load menu_exit1.png: %s\n", IMG_GetError());
+        SDL_FreeSurface(pBackgroundSurface);
+        SDL_FreeSurface(pStart0Surface);
+        SDL_FreeSurface(pStart1Surface);
+        SDL_FreeSurface(pExit0Surface);
+        return false;
+    }
+
+    SDL_Surface *pSoundOnSurface = IMG_Load("resources/soundon0.png");
+    SDL_Surface *pSoundOffSurface = IMG_Load("resources/soundoff0.png");
+
+    if (!pSoundOnSurface || !pSoundOffSurface) {
+        printf("Error loading sound icons: %s\n", IMG_GetError());
+        SDL_FreeSurface(pBackgroundSurface);
+        SDL_FreeSurface(pStart0Surface);
+        SDL_FreeSurface(pStart1Surface);
+        SDL_FreeSurface(pExit0Surface);
+        SDL_FreeSurface(pExit1Surface);
+        return false;
+    }
+
+    SDL_Texture *pBackgroundTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, pBackgroundSurface);
+    SDL_Texture *pStart0Texture = SDL_CreateTextureFromSurface(pGame->pRenderer, pStart0Surface);
+    SDL_Texture *pStart1Texture = SDL_CreateTextureFromSurface(pGame->pRenderer, pStart1Surface);
+    SDL_Texture *pExit0Texture = SDL_CreateTextureFromSurface(pGame->pRenderer, pExit0Surface);
+    SDL_Texture *pExit1Texture = SDL_CreateTextureFromSurface(pGame->pRenderer, pExit1Surface);
     SDL_Texture *pSoundOnTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, pSoundOnSurface);
     SDL_Texture *pSoundOffTexture = SDL_CreateTextureFromSurface(pGame->pRenderer, pSoundOffSurface);
 
-    SDL_FreeSurface(pStartSurface);
-    SDL_FreeSurface(pExitSurface);
-    SDL_FreeSurface(pStartBlueSurface);
-    SDL_FreeSurface(pExitBlueSurface);
+    if (!pBackgroundTexture || !pStart0Texture || !pStart1Texture || !pExit0Texture || !pExit1Texture || 
+        !pSoundOnTexture || !pSoundOffTexture)
+    {
+        printf("Error creating textures: %s\n", SDL_GetError());
+        return false;
+    }
+
+    SDL_FreeSurface(pBackgroundSurface);
+    SDL_FreeSurface(pStart0Surface);
+    SDL_FreeSurface(pStart1Surface);
+    SDL_FreeSurface(pExit0Surface);
+    SDL_FreeSurface(pExit1Surface);
     SDL_FreeSurface(pSoundOnSurface);
     SDL_FreeSurface(pSoundOffSurface);
 
-    if (!pStartTexture || !pExitTexture)
+    if (!pBackgroundTexture || !pStart0Texture || !pStart1Texture || !pExit0Texture || !pExit1Texture || 
+        !pSoundOnTexture || !pSoundOffTexture)
     {
-        printf("Error creating menu textures: %s\n", SDL_GetError());
+        printf("Error creating textures: %s\n", SDL_GetError());
         return false;
     }
 
     SDL_Rect startRect;
-    startRect.w = ((position.window_width) / 6) * 2;
-    startRect.h = ((position.window_height) / 10) * 2;
+    // Make menu items a bit larger and adjust their positions
+    startRect.w = position.window_width / 4;  // Larger width
+    startRect.h = position.window_height / 8; // Larger height
     startRect.x = (position.window_width - startRect.w) / 2;
-    startRect.y = ((position.window_height - (startRect.h) * 4));
+    startRect.y = (position.window_height / 3) - 60;  // Moved up by 1.6cm (≈60 pixels = original 68 - 8)
+
     SDL_Rect exitRect;
-    exitRect.w = ((position.window_width) / 6) * 2;
-    exitRect.h = ((position.window_height) / 10) * 2;
+    exitRect.w = position.window_width / 4;
+    exitRect.h = position.window_height / 8;
     exitRect.x = (position.window_width - exitRect.w) / 2;
-    exitRect.y = ((position.window_height - (exitRect.h) * 2));
+    exitRect.y = (position.window_height / 2) + 57;  // Below start button + 1.5cm (57 pixels = original 38 + 19)
+    SDL_Rect backgroundRect;
+    backgroundRect.x = 0;
+    backgroundRect.y = 0;
+    backgroundRect.w = position.window_width;
+    backgroundRect.h = position.window_height;
+
     SDL_Rect soundRect;
-    soundRect.w = ((position.window_width) / 20);
-    soundRect.h = ((position.window_height) / 9);
-    soundRect.x = (position.window_width - soundRect.w - (position.window_width / 10));
-    soundRect.y = ((position.window_height / 10));
+    soundRect.w = ((position.window_width) / 15);  // Slightly larger
+    soundRect.h = ((position.window_height) / 8);  // Match menu item height
+    soundRect.x = (position.window_width - soundRect.w - 58);  // Move right by 1cm (96 - 38)
+    soundRect.y = 39;  // Move up by 0.5cm (58 - 19)
 
     int mousex, mousey;
     bool menuRunning = true;
@@ -307,115 +422,172 @@ bool showMenu(Game *pGame, DisplayMode position)
             {
                 if (SDL_BUTTON_LEFT == event.button.button)
                 {
-                    if ((mousex > soundRect.x && mousex < soundRect.x + soundRect.w) && (mousey > soundRect.y && mousey < soundRect.y + soundRect.h))
+                    bool buttonClicked = false;
+
+                    // Handle sound toggle button click
+                    // When you click the sound icon, I'll toggle the music for you
+                    if ((mousex > soundRect.x && mousex < soundRect.x + soundRect.w) && 
+                        (mousey > soundRect.y && mousey < soundRect.y + soundRect.h))
                     {
-                        if (soundgame == true)
+                        Mix_PlayChannel(-1, buttonSound, 0);  // Play click sound
+                        if (soundgame)
                         {
+                            Mix_PauseMusic();  // Pause menu music
                             soundgame = false;
                         }
                         else
                         {
+                            Mix_ResumeMusic();  // Resume menu music
                             soundgame = true;
                         }
                     }
-                    if (menuChoice == 1)
+                    // When you click Start, I'll play a sound and kick off the game
+                    else if ((mousex > startRect.x && mousex < startRect.x + startRect.w) && 
+                             (mousey > startRect.y && mousey < startRect.y + startRect.h))
                     {
+                        Mix_PlayChannel(-1, buttonSound, 0);  // Play click sound
+                        SDL_Delay(50);  // Brief delay for sound
+                        Mix_HaltMusic();  // Stop menu music
+                        Mix_FreeMusic(menuMusic);
                         startGame = true;
                         menuRunning = false;
                     }
-                    if (menuChoice == 2)
+                    // Exit button gets a sound too - keeping it consistent!
+                    else if ((mousex > exitRect.x && mousex < exitRect.x + exitRect.w) && 
+                             (mousey > exitRect.y && mousey < exitRect.y + exitRect.h))
                     {
+                        Mix_PlayChannel(-1, buttonSound, 0);  // Play click sound
                         menuRunning = false;
                     }
-                }
             }
             else if (event.type == SDL_KEYDOWN)
             {
                 switch (event.key.keysym.scancode)
                 {
-                case SDL_SCANCODE_UP:
-                    if (menuChoice < 2)
-                    {
-                        menuChoice = 1;
-                    }
-                    else
-                    {
-                        menuChoice--;
-                    }
-                    break;
-                case SDL_SCANCODE_DOWN:
-                    if (menuChoice == NUM_MENU)
-                    {
-                        menuChoice = NUM_MENU;
-                    }
-                    else
-                    {
-                        menuChoice++;
-                    }
-                    break;
-                case SDL_SCANCODE_RETURN:
-                    if (menuChoice == 1)
-                    {
-                        startGame = true;
-                        menuRunning = false;
-                    }
-                    else
-                    {
-                        menuRunning = false;
-                    }
+                    default: // Handle any unspecified keys
+                        break;
+                        
+                    case SDL_SCANCODE_UP:
+                        if (menuChoice > 1) {
+                            menuChoice--;
+                            Mix_PlayChannel(-1, buttonSound, 0);
+                        }
+                        break;
+                        
+                    case SDL_SCANCODE_DOWN:
+                        if (menuChoice < 3) {
+                            menuChoice++;
+                            Mix_PlayChannel(-1, buttonSound, 0);
+                        }
+                        break;
+                        
+                    case SDL_SCANCODE_SPACE:
+                    case SDL_SCANCODE_RETURN:
+                        Mix_PlayChannel(-1, buttonSound, 0);
+                        if (menuChoice == 1)
+                        {
+                            startGame = true;
+                            menuRunning = false;
+                        }
+                        else if (menuChoice == 2)
+                        {
+                            Mix_HaltMusic();
+                            soundgame = false;
+                        }
+                        else
+                        {
+                            menuRunning = false;
+                        }
+                        break;
                 }
             }
         }
 
-        SDL_RenderClear(pGame->pRenderer);
-        if (soundgame)
-        {
+        // Render sound icon based on state
+        if (soundgame) {
             SDL_RenderCopy(pGame->pRenderer, pSoundOnTexture, NULL, &soundRect);
-        }
-        else
-        {
+        } else {
             SDL_RenderCopy(pGame->pRenderer, pSoundOffTexture, NULL, &soundRect);
         }
 
+        // Default state (no hover)
         if (menuChoice == 0)
         {
-            SDL_RenderCopy(pGame->pRenderer, pStartTexture, NULL, &startRect);
-            SDL_RenderCopy(pGame->pRenderer, pExitTexture, NULL, &exitRect);
+            SDL_RenderCopy(pGame->pRenderer, pStart0Texture, NULL, &startRect);
+            SDL_RenderCopy(pGame->pRenderer, pExit0Texture, NULL, &exitRect);
         }
-        if (menuChoice == 1)
+        // Start button hover
+        else if (menuChoice == 1)
         {
-            SDL_RenderCopy(pGame->pRenderer, pStartBlueTexture, NULL, &startRect);
-            SDL_RenderCopy(pGame->pRenderer, pExitTexture, NULL, &exitRect);
+            SDL_RenderCopy(pGame->pRenderer, pStart1Texture, NULL, &startRect);
+            SDL_RenderCopy(pGame->pRenderer, pExit0Texture, NULL, &exitRect);
         }
+        // Exit button hover
         else if (menuChoice == 2)
         {
-            SDL_RenderCopy(pGame->pRenderer, pStartTexture, NULL, &startRect);
-            SDL_RenderCopy(pGame->pRenderer, pExitBlueTexture, NULL, &exitRect);
+            SDL_RenderCopy(pGame->pRenderer, pStart0Texture, NULL, &startRect);
+            SDL_RenderCopy(pGame->pRenderer, pExit1Texture, NULL, &exitRect);
         }
         SDL_RenderPresent(pGame->pRenderer);
     }
 
-    SDL_DestroyTexture(pStartTexture);
-    SDL_DestroyTexture(pExitTexture);
-    SDL_DestroyTexture(pStartBlueTexture);
-    SDL_DestroyTexture(pExitBlueTexture);
+    SDL_DestroyTexture(pStart0Texture);
+    SDL_DestroyTexture(pStart1Texture);
+    SDL_DestroyTexture(pExit0Texture);
+    SDL_DestroyTexture(pExit1Texture);
     SDL_DestroyTexture(pSoundOnTexture);
     SDL_DestroyTexture(pSoundOffTexture);
+    SDL_DestroyTexture(pBackgroundTexture);
 
+    // Clean up all audio resources
+    if (!startGame) {
+        Mix_HaltMusic();  // Stop music if exiting without starting game
+        Mix_FreeMusic(menuMusic);
+    }
+    
+    // Wait a tiny bit to ensure sound effects finish playing
+    SDL_Delay(100);
+    Mix_FreeChunk(buttonSound);
+    
+    // Time to clean up my audio stuff - always clean up after yourself!
+    if (!startGame) {
+        Mix_HaltMusic();
+        Mix_FreeMusic(menuMusic);
+    }
+    SDL_Delay(100);  // Ensure sounds finish playing
+    Mix_FreeChunk(buttonSound);
+    
     return startGame;
 }
+
+// I'm keeping the jump sound ready to go - it needs to be quick!
+Mix_Chunk *jumpSound = NULL;
 
 void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
     bool*pUp,bool *pDown,bool *pLeft,bool *pRight)
 {
+    // First time jumping? I'll load the sound - then it's ready for next time
+    if (!jumpSound) {
+        jumpSound = Mix_LoadWAV("resources/jump_sound.wav");
+        if (!jumpSound) {
+            printf("Failed to load jump sound! SDL_mixer Error: %s\n", Mix_GetError());
+        }
+    }
+
     if(pEvent->type == SDL_KEYDOWN)
     {
         switch (pEvent->key.keysym.scancode)
         {
+            default: // Handle any unspecified keys
+                break;
+
             case SDL_SCANCODE_W:
             case SDL_SCANCODE_UP:
             case SDL_SCANCODE_SPACE:
                 (*pUp) = true;
+                if (jumpSound) {
+                    Mix_PlayChannel(-1, jumpSound, 0);  // Play jump sound
+                }
                 break;
             case SDL_SCANCODE_A:
             case SDL_SCANCODE_LEFT:
@@ -430,14 +602,21 @@ void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
                 (*pRight) = true;
                 break;
             case SDL_SCANCODE_ESCAPE:
+                if (jumpSound) {
+                    Mix_FreeChunk(jumpSound);  // Clean up jump sound
+                    jumpSound = NULL;
+                }
                 (*pCloseWindow) = true;
-                return;
+                break;
         }
     }
     else if (pEvent->type == SDL_KEYUP)
     {
         switch (pEvent->key.keysym.scancode)
         {
+            default: // Handle any unspecified keys
+                break;
+                
             case SDL_SCANCODE_W:
             case SDL_SCANCODE_UP:
                 (*pUp) = false;
