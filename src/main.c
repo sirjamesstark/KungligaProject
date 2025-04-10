@@ -16,15 +16,12 @@
 
 #define NUM_MENU 2
 
-struct game{
+typedef struct{
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     Player *pPlayer;
     // AsteroidImage *pAsteroidImage;
     // Asteroid *pAsteroids[MAX_ASTEROIDS];
-
-    bool is_server;
-    Server *pServer;
 };
 typedef struct game Game;
 
@@ -39,7 +36,7 @@ typedef struct {
 int initiate(DisplayMode *pdM,Game *pGame, int argv, char **args);
 bool showMenu(Game *pGame, DisplayMode position);
 void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
-                bool*pUp,bool *pDown,bool *pLeft,bool *pRight);
+                bool *pUp,bool *pDown,bool *pLeft,bool *pRight);
 
 int main(int argv, char **args)
 {
@@ -86,7 +83,7 @@ int main(int argv, char **args)
     (&game)->pPlayer = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height);
 
     bool closeWindow = false;
-    bool up, down, left, right;
+    bool up, down, left, right, goUp, goDown, goLeft, goRight;
     bool onGround = true;
     up = down = left = right = false;
     int upCounter = 0;
@@ -129,8 +126,9 @@ int main(int argv, char **args)
             if(event.type==SDL_QUIT) closeWindow = true;
             else handleInput(&game,&event,&closeWindow,&up,&down,&left,&right);
         }
-        setSpeed(up,down,left,right,&upCounter,onGround,game.pPlayer,dM.speed_x,dM.speed_y);
-        updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround);
+        goDown = goLeft = goRight = goUp = 0;
+        setSpeed(up,down,left,right,&goUp,&goDown,&goLeft,&goRight,&upCounter,onGround,game.pPlayer,dM.speed_x,dM.speed_y);
+        updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight);
         SDL_RenderClear(game.pRenderer);
         drawPlayer(game.pPlayer);
 
@@ -443,5 +441,4 @@ void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
                 break;
         }
     }
-    
 }
