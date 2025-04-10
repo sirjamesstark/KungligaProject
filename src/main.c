@@ -165,16 +165,6 @@ int main(int argv, char **args)
 
 int initiate(DisplayMode *pdM,Game *pGame, int argv, char **args)
 {
-    if (argv > 1 && strcmp(args[1], "server") == 0) { // UDP prototyp
-        pGame->is_server = true; 
-    }
-
-    pGame->pServer = NET_INIT(pGame->is_server);
-
-    bindPort(pGame->is_server, pGame->pServer);
-
-    if (!pGame->is_server) setSrvAdd_client(args, argv, pGame->pServer);
-    
     
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)

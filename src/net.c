@@ -91,3 +91,29 @@ void NET_Quit(Server *pSrv){
     SDLNet_UDP_Close(pSrv->sd);
     SDLNet_Quit();
 }
+
+/*
+struct game{
+    SDL_Window *pWindow;
+    SDL_Renderer *pRenderer;
+    Player *pPlayer;
+    // AsteroidImage *pAsteroidImage;
+    // Asteroid *pAsteroids[MAX_ASTEROIDS];
+
+    bool is_server;
+    Server *pServer;
+};
+typedef struct game Game;
+
+
+    if (argv > 1 && strcmp(args[1], "server") == 0) { // UDP prototyp
+        pGame->is_server = true; 
+    }
+
+    pGame->pServer = NET_INIT(pGame->is_server);
+
+    bindPort(pGame->is_server, pGame->pServer);
+
+    if (!pGame->is_server) setSrvAdd_client(args, argv, pGame->pServer);
+
+*/
