@@ -53,8 +53,8 @@ void setPacketSize(Server *pSrv){
     }
 }
 
-void sendPaket(int x, int y, Server *pSrv, bool is_server){
-    sprintf((char*)pSrv->p->data, "%d %d", (int)x, (int)y);
+void sendPaket(SDL_Rect player, Server *pSrv, bool is_server){
+    sprintf((char*)pSrv->p->data, "%d %d", player.x, player.y);
     pSrv->p->len = strlen((char*)pSrv->p->data) + 1;
 
     if (!is_server) {
@@ -93,19 +93,6 @@ void NET_Quit(Server *pSrv){
 }
 
 /*
-struct game{
-    SDL_Window *pWindow;
-    SDL_Renderer *pRenderer;
-    Player *pPlayer;
-    // AsteroidImage *pAsteroidImage;
-    // Asteroid *pAsteroids[MAX_ASTEROIDS];
-
-    bool is_server;
-    Server *pServer;
-};
-typedef struct game Game;
-
-
     if (argv > 1 && strcmp(args[1], "server") == 0) { // UDP prototyp
         pGame->is_server = true; 
     }

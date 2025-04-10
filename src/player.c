@@ -22,14 +22,15 @@ struct player {
     SDL_Texture *pTexture;
     SDL_Rect srcRect;   // srcRect.w och srcRect.h lagrar den verkliga storleken av en frame i spritesheetet, srcRect.x och srcRect.y anger vilken frame i spritesheetet som väljs
     SDL_Rect dstRect;   // dstRect.w och dstRect.h är en nerskalad variant av srcRect.w och srcRect.h, srcRect.x och srcRect.y anger var i fönstret som den aktuella framen i srcRect.x och srcRect.y ska ritas upp
+    int player_ID;
 };
 
 static float distance(int x1, int y1, int x2, int y2);
 
 Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_width, int window_height) {
-    int player_ID = 0; // har bara nu tills vidare under testing, denna variabel bestämmer vilken spelgubbe som ska laddas in
 
     Player *pPlayer = malloc(sizeof(struct player));
+    pPlayer->player_ID=0;
     if (pPlayer == NULL) return NULL;
 
     pPlayer->vx=pPlayer->vy=0;
@@ -37,7 +38,7 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
     pPlayer->window_height = window_height;
 
     SDL_Surface* pSurface = NULL; 
-    switch (player_ID) {
+    switch (pPlayer->player_ID) {
         case 0:
             pSurface = IMG_Load("resources/player_0.png");
             pPlayer->frames.nrOfFrames_idle = 5;
@@ -270,4 +271,8 @@ void destroyPlayer(Player *pPlayer) {
 
 static float distance(int x1, int y1, int x2, int y2) {
     return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+}
+
+SDL_Rect getPlayerRect(Player *pPly){
+    return pPly->srcRect;
 }

@@ -15,13 +15,17 @@
 #include "../include/net.h"
 
 #define NUM_MENU 2
+#define NROFPLAYERS 2
 
-typedef struct{
+struct game{
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
-    Player *pPlayer;
+    Player *pPlayer[NROFPLAYERS];
     // AsteroidImage *pAsteroidImage;
     // Asteroid *pAsteroids[MAX_ASTEROIDS];
+
+    bool is_server;
+    Server *pServer;
 };
 typedef struct game Game;
 
@@ -129,6 +133,7 @@ int main(int argv, char **args)
         goDown = goLeft = goRight = goUp = 0;
         setSpeed(up,down,left,right,&goUp,&goDown,&goLeft,&goRight,&upCounter,onGround,game.pPlayer,dM.speed_x,dM.speed_y);
         updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight);
+        sendPaket(getPlayerRect(game.pPlayer), game.pServer, game.is_server);
         SDL_RenderClear(game.pRenderer);
         drawPlayer(game.pPlayer);
 
@@ -153,6 +158,7 @@ int main(int argv, char **args)
         SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
     }
 
+    NET_Quit(game.pServer);
     destroyPlayer(game.pPlayer);
     SDL_DestroyRenderer(game.pRenderer);
     SDL_DestroyWindow(game.pWindow);
@@ -164,6 +170,15 @@ int main(int argv, char **args)
 int initiate(DisplayMode *pdM,Game *pGame, int argv, char **args)
 {
     
+    if (argv > 1 && strcmp(args[1], "server") == 0) { // UDP prototyp
+        pGame->is_server = true; 
+    }
+
+    pGame->pServer = NET_INIT(pGame->is_server);
+
+    bindPort(pGame->is_server, pGame->pServer);
+
+    if (!pGame->is_server) setSrvAdd_client(args, argv, pGame->pServer);
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
     {
