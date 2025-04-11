@@ -49,6 +49,12 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Initialize SDL_mixer
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+        return 1;
+    }
+
     if (!initiate(&dM,&game))
     {
         return 1;
@@ -58,6 +64,15 @@ int main(int argc, char *argv[])
         SDL_DestroyWindow(game.pWindow);
         SDL_Quit();
         return 1;
+    }
+
+    // Load and play game music
+    Mix_Music *gameMusic = Mix_LoadMUS("resources/game_music.wav");
+    if (!gameMusic) {
+        printf("Failed to load game music! SDL_mixer Error: %s\n", Mix_GetError());
+    } else {
+        Mix_VolumeMusic((int)(MIX_MAX_VOLUME * 0.5));  // Set volume to 50%
+        Mix_PlayMusic(gameMusic, -1);  // -1 means loop infinitely
     }
 
     // Load game background
@@ -83,7 +98,7 @@ int main(int argc, char *argv[])
     backgroundRect.h = dM.window_height;
 
     // Load platform blocks
-    SDL_Surface *pBlockSurface = IMG_Load("resources/box3.png");
+    SDL_Surface *pBlockSurface = IMG_Load("resources/box8.png");
     if (!pBlockSurface)
     {
         printf("Error: %s\n", SDL_GetError());
@@ -102,10 +117,14 @@ int main(int argc, char *argv[])
     }
 
     SDL_Rect blockRect;
-    blockRect.w = ((dM.window_width)/BOX_COL);
-    blockRect.h = ((dM.window_height)/BOX_ROW);
-    blockRect.x = (dM.window_width - blockRect.w)/2 + blockRect.w*5;
-    blockRect.y = ((dM.window_height - blockRect.h)/2);
+    // Calculate block size to exactly fit window
+    blockRect.w = dM.window_width / BOX_COL;
+    blockRect.h = dM.window_height / BOX_ROW;
+    // Adjust for any rounding errors
+    if (blockRect.w * BOX_COL < dM.window_width) blockRect.w++;
+    if (blockRect.h * BOX_ROW < dM.window_height) blockRect.h++;
+    blockRect.x = 0;
+    blockRect.y = 0;
 
     (&game)->pPlayer = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height);
 
@@ -167,8 +186,9 @@ int main(int argc, char *argv[])
             for (int col = 0; col < numBlocksX; col++) {
                 if (gameMap[row][col] == 1)
                 {
-                    blockRect.x = col * blockRect.w;  // Platform horizontal position
-                    blockRect.y = row * blockRect.h;  // Platform vertical position
+                    // Position blocks without any gaps
+                    blockRect.x = col * blockRect.w;
+                    blockRect.y = row * blockRect.h;
 
                     SDL_RenderCopy(game.pRenderer, pBlockTexture, NULL, &blockRect);
                 }
@@ -184,6 +204,11 @@ int main(int argc, char *argv[])
 
     destroyPlayer(game.pPlayer);
     SDL_DestroyTexture(pBackgroundTexture);
+    
+    // Stop and free game music
+    Mix_HaltMusic();
+    Mix_FreeMusic(gameMusic);
+    
     SDL_DestroyRenderer(game.pRenderer);
     SDL_DestroyWindow(game.pWindow);
     SDL_Quit();
@@ -193,9 +218,15 @@ int main(int argc, char *argv[])
 
 int initiate(DisplayMode *pdM,Game *pGame)
 {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) != 0)
     {
         printf("Error: %s\n", SDL_GetError());
+        return 0;
+    }
+
+    // Initialize SDL_mixer
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
         return 0;
     }
 
@@ -276,11 +307,6 @@ int initiate(DisplayMode *pdM,Game *pGame)
 // I'm setting up the audio system here - this is where all the menu magic happens
 bool showMenu(Game *pGame, DisplayMode position)
 {
-    // Let me set up our audio system first - we need this for all our cool sounds
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-        return false;
-    }
 
     // Let's get that sweet background music going - it'll loop forever with -1
     Mix_Music *menuMusic = Mix_LoadMUS("resources/menu_music.wav");
