@@ -13,8 +13,10 @@
 #include "../include/renderer.h"
 
 #define NUM_MENU 2
+#define MAX_NROFPLAYERS 4
 
-typedef struct{
+
+typedef struct {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     Player *pPlayer;
@@ -35,11 +37,13 @@ int initiate(DisplayMode *pdM,Game *pGame);
 bool showMenu(Game *pGame, DisplayMode position);
 void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
                 bool *pUp,bool *pDown,bool *pLeft,bool *pRight);
+void cleanUp(Game *pGame);
 
 int main(int argc, char *argv[])
 {
-    Game game;
-    DisplayMode dM;
+    Game game = {0};
+    DisplayMode dM = {0};
+
     bool startGame = false;
 
     // Initialize SDL_image for PNG loading
@@ -202,17 +206,12 @@ int main(int argc, char *argv[])
         SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
     }
 
-    destroyPlayer(game.pPlayer);
     SDL_DestroyTexture(pBackgroundTexture);
-    
     // Stop and free game music
     Mix_HaltMusic();
     Mix_FreeMusic(gameMusic);
     
-    SDL_DestroyRenderer(game.pRenderer);
-    SDL_DestroyWindow(game.pWindow);
-    SDL_Quit();
-
+    cleanUp(&game);
     return 0;
 }
 
@@ -221,6 +220,7 @@ int initiate(DisplayMode *pdM,Game *pGame)
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) != 0)
     {
         printf("Error: %s\n", SDL_GetError());
+        cleanUp(pGame);
         return 0;
     }
 
@@ -230,25 +230,39 @@ int initiate(DisplayMode *pdM,Game *pGame)
         return 0;
     }
 
-    SDL_DisplayMode windowMode;
-    if (SDL_GetCurrentDisplayMode(0, &windowMode) != 0)
-    {
-        printf("Failed to get display mode: %s\n", SDL_GetError());
+    SDL_DisplayMode currentDisplay;
+    if (SDL_GetCurrentDisplayMode(0, &currentDisplay) != 0) {
+        printf("Error: %s\n", SDL_GetError());
+        cleanUp(pGame);
         return 0;
     }
-    else
-    {
-        pdM->window_width = windowMode.w;
-        pdM->window_height = windowMode.h;
-        pdM->speed_x = pdM->window_width / 20;
-        pdM->speed_y = pdM->window_height / 20;
+
+    pdM->window_width = currentDisplay.w;
+    pdM->window_height = currentDisplay.h;
+    
+    /*
+    float aspect_ratio = (float)(pdM->window_width/pdM->window_height);
+    if (aspect_ratio != (16.0f / 9.0f)) {
+        // Här tvingar vi till en 16:9 aspect ratio genom att justera höjd eller bredd
+        if (aspect_ratio > (16.0f / 9.0f)) {
+            // Om bredden är för stor (mer än 16:9)
+            pdM->window_width = pdM->window_height * 16 / 9;
+        } else {
+            // Om höjden är för stor (mer än 9:16)
+            pdM->window_height = pdM->window_width * 9 / 16;
+        }
     }
+    */
+
+    pdM->speed_x = pdM->window_width / 20;
+    pdM->speed_y = pdM->window_height / 20;
+
     // Create window with explicit cursor support
     pGame->pWindow = SDL_CreateWindow("Meny", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, pdM->window_width, pdM->window_height, SDL_WINDOW_FULLSCREEN_DESKTOP);
     if (!pGame->pWindow)
     {
         printf("Error: %s\n", SDL_GetError());
-        SDL_Quit();
+        cleanUp(pGame);
         return 0;
     }
     
@@ -258,8 +272,7 @@ int initiate(DisplayMode *pdM,Game *pGame)
     if (!pGame->pRenderer)
     {
         printf("Error: %s\n", SDL_GetError());
-        SDL_DestroyWindow(pGame->pWindow);
-        SDL_Quit();
+        cleanUp(pGame);
         return 0;
     }
 
@@ -675,4 +688,38 @@ void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
                 break;
         }
     }
+}
+
+void cleanUp(Game *pGame) {
+    if (pGame == NULL) return;
+
+    /*
+    if (pGame->pTexture != NULL) {
+        SDL_DestroyTexture(pGame->pTexture);
+        pGame->pTexture = NULL; 
+    }
+    */
+
+    if (pGame->pRenderer != NULL) {
+        SDL_DestroyRenderer(pGame->pRenderer);
+        pGame->pRenderer = NULL;
+    }
+
+    if (pGame->pWindow != NULL) {
+        SDL_DestroyWindow(pGame->pWindow);
+        pGame->pWindow = NULL;
+    }
+
+    destroyPlayer(pGame->pPlayer);
+    /*
+    for (int i=0; i<MAX_NROFPLAYERS; i++) {
+        if (pGame->pPlayers[i] != NULL) {
+            destroyPlayer(pGame->pPlayer[i]);
+            pGame->pPlayer[i] = NULL; 
+        }
+    }
+    */
+
+    // Här lägger vi till mer kod som frigör tidigare allokerat minne ifall det behövs (t.ex. för platforms sen)
+    SDL_Quit();
 }
