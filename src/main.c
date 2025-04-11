@@ -121,8 +121,8 @@ int main(int argc, char *argv[])
     blockRect.w = dM.window_width / BOX_COL;
     blockRect.h = dM.window_height / BOX_ROW;
     // Adjust for any rounding errors
-    if (blockRect.w * BOX_COL < dM.window_width) blockRect.w++;
-    if (blockRect.h * BOX_ROW < dM.window_height) blockRect.h++;
+    // if (blockRect.w * BOX_COL < dM.window_width) blockRect.w++;
+    // if (blockRect.h * BOX_ROW < dM.window_height) blockRect.h++;
     blockRect.x = 0;
     blockRect.y = 0;
 
