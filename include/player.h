@@ -1,7 +1,5 @@
-#ifndef rocket_h
-#define rocket_h
-
-#include <stdbool.h>
+#ifndef player_h
+#define player_h
 
 #define BOX_ROW 22
 #define BOX_COL 26
