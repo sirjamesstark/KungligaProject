@@ -21,12 +21,13 @@ struct game{
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     Player *pPlayer[NROFPLAYERS];
+    Mix_Chunk *jumpSound;
     // AsteroidImage *pAsteroidImage;
     // Asteroid *pAsteroids[MAX_ASTEROIDS];
 
     bool is_server;
     Server *pServer;
-    int pPlayerID
+    int pPlayerID;
 };
 typedef struct game Game;
 
@@ -47,7 +48,7 @@ int main(int argc, char *argv[])
 {
     DisplayMode dM = {0};
     Game game={0}; 
-    if(!initiate(&dM,&game,argv,argc)) return 1;
+    if(!initiate(&dM,&game,argc,argv)) return 1;
 
     if (!showMenu(&game, dM))
     {
@@ -651,6 +652,7 @@ void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
             case SDL_SCANCODE_LEFT:
                 (*pLeft) = false;
                 break;
+                
             case SDL_SCANCODE_S:
             case SDL_SCANCODE_DOWN:
                 (*pDown) = false;

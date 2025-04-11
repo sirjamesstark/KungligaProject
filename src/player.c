@@ -26,7 +26,7 @@ struct player {
 
 static float distance(int x1, int y1, int x2, int y2);
 
-Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_width, int window_height, int* pPlayerID) {
+Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_width, int window_height, int PlayerID) {
 
     Player *pPlayer = malloc(sizeof(struct player));
 
@@ -37,7 +37,7 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
     pPlayer->window_height = window_height;
 
     SDL_Surface* pSurface = NULL; 
-    switch (*pPlayerID) {
+    switch (PlayerID) {
         case 0:
             pSurface = IMG_Load("resources/player_0.png");
             pPlayer->frames.nrOfFrames_idle = 5;

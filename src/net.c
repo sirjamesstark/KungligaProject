@@ -27,7 +27,7 @@ Server *NET_INIT(bool is_server){
 }
 
 void bindPort(bool is_server, Server *pServer){
-    if (!(pServer->sd = SDLNet_UDP_Open(is_server ? 2000 : 0))) {
+    if (!(pServer->sd = SDLNet_UDP_Open(is_server ? 51234 : 0))) {
         fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
         exit(EXIT_FAILURE);
     }
@@ -39,7 +39,7 @@ void setSrvAdd_client(char **args, int argv, Server *pSrv){
         exit(EXIT_FAILURE);
     }
     
-    if (SDLNet_ResolveHost(&(pSrv->serverAdd), args[2], 2000) == -1) {
+    if (SDLNet_ResolveHost(&(pSrv->serverAdd), args[2], 51234) == -1) {
         fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
         exit(EXIT_FAILURE);
     }
