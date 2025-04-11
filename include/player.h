@@ -2,6 +2,7 @@
 #define rocket_h
 
 #include <stdbool.h>
+#include <SDL_mixer.h>
 
 #define BOX_ROW 22
 #define BOX_COL 26

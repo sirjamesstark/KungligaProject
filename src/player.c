@@ -22,6 +22,7 @@ struct player {
     SDL_Texture *pTexture;
     SDL_Rect srcRect;   // srcRect.w och srcRect.h lagrar den verkliga storleken av en frame i spritesheetet, srcRect.x och srcRect.y anger vilken frame i spritesheetet som väljs
     SDL_Rect dstRect;   // dstRect.w och dstRect.h är en nerskalad variant av srcRect.w och srcRect.h, srcRect.x och srcRect.y anger var i fönstret som den aktuella framen i srcRect.x och srcRect.y ska ritas upp
+    Mix_Chunk *jumpSound;
 };
 
 static float distance(int x1, int y1, int x2, int y2);
@@ -103,6 +104,12 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
     
     pPlayer->x = blockRect.w * 2;
     pPlayer->y = pPlayer->window_height - (pPlayer->window_height - (BOX_ROW * blockRect.h)) - blockRect.h - pPlayer->dstRect.h;
+
+    // Load jump sound
+    pPlayer->jumpSound = Mix_LoadWAV("resources/jump_sound.wav");
+    if (!pPlayer->jumpSound) {
+        printf("Failed to load jump sound! SDL_mixer Error: %s\n", Mix_GetError());
+    }
 
     //pPlayer->dstRect.w = (pPlayer->srcRect.w) <-- multiplicera med skalfaktor
     //pPlayer->dstRect.h = (pPlayer->srcRect.h) <-- multiplicera med skalfaktor
@@ -258,14 +265,15 @@ void drawPlayer(Player *pPlayer) {
     }
 }
 
-void destroyPlayer(Player *pPlayer) {
-    if (pPlayer == NULL) return;
-    if (pPlayer->pTexture != NULL) {
-        SDL_DestroyTexture(pPlayer->pTexture);
-        pPlayer->pTexture = NULL; 
+void destroyPlayer(Player *pPlayer)
+{
+    if (pPlayer != NULL) {
+        if (pPlayer->pTexture != NULL)
+            SDL_DestroyTexture(pPlayer->pTexture);
+        if (pPlayer->jumpSound != NULL)
+            Mix_FreeChunk(pPlayer->jumpSound);
+        free(pPlayer);
     }
-    free(pPlayer);
-    pPlayer = NULL;
 }
 
 static float distance(int x1, int y1, int x2, int y2) {
