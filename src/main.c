@@ -21,8 +21,8 @@ typedef struct {
     SDL_Renderer *pRenderer;
     Player *pPlayer;
     Mix_Chunk *jumpSound;
-    // AsteroidImage *pAsteroidImage;
-    // Asteroid *pAsteroids[MAX_ASTEROIDS];
+    BlockImage *pBlockImage;
+    Block *pBlock;
 } Game;
 
 typedef struct {
@@ -34,6 +34,7 @@ typedef struct {
 } DisplayMode;
 
 int initiate(DisplayMode *pdM,Game *pGame);
+int initiateGameTheme();
 bool showMenu(Game *pGame, DisplayMode position);
 void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
                 bool *pUp,bool *pDown,bool *pLeft,bool *pRight);
@@ -46,19 +47,6 @@ int main(int argc, char *argv[])
 
     bool startGame = false;
 
-    // Initialize SDL_image for PNG loading
-    int imgFlags = IMG_INIT_PNG;
-    if (!(IMG_Init(imgFlags) & imgFlags)) {
-        printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-        return 1;
-    }
-
-    // Initialize SDL_mixer
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-        return 1;
-    }
-
     if (!initiate(&dM,&game))
     {
         return 1;
@@ -69,6 +57,8 @@ int main(int argc, char *argv[])
         SDL_Quit();
         return 1;
     }
+
+    // initiateGameTheme();
 
     // Load and play game music
     Mix_Music *gameMusic = Mix_LoadMUS("resources/game_music.wav");
@@ -93,7 +83,6 @@ int main(int argc, char *argv[])
         printf("Error creating background texture: %s\n", SDL_GetError());
         return 0;
     }
-
     // Create background rect
     SDL_Rect backgroundRect;
     backgroundRect.x = 0;
@@ -101,32 +90,9 @@ int main(int argc, char *argv[])
     backgroundRect.w = dM.window_width;
     backgroundRect.h = dM.window_height;
 
-    // Load platform blocks
-    SDL_Surface *pBlockSurface = IMG_Load("resources/box8.png");
-    if (!pBlockSurface)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        return 0;
-    }
-
-    SDL_Texture *pBlockTexture = SDL_CreateTextureFromSurface(game.pRenderer, pBlockSurface);
-    SDL_FreeSurface(pBlockSurface);
-    if (!pBlockTexture)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        SDL_DestroyRenderer(game.pRenderer);
-        SDL_DestroyWindow(game.pWindow);
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_Rect blockRect;
-    // Calculate block size to exactly fit window
-    blockRect.w = dM.window_width / BOX_COL;
-    blockRect.h = dM.window_height / BOX_ROW;
-    blockRect.x = 0;
-    blockRect.y = 0;
-
+    game.pBlockImage = createBlockImage(game.pRenderer);
+    game.pBlock = createBlock(game.pBlockImage,dM.window_width,dM.window_height);
+    SDL_Rect blockRect = getRectBlock(game.pBlock);
     (&game)->pPlayer = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height);
 
     bool closeWindow = false;
@@ -187,11 +153,12 @@ int main(int argc, char *argv[])
             for (int col = 0; col < numBlocksX; col++) {
                 if (gameMap[row][col] == 1)
                 {
+                    getBlockCoordinates(game.pBlock,row * blockRect.h,col * blockRect.w);
                     // Position blocks without any gaps
                     blockRect.x = col * blockRect.w;
                     blockRect.y = row * blockRect.h;
 
-                    SDL_RenderCopy(game.pRenderer, pBlockTexture, NULL, &blockRect);
+                    drawBlock(game.pBlock);
                 }
             }
         }
@@ -218,6 +185,19 @@ int initiate(DisplayMode *pdM,Game *pGame)
     {
         printf("Error: %s\n", SDL_GetError());
         cleanUp(pGame);
+        return 0;
+    }
+
+    // Initialize SDL_image for PNG loading
+    int iconImage = IMG_INIT_PNG;
+    if (!(IMG_Init(iconImage) & iconImage)) {
+        printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+        return 0;
+    }
+
+    // Initialize SDL_mixer
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
         return 0;
     }
 
@@ -274,8 +254,8 @@ int initiate(DisplayMode *pdM,Game *pGame)
     }
 
     // Initialize SDL_image for cursor loading
-    int imgFlags = IMG_INIT_PNG;
-    if (!(IMG_Init(imgFlags) & imgFlags)) {
+    int cursor = IMG_INIT_PNG;
+    if (!(IMG_Init(cursor) & cursor)) {
         printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
         return 0;
     }
@@ -312,6 +292,11 @@ int initiate(DisplayMode *pdM,Game *pGame)
     }
 
     return 1;
+}
+
+int initiateGameTheme()
+{
+
 }
 
 // I'm setting up the audio system here - this is where all the menu magic happens
@@ -666,7 +651,6 @@ void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
         {
             default: // Handle any unspecified keys
                 break;
-                
             case SDL_SCANCODE_W:
             case SDL_SCANCODE_UP:
                 (*pUp) = false;
@@ -718,5 +702,8 @@ void cleanUp(Game *pGame) {
     */
 
     // Här lägger vi till mer kod som frigör tidigare allokerat minne ifall det behövs (t.ex. för platforms sen)
+    destroyBlock(pGame->pBlock);
+    destroyBlockImage(pGame->pBlockImage);
+    // Nu har jag lagt in blocks
     SDL_Quit();
 }
