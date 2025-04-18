@@ -23,7 +23,7 @@ void getBlockCoordinates(Block *pBlock,int y, int x)
 }
 
 BlockImage *createBlockImage(SDL_Renderer *pRenderer){
-    static BlockImage* pBlockImage = NULL;
+    BlockImage* pBlockImage = NULL;
     if(pBlockImage==NULL){
         pBlockImage = malloc(sizeof(struct blockImage));
         SDL_Surface *surface = IMG_Load("resources/box8.png");
