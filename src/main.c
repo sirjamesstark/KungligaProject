@@ -49,15 +49,14 @@ int main(int argc, char *argv[])
     if (!initiate(&dM,&game))
     {
         return 1;
-    } if (!showMenu(game.pRenderer,dM.window_width,dM.window_height))
+    } 
+    if (!showMenu(game.pRenderer,dM.window_width,dM.window_height))
     {
-        SDL_DestroyRenderer(game.pRenderer);
-        SDL_DestroyWindow(game.pWindow);
-        SDL_Quit();
+        cleanUp(&game);
         return 1;
     }
 
-    // initiateGameTheme();
+    initiateGameTheme();
 
     // Load and play game music
     Mix_Music *gameMusic = Mix_LoadMUS("resources/game_music.wav");
@@ -92,7 +91,7 @@ int main(int argc, char *argv[])
     game.pBlockImage = createBlockImage(game.pRenderer);
     game.pBlock = createBlock(game.pBlockImage,dM.window_width,dM.window_height);
     SDL_Rect blockRect = getRectBlock(game.pBlock);
-    (&game)->pPlayer = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height);
+    game.pPlayer = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height);
 
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
@@ -191,18 +190,21 @@ int initiate(DisplayMode *pdM,Game *pGame)
     int iconImage = IMG_INIT_PNG;
     if (!(IMG_Init(iconImage) & iconImage)) {
         printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+        cleanUp(pGame);
         return 0;
     }
 
     // Initialize SDL_mixer
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
         printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+        cleanUp(pGame);
         return 0;
     }
 
     // Initialize SDL_mixer
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
         printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+        cleanUp(pGame);
         return 0;
     }
 
@@ -256,6 +258,7 @@ int initiate(DisplayMode *pdM,Game *pGame)
     int cursor = IMG_INIT_PNG;
     if (!(IMG_Init(cursor) & cursor)) {
         printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+        cleanUp(pGame);
         return 0;
     }
 

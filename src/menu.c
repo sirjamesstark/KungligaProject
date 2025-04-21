@@ -40,7 +40,10 @@ bool showMenu(SDL_Renderer *pRenderer, int window_width, int window_height)
         Mix_FreeMusic(pMenuMusic);
         return false;
     }
-    createAllImages(pButtonImages,pRenderer);
+    if (!createAllImages(pButtonImages,pRenderer))
+    {
+        return false;
+    } 
     createButtonsAndBackground(pButtonsAndBackground, pButtonImages, window_width, window_height);
     runMenu(pButtonImages,pButtonsAndBackground,pMenuVariables,pButtonSound,pMenuMusic,pRenderer);
     cleanMenu(pButtonImages,pButtonsAndBackground,pMenuVariables);
@@ -58,7 +61,7 @@ bool showMenu(SDL_Renderer *pRenderer, int window_width, int window_height)
     return pMenuVariables->startGame;
 }
 
-void createAllImages(ButtonImages *pButtonImages[NROFPICS] ,SDL_Renderer *pRenderer)
+int createAllImages(ButtonImages *pButtonImages[NROFPICS] ,SDL_Renderer *pRenderer)
 {
     for (int i = 0; i < NROFPICS; i++)
     {
@@ -76,7 +79,7 @@ void createAllImages(ButtonImages *pButtonImages[NROFPICS] ,SDL_Renderer *pRende
     {
         printf("Error loading one or more surfaces: %s\n", IMG_GetError());
         freeAllSurface(pBackgroundSurface,pStart0Surface,pStart1Surface,pExit0Surface,pExit1Surface,pSoundOnSurface,pSoundOnSurface);
-        return;
+        return 0;
     }
     for (int i = 0; i < NROFPICS; i++)
     {
@@ -94,10 +97,11 @@ void createAllImages(ButtonImages *pButtonImages[NROFPICS] ,SDL_Renderer *pRende
         if (!(pButtonImages[i]->pTexture))
         {
             printf("Error creating textures: %s\n", SDL_GetError());
-            return;
+            return 0;
         }   
     }
     freeAllSurface(pBackgroundSurface,pStart0Surface,pStart1Surface,pExit0Surface,pExit1Surface,pSoundOnSurface,pSoundOffSurface);
+    return 1;
 }
 void freeAllSurface(SDL_Surface *pBackgroundSurface, SDL_Surface *pStart0Surface,
     SDL_Surface *pStart1Surface, SDL_Surface *pExit0Surface, 

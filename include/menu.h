@@ -9,7 +9,7 @@ typedef struct buttonsAndBackground ButtonsAndBackground;
 typedef struct menuVariables MenuVariables;
 
 bool showMenu(SDL_Renderer *pRenderer, int window_width, int window_height);
-void createAllImages(ButtonImages *pButtonImages[NROFPICS] ,SDL_Renderer *pRenderer);
+int createAllImages(ButtonImages *pButtonImages[NROFPICS] ,SDL_Renderer *pRenderer);
 void createButtonsAndBackground(ButtonsAndBackground *pButtonsAndBackground[NROFBUTTONS], ButtonImages *pButtonImages[NROFPICS],
                                 int window_width,int window_height);
 void freeAllSurface(SDL_Surface *pBackgroundSurface, SDL_Surface *pStart0Surface,
