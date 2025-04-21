@@ -36,8 +36,7 @@ typedef struct {
 } DisplayMode;
 
 int initiate(DisplayMode *pdM,Game *pGame);
-void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
-                bool *pUp,bool *pDown,bool *pLeft,bool *pRight);
+void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow, bool *pUp,bool *pDown,bool *pLeft,bool *pRight);
 void cleanUp(Game *pGame);
 
 int main(int argc, char *argv[])
@@ -58,23 +57,16 @@ int main(int argc, char *argv[])
     }
     
     game.pGameMusic = initiateMusic(game.pGameMusic);
-    if (!game.pGameMusic)
-    {
-        cleanUp(&game);
-        return 1;
-    }
-    
     game.pBackground = createBackground(game.pRenderer, dM.window_width, dM.window_height);
-    if (!game.pBackground)
-    {
-        cleanUp(&game);
-        return 1;
-    }
     game.pBlockImage = createBlockImage(game.pRenderer);
     game.pBlock = createBlock(game.pBlockImage,dM.window_width,dM.window_height);
     SDL_Rect blockRect = getRectBlock(game.pBlock);
     game.pPlayer = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height);
-
+    if (!game.pGameMusic || !game.pBackground || !game.pBlockImage || !game.pPlayer)
+    {
+        cleanUp(&game);
+        return 1;
+    }
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
     bool onGround = true;
@@ -124,10 +116,8 @@ int main(int argc, char *argv[])
         updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight);
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground);
-        int numBlocksX = dM.window_width / blockRect.w;  // Antal lådor per rad
-        int numBlocksY = (dM.window_height / blockRect.h);  // Antal rader
-        for (int row = 0; row < numBlocksY; row++) {
-            for (int col = 0; col < numBlocksX; col++) {
+        for (int row = 0; row < BOX_ROW; row++) {
+            for (int col = 0; col < BOX_COL; col++) {
                 if (gameMap[row][col] == 1)
                 {
                     getBlockCoordinates(game.pBlock,row * blockRect.h,col * blockRect.w);
