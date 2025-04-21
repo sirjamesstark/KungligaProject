@@ -11,6 +11,7 @@
 #include "../include/platform.h"
 #include "../include/player.h"
 #include "../include/renderer.h"
+#include "../include/theme.h"
 
 #define NUM_MENU 2
 #define MAX_NROFPLAYERS 4
@@ -19,10 +20,11 @@ typedef struct {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     Player *pPlayer;
-    Mix_Chunk *jumpSound;
+    Mix_Chunk *pJumpSound;
+    Mix_Music *pGameMusic;
     BlockImage *pBlockImage;
     Block *pBlock;
-
+    Background *pBackground;
 } Game;
 
 typedef struct {
@@ -34,7 +36,6 @@ typedef struct {
 } DisplayMode;
 
 int initiate(DisplayMode *pdM,Game *pGame);
-int initiateGameTheme();
 void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
                 bool *pUp,bool *pDown,bool *pLeft,bool *pRight);
 void cleanUp(Game *pGame);
@@ -55,39 +56,20 @@ int main(int argc, char *argv[])
         cleanUp(&game);
         return 1;
     }
-
-    initiateGameTheme();
-
-    // Load and play game music
-    Mix_Music *gameMusic = Mix_LoadMUS("resources/game_music.wav");
-    if (!gameMusic) {
-        printf("Failed to load game music! SDL_mixer Error: %s\n", Mix_GetError());
-    } else {
-        Mix_VolumeMusic((int)(MIX_MAX_VOLUME * 0.5));  // Set volume to 50%
-        Mix_PlayMusic(gameMusic, -1);  // -1 means loop infinitely
-    }
-
-    // Load game background
-    SDL_Surface *pBackgroundSurface = IMG_Load("resources/game_background.png");
-    if (!pBackgroundSurface)
+    
+    game.pGameMusic = initiateMusic(game.pGameMusic);
+    if (!game.pGameMusic)
     {
-        printf("Error loading background: %s\n", SDL_GetError());
-        return 0;
+        cleanUp(&game);
+        return 1;
     }
-    SDL_Texture *pBackgroundTexture = SDL_CreateTextureFromSurface(game.pRenderer, pBackgroundSurface);
-    SDL_FreeSurface(pBackgroundSurface);
-    if (!pBackgroundTexture)
+    
+    game.pBackground = createBackground(game.pRenderer, dM.window_width, dM.window_height);
+    if (!game.pBackground)
     {
-        printf("Error creating background texture: %s\n", SDL_GetError());
-        return 0;
+        cleanUp(&game);
+        return 1;
     }
-    // Create background rect
-    SDL_Rect backgroundRect;
-    backgroundRect.x = 0;
-    backgroundRect.y = 0;
-    backgroundRect.w = dM.window_width;
-    backgroundRect.h = dM.window_height;
-
     game.pBlockImage = createBlockImage(game.pRenderer);
     game.pBlock = createBlock(game.pBlockImage,dM.window_width,dM.window_height);
     SDL_Rect blockRect = getRectBlock(game.pBlock);
@@ -141,10 +123,7 @@ int main(int argc, char *argv[])
         setSpeed(up,down,left,right,&goUp,&goDown,&goLeft,&goRight,&upCounter,onGround,game.pPlayer,dM.speed_x,dM.speed_y);
         updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight);
         SDL_RenderClear(game.pRenderer);
-        
-        // Draw background first
-        SDL_RenderCopy(game.pRenderer, pBackgroundTexture, NULL, &backgroundRect);
-
+        drawBackground(game.pBackground);
         int numBlocksX = dM.window_width / blockRect.w;  // Antal lådor per rad
         int numBlocksY = (dM.window_height / blockRect.h);  // Antal rader
         for (int row = 0; row < numBlocksY; row++) {
@@ -167,12 +146,6 @@ int main(int argc, char *argv[])
         SDL_RenderPresent(game.pRenderer);
         SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
     }
-
-    SDL_DestroyTexture(pBackgroundTexture);
-    // Stop and free game music
-    Mix_HaltMusic();
-    Mix_FreeMusic(gameMusic);
-    
     cleanUp(&game);
     return 0;
 }
@@ -244,7 +217,7 @@ int initiate(DisplayMode *pdM,Game *pGame)
         return 0;
     }
     
-    pGame->jumpSound = NULL;  // Initialize jump sound to NULL
+    pGame->pJumpSound = NULL;  // Initialize jump sound to NULL
 
     pGame->pRenderer = SDL_CreateRenderer(pGame->pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!pGame->pRenderer)
@@ -296,20 +269,13 @@ int initiate(DisplayMode *pdM,Game *pGame)
     return 1;
 }
 
-int initiateGameTheme()
-{
-
-}
-
-
-
 void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
     bool*pUp,bool *pDown,bool *pLeft,bool *pRight)
 {
     // First time jumping? I'll load the sound - then it's ready for next time
-    if (!pGame->jumpSound) {
-        pGame->jumpSound = Mix_LoadWAV("resources/jump_sound.wav");
-        if (!pGame->jumpSound) {
+    if (!pGame->pJumpSound) {
+        pGame->pJumpSound = Mix_LoadWAV("resources/jump_sound.wav");
+        if (!pGame->pJumpSound) {
             printf("Failed to load jump sound! SDL_mixer Error: %s\n", Mix_GetError());
         }
     }
@@ -325,8 +291,8 @@ void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
             case SDL_SCANCODE_UP:
             case SDL_SCANCODE_SPACE:
                 (*pUp) = true;
-                if (pGame->jumpSound) {
-                    Mix_PlayChannel(-1, pGame->jumpSound, 0);  // Play jump sound
+                if (pGame->pJumpSound) {
+                    Mix_PlayChannel(-1, pGame->pJumpSound, 0);  // Play jump sound
                 }
                 break;
             case SDL_SCANCODE_A:
@@ -342,9 +308,9 @@ void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
                 (*pRight) = true;
                 break;
             case SDL_SCANCODE_ESCAPE:
-                if (pGame->jumpSound) {
-                    Mix_FreeChunk(pGame->jumpSound);  // Clean up jump sound
-                    pGame->jumpSound = NULL;
+                if (pGame->pJumpSound) {
+                    Mix_FreeChunk(pGame->pJumpSound);  // Clean up jump sound
+                    pGame->pJumpSound = NULL;
                 }
                 (*pCloseWindow) = true;
                 break;
@@ -376,7 +342,8 @@ void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
     }
 }
 
-void cleanUp(Game *pGame) {
+void cleanUp(Game *pGame) 
+{
     if (pGame == NULL) return;
     /*
     if (pGame->pTexture != NULL) {
@@ -384,7 +351,10 @@ void cleanUp(Game *pGame) {
         pGame->pTexture = NULL; 
     }
     */
-
+    destroyBackground(pGame->pBackground);
+    // Stop and free game music
+    Mix_HaltMusic();
+    Mix_FreeMusic(pGame->pGameMusic);
     if (pGame->pRenderer != NULL) {
         SDL_DestroyRenderer(pGame->pRenderer);
         pGame->pRenderer = NULL;
