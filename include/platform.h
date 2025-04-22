@@ -9,7 +9,7 @@ typedef struct blocks Block;
 
 BlockImage *createBlockImage(SDL_Renderer *pRenderer);
 Block *createBlock(BlockImage *pBlockImage, int window_width, int window_height);
-void getBlockCoordinates(Block *pBlock,int y, int x);
+void buildTheMap(int gameMap[BOX_ROW][BOX_COL],Block *pBlock);
 void drawBlock(Block *pBlock);
 void destroyBlock(Block *pBlock);
 SDL_Rect getRectBlock(Block *pBlock);

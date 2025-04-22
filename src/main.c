@@ -12,11 +12,13 @@
 #include "../include/player.h"
 #include "../include/renderer.h"
 #include "../include/theme.h"
+#include "../include/maps.h"
 
 #define NUM_MENU 2
 #define MAX_NROFPLAYERS 4
 
-typedef struct {
+typedef struct 
+{
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     Player *pPlayer;
@@ -24,10 +26,12 @@ typedef struct {
     Mix_Music *pGameMusic;
     BlockImage *pBlockImage;
     Block *pBlock;
+    Maps *pMaps[NROFMAPS];
     Background *pBackground;
 } Game;
 
-typedef struct {
+typedef struct 
+{
     int window_width;
     int window_height;
     int speed_x;
@@ -36,8 +40,7 @@ typedef struct {
 } DisplayMode;
 
 int initiate(DisplayMode *pdM,Game *pGame);
-void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow,
-                bool *pUp,bool *pDown,bool *pLeft,bool *pRight);
+void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow, bool *pUp,bool *pDown,bool *pLeft,bool *pRight);
 void cleanUp(Game *pGame);
 
 int main(int argc, char *argv[])
@@ -58,55 +61,27 @@ int main(int argc, char *argv[])
     }
     
     game.pGameMusic = initiateMusic(game.pGameMusic);
-    if (!game.pGameMusic)
-    {
-        cleanUp(&game);
-        return 1;
-    }
-    
     game.pBackground = createBackground(game.pRenderer, dM.window_width, dM.window_height);
-    if (!game.pBackground)
-    {
-        cleanUp(&game);
-        return 1;
-    }
     game.pBlockImage = createBlockImage(game.pRenderer);
     game.pBlock = createBlock(game.pBlockImage,dM.window_width,dM.window_height);
     SDL_Rect blockRect = getRectBlock(game.pBlock);
     game.pPlayer = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height);
-
+    if (!game.pGameMusic || !game.pBackground || !game.pBlockImage || !game.pPlayer)
+    {
+        cleanUp(&game);
+        return 1;
+    }
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
     bool onGround = true;
     up = down = left = right = false;
-    int upCounter = 0;
+    int upCounter = 0,chosenMap = 0, gameMap[BOX_ROW][BOX_COL] = {0};
 
     Uint32 lastTime = SDL_GetTicks(); // Tidpunkt för senaste uppdateringen
     Uint32 currentTime;
     float deltaTime;
-
-    int gameMap[BOX_ROW][BOX_COL] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
-                                     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,
-                                     1,1,0,0,0,1,1,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,1,0,
-                                     0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,0,
-                                     0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,1,0,
-                                     0,1,0,0,0,0,0,1,1,0,0,1,1,1,1,0,0,0,0,1,0,0,0,1,1,0,
-                                     0,1,0,0,1,1,0,0,0,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,
-                                     0,1,1,0,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,1,1,0,
-                                     0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,0,
-                                     0,1,1,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,1,0,
-                                     0,1,0,0,0,0,1,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,1,1,0,
-                                     0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
-                                     0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,
-                                     0,1,0,1,1,1,0,0,1,1,1,1,0,0,0,0,0,1,1,1,1,1,0,0,1,0,
-                                     0,1,0,0,0,0,0,1,1,0,0,0,0,1,1,1,0,0,0,0,1,0,0,1,1,0,
-                                     0,1,0,0,1,1,1,0,0,0,1,1,1,0,0,0,0,1,0,0,0,0,1,1,1,0,
-                                     0,1,1,0,0,1,1,0,1,0,0,0,0,0,0,1,1,1,0,0,0,1,1,1,1,0,
-                                     0,1,1,1,0,0,0,0,0,1,0,1,1,1,0,0,0,0,0,1,0,0,0,0,1,0,
-                                     0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,0,
-                                     0,1,0,0,0,0,1,1,0,0,0,1,1,0,0,0,0,0,1,1,0,0,0,1,1,0,
-                                     0,1,0,0,1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,1,1,1,0,
-                                     0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0};
+    drawBlueprints(game.pMaps);
+    chooseMap(gameMap,game.pMaps[chosenMap]);
     while (!closeWindow)
     {
         // Beräkna tid sedan senaste frame
@@ -124,23 +99,7 @@ int main(int argc, char *argv[])
         updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight);
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground);
-        int numBlocksX = dM.window_width / blockRect.w;  // Antal lådor per rad
-        int numBlocksY = (dM.window_height / blockRect.h);  // Antal rader
-        for (int row = 0; row < numBlocksY; row++) {
-            for (int col = 0; col < numBlocksX; col++) {
-                if (gameMap[row][col] == 1)
-                {
-                    getBlockCoordinates(game.pBlock,row * blockRect.h,col * blockRect.w);
-                    // Position blocks without any gaps
-                    blockRect.x = col * blockRect.w;
-                    blockRect.y = row * blockRect.h;
-
-                    drawBlock(game.pBlock);
-                }
-            }
-        }
-
-        // Draw player on top of platforms
+        buildTheMap(gameMap,game.pBlock);
         drawPlayer(game.pPlayer);
 
         SDL_RenderPresent(game.pRenderer);
@@ -378,6 +337,12 @@ void cleanUp(Game *pGame)
     // Här lägger vi till mer kod som frigör tidigare allokerat minne ifall det behövs (t.ex. för platforms sen)
     destroyBlock(pGame->pBlock);
     destroyBlockImage(pGame->pBlockImage);
+    for (int i = 0; i < NROFMAPS; i++)
+    {
+        destroyMap(pGame->pMaps[i]);
+        pGame->pMaps[i] = NULL; // skyddar mot dubbel-free
+    }
+    
     // Nu har jag lagt in blocks
     SDL_Quit();
 }
