@@ -99,21 +99,7 @@ int main(int argc, char *argv[])
         updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight);
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground);
-        for (int row = 0; row < BOX_ROW; row++) {
-            for (int col = 0; col < BOX_COL; col++) {
-                if (gameMap[row][col] == 1)
-                {
-                    getBlockCoordinates(game.pBlock,row * blockRect.h,col * blockRect.w);
-                    // Position blocks without any gaps
-                    blockRect.x = col * blockRect.w;
-                    blockRect.y = row * blockRect.h;
-
-                    drawBlock(game.pBlock);
-                }
-            }
-        }
-
-        // Draw player on top of platforms
+        buildTheMap(gameMap,game.pBlock);
         drawPlayer(game.pPlayer);
 
         SDL_RenderPresent(game.pRenderer);

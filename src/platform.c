@@ -16,12 +16,6 @@ struct blocks{
     SDL_Rect rect;
 };
 
-void getBlockCoordinates(Block *pBlock,int y, int x)
-{
-    pBlock->rect.y = y;
-    pBlock->rect.x = x;
-}
-
 BlockImage *createBlockImage(SDL_Renderer *pRenderer){
     BlockImage* pBlockImage = NULL;
     if(pBlockImage==NULL){
@@ -59,8 +53,21 @@ SDL_Rect getRectBlock(Block *pBlock){
     return pBlock->rect;
 }
 
+void buildTheMap(int gameMap[BOX_ROW][BOX_COL],Block *pBlock)
+{
+    for (int row = 0; row < BOX_ROW; row++) {
+        for (int col = 0; col < BOX_COL; col++) {
+            if (gameMap[row][col] == 1)
+            {
+                pBlock->rect.x = col * pBlock->rect.w;
+                pBlock->rect.y = row * pBlock->rect.h;
+                drawBlock(pBlock);
+            }
+        }
+    }
+}
+
 void drawBlock(Block *pBlock){
-    // SDL_RenderCopyEx(pBlock->pRenderer,pBlock->pTexture,NULL,&(pBlock->rect),0,NULL,SDL_FLIP_NONE);
     SDL_RenderCopy(pBlock->pRenderer, pBlock->pTexture, NULL, &(pBlock->rect));
 }
 
