@@ -229,25 +229,32 @@ void updatePlayer(Player *pPlayer,float deltaTime,int gameMap[BOX_ROW][BOX_COL],
     pPlayer->dstRect.y = pPlayer->y - 3;
 }
 
-void updatePlayerRect(Player *pPlayer) {
+void updatePlayerRect(Player *pPlayer) 
+{
     Uint32 currentTime = SDL_GetTicks();
     if (currentTime - pPlayer->frames.lastFrameTime < pPlayer->frames.frameDelay) return;
     pPlayer->frames.lastFrameTime = currentTime;
 
-    if (pPlayer->frames.currentFrame_y == 0) {
-        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_idle-1) {
+    if (pPlayer->frames.currentFrame_y == 0) 
+    {
+        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_idle-1) 
+        {
             pPlayer->frames.currentFrame_x +=1;
         }
         else pPlayer->frames.currentFrame_x = 0;
     } 
-    else if (pPlayer->frames.currentFrame_y == 1) {
-        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_sprint-1) {
+    else if (pPlayer->frames.currentFrame_y == 1) 
+    {
+        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_sprint-1) 
+        {
             pPlayer->frames.currentFrame_x +=1;
         }
         else pPlayer->frames.currentFrame_x = 0;
     }
-    else if (pPlayer->frames.currentFrame_y == 2) {
-        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_jump-1) {
+    else if (pPlayer->frames.currentFrame_y == 2) 
+    {
+        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_jump-1) 
+        {
             pPlayer->frames.currentFrame_x +=1;
         }
         else pPlayer->frames.currentFrame_x = 0; 
@@ -257,9 +264,11 @@ void updatePlayerRect(Player *pPlayer) {
     pPlayer->srcRect.y = pPlayer->frames.currentFrame_y * pPlayer->srcRect.h;
 }
 
-void drawPlayer(Player *pPlayer) {
+void drawPlayer(Player *pPlayer) 
+{
     updatePlayerRect(pPlayer);
-    if (pPlayer->frames.is_mirrored == true) {
+    if (pPlayer->frames.is_mirrored == true) 
+    {
         SDL_RenderCopyEx(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect, 0, NULL, SDL_FLIP_HORIZONTAL);
     }
     else {
