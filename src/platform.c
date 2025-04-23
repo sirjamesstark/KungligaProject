@@ -20,6 +20,7 @@ BlockImage *createBlockImage(SDL_Renderer *pRenderer){
     BlockImage* pBlockImage = NULL;
     if(pBlockImage==NULL){
         pBlockImage = malloc(sizeof(struct blockImage));
+        if(pBlockImage == NULL) return NULL;
         SDL_Surface *surface = IMG_Load("resources/box8.png");
         if(!surface){
             printf("Error: %s\n",SDL_GetError());
@@ -38,6 +39,7 @@ BlockImage *createBlockImage(SDL_Renderer *pRenderer){
 
 Block *createBlock(BlockImage *pBlockImage, int window_width, int window_height){
     Block *pBlock = malloc(sizeof(struct blocks));
+    if(pBlock == NULL) return NULL;
     pBlock->pRenderer = pBlockImage->pRenderer;
     pBlock->pTexture = pBlockImage->pTexture;
     pBlock->window_width = window_width;

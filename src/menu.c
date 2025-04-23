@@ -346,8 +346,17 @@ void cleanMenu(ButtonImages *pButtonImages[NROFPICS], ButtonsAndBackground *pBut
     }
     for (int i = 0; i < NROFBUTTONS; i++)
     {
-        SDL_DestroyTexture(pButtonsAndBackground[i]->pTexture);
-        free(pButtonsAndBackground[i]);
+        if (pButtonsAndBackground[i]->pTexture != NULL)
+        {
+            SDL_DestroyTexture(pButtonsAndBackground[i]->pTexture);
+        }
+        if (pButtonsAndBackground[i] != NULL)
+        {
+            free(pButtonsAndBackground[i]);
+        }
     }
-    free(pMenuVariables);
+    if (pMenuVariables != NULL)
+    {
+        free(pMenuVariables);
+    }
 }

@@ -324,7 +324,10 @@ void cleanUp(Game *pGame)
         pGame->pWindow = NULL;
     }
 
-    destroyPlayer(pGame->pPlayer);
+    if (pGame->pPlayer != NULL) {
+        destroyPlayer(pGame->pPlayer);
+        pGame->pPlayer = NULL; 
+    }
     /*
     for (int i=0; i<MAX_NROFPLAYERS; i++) {
         if (pGame->pPlayers[i] != NULL) {
@@ -335,12 +338,23 @@ void cleanUp(Game *pGame)
     */
 
     // Här lägger vi till mer kod som frigör tidigare allokerat minne ifall det behövs (t.ex. för platforms sen)
-    destroyBlock(pGame->pBlock);
-    destroyBlockImage(pGame->pBlockImage);
+    if (pGame->pBlock != NULL)
+    {
+        destroyBlock(pGame->pBlock);
+        pGame->pBlock = NULL;
+    }
+    if (pGame->pBlockImage)
+    {
+        destroyBlockImage(pGame->pBlockImage);
+        pGame->pBlockImage = NULL;
+    }
     for (int i = 0; i < NROFMAPS; i++)
     {
-        destroyMap(pGame->pMaps[i]);
-        pGame->pMaps[i] = NULL; // skyddar mot dubbel-free
+        if (pGame->pMaps[i] != NULL)
+        {
+            destroyMap(pGame->pMaps[i]);
+            pGame->pMaps[i] = NULL; // skyddar mot dubbel-free
+        }
     }
     
     // Nu har jag lagt in blocks

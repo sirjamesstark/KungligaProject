@@ -60,9 +60,15 @@ void drawBackground(Background *pBackground)
 
 void destroyBackground(Background *pBackground)
 {
-    if (pBackground) 
+    if (pBackground->pTexture != NULL) 
     {
         SDL_DestroyTexture(pBackground->pTexture);
-        free(pBackground);
+        pBackground->pTexture = NULL;
     }
+    if (pBackground != NULL)
+    {
+        free(pBackground);
+        pBackground = NULL;
+    }
+    
 }

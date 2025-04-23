@@ -16,6 +16,8 @@ void drawBlueprints(Maps *pMaps[NROFMAPS])
 
 Maps* drawMap1()
 {
+    Maps *pMap = malloc(sizeof(Maps));
+    if (pMap == NULL) return NULL;
     int tempBlueprint[BOX_ROW][BOX_COL] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
                                            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,
                                            1,1,0,0,0,1,1,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,1,0,
@@ -38,7 +40,6 @@ Maps* drawMap1()
                                            0,1,0,0,0,0,1,1,0,0,0,1,1,0,0,0,0,0,1,1,0,0,0,1,1,0,
                                            0,1,0,0,1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,1,1,1,0,
                                            0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0};
-    Maps *pMap = malloc(sizeof(Maps));
     memcpy(pMap->blueprint, tempBlueprint, sizeof(tempBlueprint));
     return pMap;
 }
