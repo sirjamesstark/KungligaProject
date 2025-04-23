@@ -46,9 +46,10 @@ bool showMenu(SDL_Renderer *pRenderer, int window_width, int window_height)
     } 
     createButtonsAndBackground(pButtonsAndBackground, pButtonImages, window_width, window_height);
     runMenu(pButtonImages,pButtonsAndBackground,pMenuVariables,pButtonSound,pMenuMusic,pRenderer);
+    int letTheGameBegin = pMenuVariables->startGame;
     cleanMenu(pButtonImages,pButtonsAndBackground,pMenuVariables);
     // Clean up all audio resources
-    if (!pMenuVariables->startGame) {
+    if (!letTheGameBegin) {
         Mix_HaltMusic();  // Stop music if exiting without starting game
         Mix_FreeMusic(pMenuMusic);
     }
