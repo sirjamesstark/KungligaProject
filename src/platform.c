@@ -16,13 +16,11 @@ struct blocks{
     SDL_Rect rect;
 };
 
-static void getStartValues(Blocks *a);
-
 BlockImage *createBlockImage(SDL_Renderer *pRenderer){
-    static BlockImage* pBlockImage = NULL;
+    BlockImage* pBlockImage = NULL;
     if(pBlockImage==NULL){
         pBlockImage = malloc(sizeof(struct blockImage));
-        SDL_Surface *surface = IMG_Load("resources/boxPaint.png");
+        SDL_Surface *surface = IMG_Load("resources/box8.png");
         if(!surface){
             printf("Error: %s\n",SDL_GetError());
             return NULL;
@@ -38,28 +36,42 @@ BlockImage *createBlockImage(SDL_Renderer *pRenderer){
     return pBlockImage;
 }
 
-Blocks *createBlock(BlockImage *pBlockImage, int window_width, int window_height){
-    Blocks *pBlock = malloc(sizeof(struct blocks));
+Block *createBlock(BlockImage *pBlockImage, int window_width, int window_height){
+    Block *pBlock = malloc(sizeof(struct blocks));
     pBlock->pRenderer = pBlockImage->pRenderer;
     pBlock->pTexture = pBlockImage->pTexture;
     pBlock->window_width = window_width;
     pBlock->window_height = window_height;
     SDL_QueryTexture(pBlockImage->pTexture,NULL,NULL,&(pBlock->rect.w),&(pBlock->rect.h));
-    pBlock->rect.w=16;
-    pBlock->rect.h=16;
+    pBlock->rect.w = window_width / BOX_COL;
+    pBlock->rect.h = window_height / BOX_ROW;
 
     return pBlock;
 }
 
-SDL_Rect getRectBlock(Blocks *pBlock){
+SDL_Rect getRectBlock(Block *pBlock){
     return pBlock->rect;
 }
 
-void drawBlock(Blocks *pBlock){
-    SDL_RenderCopyEx(pBlock->pRenderer,pBlock->pTexture,NULL,&(pBlock->rect),0,NULL,SDL_FLIP_NONE);
+void buildTheMap(int gameMap[BOX_ROW][BOX_COL],Block *pBlock)
+{
+    for (int row = 0; row < BOX_ROW; row++) {
+        for (int col = 0; col < BOX_COL; col++) {
+            if (gameMap[row][col] == 1)
+            {
+                pBlock->rect.x = col * pBlock->rect.w;
+                pBlock->rect.y = row * pBlock->rect.h;
+                drawBlock(pBlock);
+            }
+        }
+    }
 }
 
-void destroyBlock(Blocks *pBlock){
+void drawBlock(Block *pBlock){
+    SDL_RenderCopy(pBlock->pRenderer, pBlock->pTexture, NULL, &(pBlock->rect));
+}
+
+void destroyBlock(Block *pBlock){
     free(pBlock);
 }
 

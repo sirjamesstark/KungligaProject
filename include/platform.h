@@ -1,15 +1,18 @@
 #ifndef asteroid_h
 #define asteroid_h
 
+#define BOX_ROW 22
+#define BOX_COL 26
+
 typedef struct blockImage BlockImage;
-typedef struct blocks Blocks;
+typedef struct blocks Block;
 
 BlockImage *createBlockImage(SDL_Renderer *pRenderer);
-Blocks *createBlock(BlockImage *pAsteroidImage, int window_width, int window_height);
-void updateAsteroid(Blocks *pAsteroid);
-void drawBlock(Blocks *pAsteroid);
-void destroyBlock(Blocks *pAsteroid);
-SDL_Rect getRectBlock(Blocks *pAsteroid);
-void destroyBlockImage(BlockImage *pAsteroidImage);
+Block *createBlock(BlockImage *pBlockImage, int window_width, int window_height);
+void buildTheMap(int gameMap[BOX_ROW][BOX_COL],Block *pBlock);
+void drawBlock(Block *pBlock);
+void destroyBlock(Block *pBlock);
+SDL_Rect getRectBlock(Block *pBlock);
+void destroyBlockImage(BlockImage *pBlockImage);
 
 #endif
