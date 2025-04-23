@@ -167,6 +167,8 @@ int initiate(DisplayMode *pdM,Game *pGame, int argv, char **args)
 
     pGame->pServer = NET_INIT(pGame->is_server);
 
+    setPacketSize(pGame->pServer); 
+    
     bindPort(pGame->is_server, pGame->pServer);
 
     if (!pGame->is_server) setSrvAdd_client(args, argv, pGame->pServer);
