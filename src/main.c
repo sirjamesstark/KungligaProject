@@ -59,6 +59,12 @@ int main(int argc, char *argv[])
     {
         return 1;
     } 
+    if (!game.is_server && !game.pServer)
+    {
+        fprintf(stderr, "Fel: Klienten kunde inte skapa eller ansluta till server-socket.\n");
+        cleanUp(&game);
+        return 1;
+    }
     if (!showMenu(game.pRenderer,dM.window_width,dM.window_height))
     {
         cleanUp(&game);
@@ -77,17 +83,19 @@ int main(int argc, char *argv[])
         (&game)->pPlayer[0] = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height, game.pPlayerID);
         (&game)->pPlayer[1] = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height, 1);
     }
-    else {
+    else 
+    {
         game.pPlayerID = 1;
         (&game)->pPlayer[0] = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height, 0);
         (&game)->pPlayer[1] = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height, game.pPlayerID);
     }
-
-    if (!game.pGameMusic || !game.pBackground || !game.pBlockImage || !game.pPlayer)
+    
+    if (!game.pGameMusic || !game.pBackground || !game.pBlockImage || !game.pPlayer[0] || !game.pPlayer[1])
     {
         cleanUp(&game);
         return 1;
     }
+
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
     bool onGround = true;
@@ -117,8 +125,11 @@ int main(int argc, char *argv[])
 
         if (!game.is_server)
         {
-            sendPaket(getPlayerRect(game.pPlayer[1]), game.pServer, game.is_server);
-            recivePaket(game.pServer, game.is_server, getPlayerRect(game.pPlayer[0]), getPlayerRect(game.pPlayer[1]));
+            if (game.pPlayer[0] && game.pPlayer[1])
+            {
+                sendPaket(getPlayerRect(game.pPlayer[1]), game.pServer, game.is_server);
+                recivePaket(game.pServer, game.is_server, getPlayerRect(game.pPlayer[0]), getPlayerRect(game.pPlayer[1]));
+            }
         } 
         else
         {
