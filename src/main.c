@@ -13,21 +13,26 @@
 #include "../include/renderer.h"
 #include "../include/theme.h"
 #include "../include/maps.h"
+#include "../include/net.h"
 
 #define NUM_MENU 2
-#define MAX_NROFPLAYERS 4
+#define MAX_NROFPLAYERS 2
 
 typedef struct 
 {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
-    Player *pPlayer;
+    Player *pPlayer[MAX_NROFPLAYERS];
     Mix_Chunk *pJumpSound;
     Mix_Music *pGameMusic;
     BlockImage *pBlockImage;
     Block *pBlock;
     Maps *pMaps[NROFMAPS];
     Background *pBackground;
+
+    bool is_server;
+    Server *pServer;
+    int pPlayerID;
 } Game;
 
 typedef struct 
@@ -39,7 +44,7 @@ typedef struct
     bool continue_game;
 } DisplayMode;
 
-int initiate(DisplayMode *pdM,Game *pGame);
+int initiate(DisplayMode *pdM,Game *pGame, int argv, char **args);
 void handleInput(Game *pGame,SDL_Event *pEvent,bool *pCloseWindow, bool *pUp,bool *pDown,bool *pLeft,bool *pRight);
 void cleanUp(Game *pGame);
 
@@ -50,7 +55,7 @@ int main(int argc, char *argv[])
 
     bool startGame = false;
 
-    if (!initiate(&dM,&game))
+    if (!initiate(&dM,&game,argc,argv))
     {
         return 1;
     } 
@@ -65,7 +70,19 @@ int main(int argc, char *argv[])
     game.pBlockImage = createBlockImage(game.pRenderer);
     game.pBlock = createBlock(game.pBlockImage,dM.window_width,dM.window_height);
     SDL_Rect blockRect = getRectBlock(game.pBlock);
-    game.pPlayer = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height);
+
+    if (game.is_server)
+    {
+        game.pPlayerID = 0;
+        (&game)->pPlayer[0] = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height, game.pPlayerID);
+        (&game)->pPlayer[1] = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height, 1);
+    }
+    else {
+        game.pPlayerID = 1;
+        (&game)->pPlayer[0] = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height, 0);
+        (&game)->pPlayer[1] = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height, game.pPlayerID);
+    }
+
     if (!game.pGameMusic || !game.pBackground || !game.pBlockImage || !game.pPlayer)
     {
         cleanUp(&game);
@@ -95,21 +112,36 @@ int main(int argc, char *argv[])
             else handleInput(&game,&event,&closeWindow,&up,&down,&left,&right);
         }
         goDown = goLeft = goRight = goUp = 0;
-        setSpeed(up,down,left,right,&goUp,&goDown,&goLeft,&goRight,&upCounter,onGround,game.pPlayer,dM.speed_x,dM.speed_y);
-        updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight);
+        setSpeed(up,down,left,right,&goUp,&goDown,&goLeft,&goRight,&upCounter,onGround,game.pPlayer[game.pPlayerID],dM.speed_x,dM.speed_y);
+        updatePlayer(game.pPlayer[game.pPlayerID],deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight);
+
+        if (!game.is_server)
+        {
+            sendPaket(getPlayerRect(game.pPlayer[1]), game.pServer, game.is_server);
+            recivePaket(game.pServer, game.is_server, getPlayerRect(game.pPlayer[0]), getPlayerRect(game.pPlayer[1]));
+        } 
+        else
+        {
+            recivePaket(game.pServer, game.is_server, getPlayerRect(game.pPlayer[1]), getPlayerRect(game.pPlayer[0]));
+        }
+
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground);
         buildTheMap(gameMap,game.pBlock);
-        drawPlayer(game.pPlayer);
+        for (int i = 0; i < MAX_NROFPLAYERS; i++)
+        {
+            drawPlayer(game.pPlayer[i]);
+        }
 
         SDL_RenderPresent(game.pRenderer);
         SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
     }
+    NET_Quit(game.pServer);
     cleanUp(&game);
     return 0;
 }
 
-int initiate(DisplayMode *pdM,Game *pGame)
+int initiate(DisplayMode *pdM,Game *pGame, int argv, char **args)
 {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) != 0)
     {
@@ -117,6 +149,16 @@ int initiate(DisplayMode *pdM,Game *pGame)
         cleanUp(pGame);
         return 0;
     }
+
+    if (argv > 1 && strcmp(args[1], "server") == 0) { // UDP prototyp
+        pGame->is_server = true; 
+    }
+
+    pGame->pServer = NET_INIT(pGame->is_server);
+
+    bindPort(pGame->is_server, pGame->pServer);
+
+    if (!pGame->is_server) setSrvAdd_client(args, argv, pGame->pServer);
 
     // Initialize SDL_image for PNG loading
     int iconImage = IMG_INIT_PNG;
@@ -324,9 +366,13 @@ void cleanUp(Game *pGame)
         pGame->pWindow = NULL;
     }
 
-    if (pGame->pPlayer != NULL) {
-        destroyPlayer(pGame->pPlayer);
-        pGame->pPlayer = NULL; 
+    for (int i = 0; i < MAX_NROFPLAYERS; i++)
+    {
+        if (pGame->pPlayer[i] != NULL) {
+            destroyPlayer(pGame->pPlayer[i]);
+            pGame->pPlayer[i] = NULL; 
+        }
+        
     }
     /*
     for (int i=0; i<MAX_NROFPLAYERS; i++) {

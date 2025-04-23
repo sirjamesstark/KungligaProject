@@ -25,9 +25,9 @@ INCDIR = ./include
 OBJDIR = ./obj
 
 # Lista över filer
-SRC = $(SRCDIR)/game.c $(SRCDIR)/main.c $(SRCDIR)/menu.c $(SRCDIR)/platform.c $(SRCDIR)/player.c $(SRCDIR)/renderer.c $(SRCDIR)/theme.c $(SRCDIR)/maps.c
-OBJS = $(OBJDIR)/game.o $(OBJDIR)/main.o $(OBJDIR)/menu.o $(OBJDIR)/platform.o $(OBJDIR)/player.o $(OBJDIR)/renderer.o $(OBJDIR)/theme.o $(OBJDIR)/maps.o
-HEADERS = $(INCDIR)/game.h $(INCDIR)/menu.h $(INCDIR)/platform.h $(INCDIR)/player.h $(INCDIR)/renderer.h $(INCDIR)/theme.h $(INCDIR)/maps.h 
+SRC = $(SRCDIR)/game.c $(SRCDIR)/main.c $(SRCDIR)/menu.c $(SRCDIR)/platform.c $(SRCDIR)/player.c $(SRCDIR)/renderer.c $(SRCDIR)/theme.c $(SRCDIR)/maps.c $(SRCDIR)/net.c
+OBJS = $(OBJDIR)/game.o $(OBJDIR)/main.o $(OBJDIR)/menu.o $(OBJDIR)/platform.o $(OBJDIR)/player.o $(OBJDIR)/renderer.o $(OBJDIR)/theme.o $(OBJDIR)/maps.o $(OBJDIR)/net.o
+HEADERS = $(INCDIR)/game.h $(INCDIR)/menu.h $(INCDIR)/platform.h $(INCDIR)/player.h $(INCDIR)/renderer.h $(INCDIR)/theme.h $(INCDIR)/maps.h $(INCDIR)/net.h 
 
 # Välj rätt kommando för att skapa kataloger och radera filer
 

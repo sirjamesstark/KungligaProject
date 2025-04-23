@@ -8,7 +8,8 @@
 typedef struct player Player;
 typedef struct frames Frames;
 
-Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_width, int window_height);
+SDL_Rect* getPlayerRect(Player *pPly);
+Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_width, int window_height,int playerID) ;
 void updatePlayer(Player *pPlayer,float deltaTime,int gameMap[BOX_ROW][BOX_COL],SDL_Rect blockRect,int *pUpCounter,bool *pOnGround,
                     bool *pGoUp,bool *pGoDown,bool *pGoLeft,bool *pGoRight);
 void updatePlayerRect(Player *pPlayer);
