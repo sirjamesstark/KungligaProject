@@ -227,6 +227,12 @@ void updatePlayer(Player *pPlayer,float deltaTime,int gameMap[BOX_ROW][BOX_COL],
     }
     pPlayer->dstRect.x = pPlayer->x;
     pPlayer->dstRect.y = pPlayer->y - 3;
+
+    if (pPlayer->x < 0) 
+    {
+        pPlayer->x = 0;             //gör så att man inte kan falla ned i vänster hörnet
+    }
+       
 }
 
 void updatePlayerRect(Player *pPlayer) 
