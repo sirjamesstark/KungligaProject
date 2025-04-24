@@ -59,7 +59,7 @@ bool showMenu(SDL_Renderer *pRenderer, int window_width, int window_height)
     Mix_FreeChunk(pButtonSound);
     Mix_CloseAudio();
     
-    return pMenuVariables->startGame;
+    return letTheGameBegin;
 }
 
 int createAllImages(ButtonImages *pButtonImages[NROFPICS] ,SDL_Renderer *pRenderer)

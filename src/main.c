@@ -6,11 +6,9 @@
 #include <SDL_timer.h>
 #include <SDL_mixer.h>
 
-#include "../include/game.h"
 #include "../include/menu.h"
 #include "../include/platform.h"
 #include "../include/player.h"
-#include "../include/renderer.h"
 #include "../include/theme.h"
 #include "../include/maps.h"
 #include <SDL_net.h>
