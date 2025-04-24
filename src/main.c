@@ -13,15 +13,15 @@
 #include "../include/renderer.h"
 #include "../include/theme.h"
 #include "../include/maps.h"
+#include <SDL_net.h>
 
 #define NUM_MENU 2
-#define MAX_NROFPLAYERS 4
 
 typedef struct 
 {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
-    Player *pPlayer;
+    Player *pPlayer[MAX_NROFPLAYERS];
     Mix_Chunk *pJumpSound;
     Mix_Music *pGameMusic;
     BlockImage *pBlockImage;
@@ -45,6 +45,42 @@ void cleanUp(Game *pGame);
 
 int main(int argc, char *argv[])
 {
+    UDPsocket sd;
+    IPaddress srvadd;
+    UDPpacket *p, *p2;
+
+    int is_server = 0;
+    if (argc > 1 && strcmp(argv[1], "server") == 0) {
+        is_server = 1;
+    }
+
+    if (SDLNet_Init() < 0) {
+        fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    if (!(sd = SDLNet_UDP_Open(is_server ? 2000 : 0))) {
+        fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    if (!is_server) {
+        if (argc < 3) {
+            fprintf(stderr, "Usage: %s client <server_ip>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
+
+        if (SDLNet_ResolveHost(&srvadd, argv[2], 2000) == -1) {
+            fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (!((p = SDLNet_AllocPacket(512)) && (p2 = SDLNet_AllocPacket(512)))) {
+        fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
+        exit(EXIT_FAILURE);
+    }
+
     Game game = {0};
     DisplayMode dM = {0};
 
@@ -65,7 +101,10 @@ int main(int argc, char *argv[])
     game.pBlockImage = createBlockImage(game.pRenderer);
     game.pBlock = createBlock(game.pBlockImage,dM.window_width,dM.window_height);
     SDL_Rect blockRect = getRectBlock(game.pBlock);
-    game.pPlayer = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height);
+    for (int i = 0; i < MAX_NROFPLAYERS; i++)
+    {
+        game.pPlayer[i] = createPlayer(blockRect,(&game)->pRenderer,dM.window_width,dM.window_height);
+    }
     if (!game.pGameMusic || !game.pBackground || !game.pBlockImage || !game.pPlayer)
     {
         cleanUp(&game);
@@ -95,12 +134,16 @@ int main(int argc, char *argv[])
             else handleInput(&game,&event,&closeWindow,&up,&down,&left,&right);
         }
         goDown = goLeft = goRight = goUp = 0;
-        setSpeed(up,down,left,right,&goUp,&goDown,&goLeft,&goRight,&upCounter,onGround,game.pPlayer,dM.speed_x,dM.speed_y);
-        updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight);
+        setSpeed(up,down,left,right,&goUp,&goDown,&goLeft,&goRight,&upCounter,onGround,game.pPlayer[0],dM.speed_x,dM.speed_y);
+        updatePlayer(game.pPlayer,deltaTime,gameMap,blockRect,&upCounter,&onGround,&goUp,&goDown,&goLeft,&goRight,p
+                        ,p2,&is_server,srvadd,&sd);
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground);
         buildTheMap(gameMap,game.pBlock);
-        drawPlayer(game.pPlayer);
+        for (int i = 0; i < MAX_NROFPLAYERS; i++)
+        {
+            drawPlayer(game.pPlayer[i]);
+        }
 
         SDL_RenderPresent(game.pRenderer);
         SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
@@ -324,18 +367,12 @@ void cleanUp(Game *pGame)
         pGame->pWindow = NULL;
     }
 
-    if (pGame->pPlayer != NULL) {
-        destroyPlayer(pGame->pPlayer);
-        pGame->pPlayer = NULL; 
-    }
-    /*
     for (int i=0; i<MAX_NROFPLAYERS; i++) {
-        if (pGame->pPlayers[i] != NULL) {
+        if (pGame->pPlayer[i] != NULL) {
             destroyPlayer(pGame->pPlayer[i]);
             pGame->pPlayer[i] = NULL; 
         }
     }
-    */
 
     // Här lägger vi till mer kod som frigör tidigare allokerat minne ifall det behövs (t.ex. för platforms sen)
     if (pGame->pBlock != NULL)
