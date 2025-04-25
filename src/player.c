@@ -180,7 +180,10 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS],float deltaTime,int gameMap[B
     pPlayer[0]->y += pPlayer[0]->vy * deltaTime;
 
     //need to move to net folder/function later
-    if (pPlayer[0]->oldX != pPlayer[0]->x || pPlayer[0]->oldY != pPlayer[0]->y) {
+    static Uint32 lastSendTime = 0;
+    Uint32 currentTime = SDL_GetTicks();
+    // Sadece 16ms (yaklaşık 60fps) geçtiyse veri gönder
+    if (currentTime - lastSendTime > 16 && (pPlayer[0]->oldX != pPlayer[0]->x || pPlayer[0]->oldY != pPlayer[0]->y)) {
         sprintf((char*)p->data, "%d %d", (int)pPlayer[0]->x, (int)pPlayer[0]->y);
         p->len = strlen((char*)p->data) + 1;
 
@@ -193,20 +196,42 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS],float deltaTime,int gameMap[B
         SDLNet_UDP_Send(*pSd, -1, p);
         pPlayer[0]->oldX = pPlayer[0]->x;
         pPlayer[0]->oldY = pPlayer[0]->y;
+        lastSendTime = currentTime;
     }
+    // Ağ verilerini işleme ve interpolasyon için değişkenler
+    static int targetX = 0, targetY = 0;
+    static Uint32 lastRecvTime = 0;
+    static float interpolationFactor = 0.2f; // Daha yumuşak hareket için
+    
     if (SDLNet_UDP_Recv(*pSd, p2)) 
     {
         int a, b;
         sscanf((char*)p2->data, "%d %d", &a, &b);
-        pPlayer[1]->x = a;
-        pPlayer[1]->y = b;
+        
+        // Hedef pozisyonu güncelle
+        targetX = a;
+        targetY = b;
+        lastRecvTime = SDL_GetTicks();
         pPlayer[1]->active = true;
+        
         if (*pIs_server) 
         {
             sprintf((char*)p->data, "%d %d", (int)pPlayer[0]->x, (int)pPlayer[0]->y);
             p->address = p2->address;
             p->len = strlen((char*)p->data) + 1;
             SDLNet_UDP_Send(*pSd, -1, p);
+        }
+    }
+    
+    // Eğer oyuncu aktifse, hedef pozisyona doğru yumuşak hareket et
+    if (pPlayer[1]->active) {
+        // Interpolasyon ile pozisyonu güncelle
+        pPlayer[1]->x += (targetX - pPlayer[1]->x) * interpolationFactor;
+        pPlayer[1]->y += (targetY - pPlayer[1]->y) * interpolationFactor;
+        
+        // Son veri alımından beri çok zaman geçtiyse (1 saniye) oyuncuyu deaktif et
+        if (SDL_GetTicks() - lastRecvTime > 1000) {
+            pPlayer[1]->active = false;
         }
     }
     //until here

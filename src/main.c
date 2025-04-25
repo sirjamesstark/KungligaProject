@@ -57,9 +57,17 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    // UDP soketini aç ve optimize et
     if (!(sd = SDLNet_UDP_Open(is_server ? 2000 : 0))) {
         fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
         exit(EXIT_FAILURE);
+    }
+    
+    // Soket tampon boyutunu artır (daha az paket kaybı için)
+    int bufSize = 65536; // 64KB
+    if (SDLNet_UDP_SetPacketLoss(sd, 0) < 0) {
+        fprintf(stderr, "SDLNet_UDP_SetPacketLoss: %s\n", SDLNet_GetError());
+        // Kritik olmadığı için devam et
     }
 
     if (!is_server) {
@@ -74,10 +82,15 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (!((p = SDLNet_AllocPacket(512)) && (p2 = SDLNet_AllocPacket(512)))) {
-        fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
+    // Daha küçük paket boyutu kullan (pozisyon verisi için yeterli)
+    if (!((p = SDLNet_AllocPacket(128)) && (p2 = SDLNet_AllocPacket(128)))) {
+        fprintf(stderr, "SDLNet_UDP_AllocPacket: %s\n", SDLNet_GetError());
         exit(EXIT_FAILURE);
     }
+    
+    // Paketleri önceliklendirme (daha hızlı işleme için)
+    p->channel = 0;  // Kanal 0 en yüksek öncelikli
+    p2->channel = 0;
 
     Game game = {0};
     DisplayMode dM = {0};
