@@ -22,6 +22,7 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
                   int *pUpCounter, bool *pOnGround, bool *pGoUp, bool *pGoDown, bool *pGoLeft, bool *pGoRight, UDPpacket *p,
                   UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd);
 void updatePlayerRect(Player *pPlayer);
+void networkUDP (Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd, float space);
 void drawPlayer(Player *pPlayer, int CamX, int CamY, int window_width, int window_height);
 
 void destroyPlayer(Player *pPlayer);

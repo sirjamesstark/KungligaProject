@@ -216,38 +216,7 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
     pPlayer[0]->x += pPlayer[0]->vx * 5 * deltaTime;
     pPlayer[0]->y += pPlayer[0]->vy * deltaTime;
 
-    // need to move to net folder/function later
-    if (pPlayer[0]->oldX != pPlayer[0]->x || pPlayer[0]->oldY != pPlayer[0]->y)
-    {
-        sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->window_width, (pPlayer[0]->y + space) / pPlayer[0]->window_height);
-        p->len = strlen((char *)p->data) + 1;
-
-        if (!(*pIs_server))
-        {
-            p->address.host = srvadd.host;
-            p->address.port = srvadd.port;
-        }
-
-        SDLNet_UDP_Send(*pSd, -1, p);
-        pPlayer[0]->oldX = pPlayer[0]->x;
-        pPlayer[0]->oldY = pPlayer[0]->y;
-    }
-    if (SDLNet_UDP_Recv(*pSd, p2))
-    {
-        float a, b;
-        sscanf((char *)p2->data, "%f %f", &a, &b);
-        pPlayer[1]->x = a * pPlayer[0]->window_width;
-        pPlayer[1]->y = b * pPlayer[0]->window_height - space;
-        pPlayer[1]->active = true;
-        if (*pIs_server)
-        {
-            sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->window_width, (pPlayer[0]->y + space) / pPlayer[0]->window_height);
-            p->address = p2->address;
-            p->len = strlen((char *)p->data) + 1;
-            SDLNet_UDP_Send(*pSd, -1, p);
-        }
-    }
-    // until here
+    networkUDP(pPlayer, p, p2, pIs_server, srvadd, pSd, space);
 
     // Check Collision
     if ((*pGoLeft) == 1)
@@ -358,6 +327,40 @@ void updatePlayerRect(Player *pPlayer)
 
     pPlayer->srcRect.x = pPlayer->frames.currentFrame_x * pPlayer->srcRect.w;
     pPlayer->srcRect.y = pPlayer->frames.currentFrame_y * pPlayer->srcRect.h;
+}
+
+void networkUDP (Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd, float space)
+{
+        if (pPlayer[0]->oldX != pPlayer[0]->x || pPlayer[0]->oldY != pPlayer[0]->y)
+        {
+            sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->window_width, (pPlayer[0]->y + space) / pPlayer[0]->window_height);
+            p->len = strlen((char *)p->data) + 1;
+    
+            if (!(*pIs_server))
+            {
+                p->address.host = srvadd.host;
+                p->address.port = srvadd.port;
+            }
+    
+            SDLNet_UDP_Send(*pSd, -1, p);
+            pPlayer[0]->oldX = pPlayer[0]->x;
+            pPlayer[0]->oldY = pPlayer[0]->y;
+        }
+        if (SDLNet_UDP_Recv(*pSd, p2))
+        {
+            float a, b;
+            sscanf((char *)p2->data, "%f %f", &a, &b);
+            pPlayer[1]->x = a * pPlayer[0]->window_width;
+            pPlayer[1]->y = b * pPlayer[0]->window_height - space;
+            pPlayer[1]->active = true;
+            if (*pIs_server)
+            {
+                sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->window_width, (pPlayer[0]->y + space) / pPlayer[0]->window_height);
+                p->address = p2->address;
+                p->len = strlen((char *)p->data) + 1;
+                SDLNet_UDP_Send(*pSd, -1, p);
+            }
+        }
 }
 
 void drawPlayer(Player *pPlayer, int CamX, int CamY, int window_width, int window_height)
