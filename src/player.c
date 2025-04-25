@@ -182,7 +182,7 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS],float deltaTime,int gameMap[B
     //need to move to net folder/function later
     static Uint32 lastSendTime = 0;
     Uint32 currentTime = SDL_GetTicks();
-    // Sadece 16ms (yaklaşık 60fps) geçtiyse veri gönder
+    // ONLY SEND DATA IF 16MS HAS PASSED (APPROXIMATELY 60FPS)
     if (currentTime - lastSendTime > 16 && (pPlayer[0]->oldX != pPlayer[0]->x || pPlayer[0]->oldY != pPlayer[0]->y)) {
         sprintf((char*)p->data, "%d %d", (int)pPlayer[0]->x, (int)pPlayer[0]->y);
         p->len = strlen((char*)p->data) + 1;
@@ -198,17 +198,17 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS],float deltaTime,int gameMap[B
         pPlayer[0]->oldY = pPlayer[0]->y;
         lastSendTime = currentTime;
     }
-    // Ağ verilerini işleme ve interpolasyon için değişkenler
+    // VARIABLES FOR PROCESSING NETWORK DATA AND INTERPOLATION
     static int targetX = 0, targetY = 0;
     static Uint32 lastRecvTime = 0;
-    static float interpolationFactor = 0.2f; // Daha yumuşak hareket için
+    static float interpolationFactor = 0.2f; // FOR SMOOTHER MOVEMENT
     
     if (SDLNet_UDP_Recv(*pSd, p2)) 
     {
         int a, b;
         sscanf((char*)p2->data, "%d %d", &a, &b);
         
-        // Hedef pozisyonu güncelle
+        // UPDATE TARGET POSITION
         targetX = a;
         targetY = b;
         lastRecvTime = SDL_GetTicks();
@@ -223,13 +223,13 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS],float deltaTime,int gameMap[B
         }
     }
     
-    // Eğer oyuncu aktifse, hedef pozisyona doğru yumuşak hareket et
+    // IF PLAYER IS ACTIVE, MOVE SMOOTHLY TOWARDS TARGET POSITION
     if (pPlayer[1]->active) {
-        // Interpolasyon ile pozisyonu güncelle
+        // UPDATE POSITION WITH INTERPOLATION
         pPlayer[1]->x += (targetX - pPlayer[1]->x) * interpolationFactor;
         pPlayer[1]->y += (targetY - pPlayer[1]->y) * interpolationFactor;
         
-        // Son veri alımından beri çok zaman geçtiyse (1 saniye) oyuncuyu deaktif et
+        // IF TOO MUCH TIME HAS PASSED SINCE LAST DATA RECEPTION (1 SECOND), DEACTIVATE PLAYER
         if (SDL_GetTicks() - lastRecvTime > 1000) {
             pPlayer[1]->active = false;
         }
