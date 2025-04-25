@@ -211,6 +211,7 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
                   int *pUpCounter, bool *pOnGround, bool *pGoUp, bool *pGoDown, bool *pGoLeft, bool *pGoRight, UDPpacket *p,
                   UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd)
 {
+    float space = pPlayer[0]->window_height - blockRect.h * (BOX_ROW - 1);
     pPlayer[0]->active = true;
     pPlayer[0]->x += pPlayer[0]->vx * 5 * deltaTime;
     pPlayer[0]->y += pPlayer[0]->vy * deltaTime;
@@ -218,7 +219,7 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
     // need to move to net folder/function later
     if (pPlayer[0]->oldX != pPlayer[0]->x || pPlayer[0]->oldY != pPlayer[0]->y)
     {
-        sprintf((char *)p->data, "%d %d", (int)pPlayer[0]->x, (int)pPlayer[0]->y);
+        sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->window_width, (pPlayer[0]->y + space) / pPlayer[0]->window_height);
         p->len = strlen((char *)p->data) + 1;
 
         if (!(*pIs_server))
@@ -233,14 +234,14 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
     }
     if (SDLNet_UDP_Recv(*pSd, p2))
     {
-        int a, b;
-        sscanf((char *)p2->data, "%d %d", &a, &b);
-        pPlayer[1]->x = a;
-        pPlayer[1]->y = b;
+        float a, b;
+        sscanf((char *)p2->data, "%f %f", &a, &b);
+        pPlayer[1]->x = a * pPlayer[0]->window_width;
+        pPlayer[1]->y = b * pPlayer[0]->window_height - space;
         pPlayer[1]->active = true;
         if (*pIs_server)
         {
-            sprintf((char *)p->data, "%d %d", (int)pPlayer[0]->x, (int)pPlayer[0]->y);
+            sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->window_width, (pPlayer[0]->y + space) / pPlayer[0]->window_height);
             p->address = p2->address;
             p->len = strlen((char *)p->data) + 1;
             SDLNet_UDP_Send(*pSd, -1, p);
