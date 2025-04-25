@@ -10,9 +10,7 @@
 
 struct frames
 {
-    int nrOfFrames_idle;
-    int nrOfFrames_sprint;
-    int nrOfFrames_jump;
+    int nrOfFrames_idle, nrOfFrames_sprint, nrOfFrames_jump;
     int currentFrame_x, currentFrame_y;
     float character_w, character_h;
     bool is_mirrored;
@@ -50,57 +48,26 @@ int getPlyY(Player *pPlayer)
     return pPlayer->dstRect.y;
 }
 
-Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_width, int window_height)
+Player *createPlayer(int player_ID, SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_width, int window_height) 
 {
-    int player_ID = 3; // har bara nu tills vidare under testing, denna variabel bestämmer vilken spelgubbe som ska laddas in
-
     Player *pPlayer = malloc(sizeof(struct player));
-    if (pPlayer == NULL)
-        return NULL;
+    if (pPlayer == NULL) return NULL;
+    SDL_Surface *pSurface = initPlayerFrames(pPlayer, player_ID);
 
-    pPlayer->vx = pPlayer->vy = 0;
-    pPlayer->window_width = window_width;
-    pPlayer->window_height = window_height;
-
-    SDL_Surface *pSurface = NULL;
-    switch (player_ID)
+    if (pSurface == NULL)
     {
-    case 0:
-        pSurface = IMG_Load("resources/player_0.png");
-        pPlayer->frames.nrOfFrames_idle = 5;
-        pPlayer->frames.nrOfFrames_sprint = 8;
-        pPlayer->frames.nrOfFrames_jump = 11;
-        pPlayer->frames.character_w = 50;
-        pPlayer->frames.character_h = 75;
-        break;
-    case 1:
-        pSurface = IMG_Load("resources/player_1.png");
-        pPlayer->frames.nrOfFrames_idle = 5;
-        pPlayer->frames.nrOfFrames_sprint = 8;
-        pPlayer->frames.nrOfFrames_jump = 8;
-        pPlayer->frames.character_w = 60;
-        pPlayer->frames.character_h = 70;
-        break;
-    case 2:
-        pSurface = IMG_Load("resources/player_2.png");
-        pPlayer->frames.nrOfFrames_idle = 5;
-        pPlayer->frames.nrOfFrames_sprint = 8;
-        pPlayer->frames.nrOfFrames_jump = 7;
-        pPlayer->frames.character_w = 50;
-        pPlayer->frames.character_h = 70;
-        break;
-    case 3:
-        pSurface = IMG_Load("resources/player_3.png");
-        pPlayer->frames.nrOfFrames_idle = 8;
-        pPlayer->frames.nrOfFrames_sprint = 8;
-        pPlayer->frames.nrOfFrames_jump = 8;
-        pPlayer->frames.character_w = 50;
-        pPlayer->frames.character_h = 71;
-        break;
-    default:
         destroyPlayer(pPlayer);
+        printf("Error: %s\n", SDL_GetError());
         return NULL;
-        break;
+    }
+    pPlayer->pRenderer = pRenderer;
+    pPlayer->pTexture = SDL_CreateTextureFromSurface(pRenderer, pSurface);
+    SDL_FreeSurface(pSurface);
+    if (!pPlayer->pTexture)
+    {
+        destroyPlayer(pPlayer);
+        printf("Error: %s\n", SDL_GetError());
+        return NULL;
     }
 
     pPlayer->frames.currentFrame_x = pPlayer->frames.currentFrame_y = 0;
@@ -108,23 +75,9 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
     pPlayer->frames.frameDelay = 200; // 100 ms = 10 frames per sekund
     pPlayer->frames.lastFrameTime = SDL_GetTicks();
 
-    if (!pSurface)
-    {
-        destroyPlayer(pPlayer);
-        printf("Error: %s\n", SDL_GetError());
-        return NULL;
-    }
-
-    pPlayer->pRenderer = pRenderer;
-    pPlayer->pTexture = SDL_CreateTextureFromSurface(pRenderer, pSurface);
-    SDL_FreeSurface(pSurface);
-
-    if (!pPlayer->pTexture)
-    {
-        destroyPlayer(pPlayer);
-        printf("Error: %s\n", SDL_GetError());
-        return NULL;
-    }
+    pPlayer->vx = pPlayer->vy = 0;
+    pPlayer->window_width = window_width;
+    pPlayer->window_height = window_height;
 
     int spritesheet_w, spritesheet_h;
     SDL_QueryTexture(pPlayer->pTexture, NULL, NULL, &spritesheet_w, &spritesheet_h);
@@ -152,6 +105,41 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
     return pPlayer;
 }
 
+SDL_Surface *initPlayerFrames(Player *pPlayer, int player_ID) {
+    switch (player_ID) {
+        case 0:
+            pPlayer->frames.nrOfFrames_idle = 5;
+            pPlayer->frames.nrOfFrames_sprint = 8;
+            pPlayer->frames.nrOfFrames_jump = 11;
+            pPlayer->frames.character_w = 50;
+            pPlayer->frames.character_h = 75;
+            return IMG_Load("resources/player_0.png");
+        case 1:
+            pPlayer->frames.nrOfFrames_idle = 5;
+            pPlayer->frames.nrOfFrames_sprint = 8;
+            pPlayer->frames.nrOfFrames_jump = 8;
+            pPlayer->frames.character_w = 60;
+            pPlayer->frames.character_h = 70;
+            return IMG_Load("resources/player_1.png");
+        case 2:
+            pPlayer->frames.nrOfFrames_idle = 5;
+            pPlayer->frames.nrOfFrames_sprint = 8;
+            pPlayer->frames.nrOfFrames_jump = 7;
+            pPlayer->frames.character_w = 50;
+            pPlayer->frames.character_h = 70;
+            return IMG_Load("resources/player_2.png");
+        case 3:
+            pPlayer->frames.nrOfFrames_idle = 8;
+            pPlayer->frames.nrOfFrames_sprint = 8;
+            pPlayer->frames.nrOfFrames_jump = 8;
+            pPlayer->frames.character_w = 50;
+            pPlayer->frames.character_h = 71;
+            return IMG_Load("resources/player_3.png");
+        default:
+            return NULL;
+    }
+}
+
 // bool isSolidTile(Player pPlayer, int row, int col)
 // {
 //     int gameMap[row][col];
@@ -163,8 +151,11 @@ Player *createPlayer(SDL_Rect blockRect, SDL_Renderer *pRenderer, int window_wid
 // }
 
 void setSpeed(bool up, bool down, bool left, bool right, bool *pGoUp, bool *pGoDown, bool *pGoLeft, bool *pGoRight,
-              int *pUpCounter, bool onGround, Player *pPlayer, int speedX, int speedY)
+              int *pUpCounter, bool onGround, Player *pPlayer)
 {
+    int speedX = pPlayer->window_width / 20; 
+    int speedY = pPlayer->window_height / 20;
+
     pPlayer->vx = pPlayer->vy = 0;
     pPlayer->frames.currentFrame_y = 0;
 

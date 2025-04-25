@@ -1,5 +1,5 @@
-#ifndef asteroid_h
-#define asteroid_h
+#ifndef platform_h
+#define platform_h
 
 #define BOX_ROW 22
 #define BOX_COL 26

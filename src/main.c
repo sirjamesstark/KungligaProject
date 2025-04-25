@@ -35,9 +35,6 @@ typedef struct
 {
     int window_width;
     int window_height;
-    int speed_x;
-    int speed_y;
-    bool continue_game;
 } DisplayMode;
 
 int initiate(DisplayMode *pdM, Game *pGame);
@@ -111,7 +108,7 @@ int main(int argc, char *argv[])
     SDL_Rect blockRect = getRectBlock(game.pBlock);
     for (int i = 0; i < MAX_NROFPLAYERS; i++)
     {
-        game.pPlayer[i] = createPlayer(blockRect, (&game)->pRenderer, dM.window_width, dM.window_height);
+        game.pPlayer[i] = createPlayer(i, blockRect, game.pRenderer, dM.window_width, dM.window_height);
     }
     game.pCamera = camera(dM.window_width, dM.window_height);
     if (!game.pGameMusic || !game.pBackground || !game.pBlockImage || !game.pPlayer)
@@ -145,7 +142,7 @@ int main(int argc, char *argv[])
                 handleInput(&game, &event, &closeWindow, &up, &down, &left, &right);
         }
         goDown = goLeft = goRight = goUp = 0;
-        setSpeed(up, down, left, right, &goUp, &goDown, &goLeft, &goRight, &upCounter, onGround, game.pPlayer[0], dM.speed_x, dM.speed_y);
+        setSpeed(up, down, left, right, &goUp, &goDown, &goLeft, &goRight, &upCounter, onGround, game.pPlayer[0]);
         updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround, &goUp, &goDown, &goLeft, &goRight, p, p2, &is_server, srvadd, &sd);
         // updatePlayer(game.pPlayer, blockRect);
         int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]), PlyY = getPlyY(game.pPlayer[0]);
@@ -199,42 +196,16 @@ int initiate(DisplayMode *pdM, Game *pGame)
         return 0;
     }
 
-    SDL_DisplayMode currentDisplay;
-    if (SDL_GetCurrentDisplayMode(0, &currentDisplay) != 0)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        cleanUp(pGame);
-        return 0;
-    }
-
-    pdM->window_width = currentDisplay.w;
-    pdM->window_height = currentDisplay.h;
-
-    /*
-    float aspect_ratio = (float)(pdM->window_width/pdM->window_height);
-    if (aspect_ratio != (16.0f / 9.0f)) {
-        // Här tvingar vi till en 16:9 aspect ratio genom att justera höjd eller bredd
-        if (aspect_ratio > (16.0f / 9.0f)) {
-            // Om bredden är för stor (mer än 16:9)
-            pdM->window_width = pdM->window_height * 16 / 9;
-        } else {
-            // Om höjden är för stor (mer än 9:16)
-            pdM->window_height = pdM->window_width * 9 / 16;
-        }
-    }
-    */
-
-    pdM->speed_x = pdM->window_width / 20;
-    pdM->speed_y = pdM->window_height / 20;
-
     // Create window with explicit cursor support
-    pGame->pWindow = SDL_CreateWindow("Lavan?", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, pdM->window_width, pdM->window_height, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    pGame->pWindow = SDL_CreateWindow("Lavan?", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
     if (!pGame->pWindow)
     {
         printf("Error: %s\n", SDL_GetError());
         cleanUp(pGame);
         return 0;
     }
+    SDL_GetWindowSize(pGame->pWindow, &pdM->window_width, &pdM->window_height);
+
 
     pGame->pJumpSound = NULL; // Initialize jump sound to NULL
 
