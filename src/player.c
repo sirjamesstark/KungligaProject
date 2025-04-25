@@ -325,7 +325,8 @@ void drawPlayer(Player *pPlayer)
     }
 }
 
-void destroyPlayer(Player *pPlayer) {
+void destroyPlayer(Player *pPlayer) 
+{
     if (pPlayer == NULL) return;
     if (pPlayer->pTexture != NULL) {
         SDL_DestroyTexture(pPlayer->pTexture);
