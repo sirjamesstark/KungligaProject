@@ -65,7 +65,7 @@ SDL_Rect getRectBlock(Block *pBlock)
     return pBlock->rect;
 }
 
-void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamX, int CamY)
+void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY)
 {
     for (int row = 0; row < BOX_ROW; row++)
     {

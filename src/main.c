@@ -9,14 +9,13 @@
 #include "../include/menu.h"
 #include "../include/platform.h"
 #include "../include/player.h"
-#include "../include/renderer.h"
+// #include "../include/renderer.h"
 #include "../include/theme.h"
 #include "../include/maps.h"
 #include "../include/camera.h"
 #include <SDL_net.h>
 
 #define NUM_MENU 2
-#define MAX_NROFPLAYERS 4
 
 typedef struct
 {
@@ -149,12 +148,11 @@ int main(int argc, char *argv[])
         setSpeed(up, down, left, right, &goUp, &goDown, &goLeft, &goRight, &upCounter, onGround, game.pPlayer[0], dM.speed_x, dM.speed_y);
         updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround, &goUp, &goDown, &goLeft, &goRight, p, p2, &is_server, srvadd, &sd);
         // updatePlayer(game.pPlayer, blockRect);
-        int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer), PlyY = getPlyY(game.pPlayer);
+        int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]), PlyY = getPlyY(game.pPlayer[0]);
         updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground, CamX, CamY);
         buildTheMap(gameMap, game.pBlock, CamY);
-        drawPlayer(game.pPlayer, CamX, CamY, dM.window_width, dM.window_height);
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
             drawPlayer(game.pPlayer[i], CamX, CamY, dM.window_width, dM.window_height);
