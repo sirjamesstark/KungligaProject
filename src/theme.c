@@ -4,23 +4,25 @@
 #include <stdbool.h>
 #include "../include/theme.h"
 
-struct background {
+struct background
+{
     SDL_Renderer *pRenderer;
     SDL_Texture *pTexture;
     SDL_Rect rect;
 };
 
-Mix_Music* initiateMusic()
+Mix_Music *initiateMusic()
 {
     Mix_Music *pGameMusic = Mix_LoadMUS("resources/game_music.wav");
-    if (!pGameMusic) {
+    if (!pGameMusic)
+    {
         printf("Failed to load game music! SDL_mixer Error: %s\n", Mix_GetError());
         return 0;
-    } 
-    else 
+    }
+    else
     {
-        Mix_VolumeMusic((int)(MIX_MAX_VOLUME * 0.5));  // Set volume to 50%
-        Mix_PlayMusic(pGameMusic, -1);  // -1 means loop infinitely
+        Mix_VolumeMusic((int)(MIX_MAX_VOLUME * 0.5)); // Set volume to 50%
+        Mix_PlayMusic(pGameMusic, -1);                // -1 means loop infinitely
         return pGameMusic;
     }
 }
@@ -28,7 +30,7 @@ Mix_Music* initiateMusic()
 Background *createBackground(SDL_Renderer *pRenderer, int window_width, int window_height)
 {
     Background *pBackground = malloc(sizeof(struct background));
-    if (!pBackground) 
+    if (!pBackground)
     {
         printf("Failed to allocate memory for background\n");
         return NULL;
@@ -49,18 +51,21 @@ Background *createBackground(SDL_Renderer *pRenderer, int window_width, int wind
         free(pBackground);
         return 0;
     }
-    pBackground->rect = (SDL_Rect){0,0,window_width,window_height};
+    pBackground->rect = (SDL_Rect){0, 0, window_width, window_height};
     return pBackground;
 }
 
-void drawBackground(Background *pBackground)
+void drawBackground(Background *pBackground, int CamX, int CamY)
 {
+
+    // pBackground->rect.x = -CamX;
+    // pBackground->rect.y = -CamY;
     SDL_RenderCopy(pBackground->pRenderer, pBackground->pTexture, NULL, &(pBackground->rect));
 }
 
 void destroyBackground(Background *pBackground)
 {
-    if (pBackground->pTexture != NULL) 
+    if (pBackground->pTexture != NULL)
     {
         SDL_DestroyTexture(pBackground->pTexture);
         pBackground->pTexture = NULL;
@@ -70,5 +75,4 @@ void destroyBackground(Background *pBackground)
         free(pBackground);
         pBackground = NULL;
     }
-    
 }
