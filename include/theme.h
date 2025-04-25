@@ -3,8 +3,8 @@
 
 typedef struct background Background;
 
-Mix_Music* initiateMusic();
+Mix_Music *initiateMusic();
 Background *createBackground(SDL_Renderer *pRenderer, int window_width, int window_height);
-void drawBackground(Background *pBackground);
+void drawBackground(Background *pBackground, int CamX, int CamY);
 void destroyBackground(Background *pBackground);
 #endif

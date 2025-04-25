@@ -13,6 +13,7 @@
 #include "../include/renderer.h"
 #include "../include/theme.h"
 #include "../include/maps.h"
+#include "../include/camera.h"
 
 #define NUM_MENU 2
 #define MAX_NROFPLAYERS 4
@@ -28,6 +29,7 @@ typedef struct
     Block *pBlock;
     Maps *pMaps[NROFMAPS];
     Background *pBackground;
+    Camera *pCamera;
 } Game;
 
 typedef struct
@@ -66,6 +68,8 @@ int main(int argc, char *argv[])
     game.pBlock = createBlock(game.pBlockImage, dM.window_width, dM.window_height);
     SDL_Rect blockRect = getRectBlock(game.pBlock);
     game.pPlayer = createPlayer(blockRect, (&game)->pRenderer, dM.window_width, dM.window_height);
+    game.pCamera = camera(dM.window_width, dM.window_height);
+
     if (!game.pGameMusic || !game.pBackground || !game.pBlockImage || !game.pPlayer)
     {
         cleanUp(&game);
@@ -99,10 +103,13 @@ int main(int argc, char *argv[])
         goDown = goLeft = goRight = goUp = 0;
         setSpeed(up, down, left, right, &goUp, &goDown, &goLeft, &goRight, &upCounter, onGround, game.pPlayer, dM.speed_x, dM.speed_y);
         updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround, &goUp, &goDown, &goLeft, &goRight);
+        // updatePlayer(game.pPlayer, blockRect);
+        int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer), PlyY = getPlyY(game.pPlayer);
+        updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
-        drawBackground(game.pBackground);
-        buildTheMap(gameMap, game.pBlock);
-        drawPlayer(game.pPlayer);
+        drawBackground(game.pBackground, CamX, CamY);
+        buildTheMap(gameMap, game.pBlock, CamY);
+        drawPlayer(game.pPlayer, CamX, CamY, dM.window_width, dM.window_height);
 
         SDL_RenderPresent(game.pRenderer);
         SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
@@ -348,6 +355,7 @@ void cleanUp(Game *pGame)
         }
     }
     */
+    destroyCamera(pGame->pCamera);
 
     // Här lägger vi till mer kod som frigör tidigare allokerat minne ifall det behövs (t.ex. för platforms sen)
     destroyBlock(pGame->pBlock);
