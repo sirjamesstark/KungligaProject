@@ -21,4 +21,5 @@ void destroyPlayer(Player *pPlayer);
 void setSpeed(bool up,bool down,bool left,bool right,bool *pGoUp,bool *pGoDown,bool *pGoLeft,bool *pGoRight,
                 int *pUpCounter, bool onGround,Player *pPlayer,int speedX,int speedY);
 
+
 #endif

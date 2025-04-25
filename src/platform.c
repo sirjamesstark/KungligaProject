@@ -51,7 +51,8 @@ Block *createBlock(BlockImage *pBlockImage, int window_width, int window_height)
     return pBlock;
 }
 
-SDL_Rect getRectBlock(Block *pBlock){
+SDL_Rect getRectBlock(Block *pBlock)
+{
     return pBlock->rect;
 }
 
