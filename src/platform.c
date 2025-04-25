@@ -24,6 +24,8 @@ BlockImage *createBlockImage(SDL_Renderer *pRenderer)
     if (pBlockImage == NULL)
     {
         pBlockImage = malloc(sizeof(struct blockImage));
+        if (pBlockImage == NULL)
+            return NULL;
         SDL_Surface *surface = IMG_Load("resources/box8.png");
         if (!surface)
         {
@@ -45,6 +47,8 @@ BlockImage *createBlockImage(SDL_Renderer *pRenderer)
 Block *createBlock(BlockImage *pBlockImage, int window_width, int window_height)
 {
     Block *pBlock = malloc(sizeof(struct blocks));
+    if (pBlock == NULL)
+        return NULL;
     pBlock->pRenderer = pBlockImage->pRenderer;
     pBlock->pTexture = pBlockImage->pTexture;
     pBlock->window_width = window_width;
@@ -61,9 +65,8 @@ SDL_Rect getRectBlock(Block *pBlock)
     return pBlock->rect;
 }
 
-void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY)
+void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamX, int CamY)
 {
-
     for (int row = 0; row < BOX_ROW; row++)
     {
         for (int col = 0; col < BOX_COL; col++)
