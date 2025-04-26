@@ -3,8 +3,9 @@
 
 #include <SDL_net.h>
 
-#define BOX_ROW 22
+#define BOX_ROW 220
 #define BOX_COL 26
+#define BOX_SCREEN_Y 22
 #define COUNTER 20
 #define MAX_NROFPLAYERS 2
 #define PLAYER_SCALEFACTOR 0.04f

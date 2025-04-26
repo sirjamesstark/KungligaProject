@@ -97,7 +97,7 @@ Block *createBlock(SDL_Renderer *pRenderer, SDL_Rect *pGameAreaRect)
     pBlock->dstRect.w = pBlock->srcRect.w;
     pBlock->dstRect.h = pBlock->srcRect.h;
     pBlock->dstRect.w = pBlock->pGameAreaRect->w / BOX_COL;
-    pBlock->dstRect.h = pBlock->pGameAreaRect->h / BOX_ROW;
+    pBlock->dstRect.h = pBlock->pGameAreaRect->h / BOX_SCREEN_Y;
 
     return pBlock;
 }
@@ -106,16 +106,17 @@ SDL_Rect getBlockRect(Block *pBlock) {
     return pBlock->dstRect;
 }
 
-void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY)
+void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY,int window_height)
 {
-    for (int row = 0; row < BOX_ROW; row++)
+    for (int row = BOX_ROW - 1; row > 0; row--)
     {
         for (int col = 0; col < BOX_COL; col++)
         {
             if (gameMap[row][col] != 0)
             {
                 pBlock->dstRect.x = col * pBlock->dstRect.w;
-                pBlock->dstRect.y = row * pBlock->dstRect.h;
+                // pBlock->dstRect.y = row * pBlock->dstRect.h;
+                pBlock->dstRect.y = window_height - (BOX_ROW - row) * pBlock->dstRect.h;
                 SDL_Rect tempRect = pBlock->dstRect;
                 tempRect.y -= CamY;
                 drawBlock(pBlock, gameMap[row][col], &tempRect); 

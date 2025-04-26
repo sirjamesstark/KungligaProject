@@ -146,7 +146,8 @@ SDL_Surface *initPlayerFrames(Player *pPlayer, int player_ID) {
 
 void initStartPosition(Player *pPlayer, SDL_Rect blockRect) {
     pPlayer->oldX = pPlayer->x = blockRect.w * 2;
-    pPlayer->oldX = pPlayer->y = pPlayer->pGameAreaRect->h - (pPlayer->pGameAreaRect->h - (BOX_ROW * blockRect.h)) - blockRect.h * 2 - pPlayer->dstRect.h;
+    pPlayer->oldY = pPlayer->y = BOX_SCREEN_Y * blockRect.h - blockRect.h * 2 - pPlayer->dstRect.h;
+    // testing pPlayer->oldY = pPlayer->y = 0;
     /*
     pPlayer->dstRect.x = (float)(pPlayer->pGameAreaRect->x + blockRect.w / 2);  // Börjar i mitten av ett block i x-led
     pPlayer->dstRect.y = (float)(pPlayer->pGameAreaRect->y + pPlayer->pGameAreaRect->h - blockRect.h - pPlayer->frames.characterRect.h);
@@ -220,11 +221,17 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
                   int *pUpCounter, bool *pOnGround, bool *pGoUp, bool *pGoDown, bool *pGoLeft, bool *pGoRight, UDPpacket *p,
                   UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd)
 {
-    float space = pPlayer[0]->pGameAreaRect->h - blockRect.h * (BOX_ROW - 1);
+    float space = pPlayer[0]->pGameAreaRect->h - blockRect.h * (BOX_SCREEN_Y - 1), checkY;
     pPlayer[0]->active = true;
     pPlayer[0]->x += pPlayer[0]->vx * 5 * deltaTime;
     pPlayer[0]->y += pPlayer[0]->vy * deltaTime;
-
+    // checkY = pPlayer[0]->y += pPlayer[0]->vy * deltaTime;
+    // while (checkY < 0)
+    // {
+    //     checkY += blockRect.h * BOX_SCREEN_Y;
+    //     printf("%f\n",checkY);
+    // }
+    
     networkUDP(pPlayer, p, p2, pIs_server, srvadd, pSd, space);
 
     // Check Collision

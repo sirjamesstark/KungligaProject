@@ -90,9 +90,6 @@ int main(int argc, char *argv[])
         return 1;
     }
     playMusic(game.pGameMusic);
-    // Debug: Kontrollera om musiken laddades OCH spelas
-    printf("[DEBUG] Music loaded: %s\n", game.pGameMusic ? "YES" : "NO");
-    printf("[DEBUG] Music playing: %s\n", Mix_PlayingMusic() ? "YES" : "NO");
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
     bool onGround = true;
@@ -126,7 +123,7 @@ int main(int argc, char *argv[])
         updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground, CamX, CamY);
-        buildTheMap(gameMap, game.pBlock, CamY);
+        buildTheMap(gameMap, game.pBlock, CamY,display.window_height);
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
             drawPlayer(game.pPlayer[i], CamX, CamY);
