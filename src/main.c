@@ -38,75 +38,35 @@ typedef struct
     SDL_Rect topRect, bottomRect, leftRect, rightRect;
 } DisplayMode;
 
-int initiate(DisplayMode *pDisplay, Game *pGame);
 
+void initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char *argv[]);
+void initGame(Game *pGame);
 void initDisplayMode(Game *pGame, DisplayMode *pDisplay);
-void drawScreenPadding(Game *pGame, DisplayMode *pDisplay);
 
-
+void drawScreenPadding(Game *pGame, DisplayMode *pDisplay);     // Anropas ej i nuläget - kan komma att användas senare 
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, bool *pUp, bool *pDown, bool *pLeft, bool *pRight);
-void cleanUp(Game *pGame);
+void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2);
+void cleanUpGame(Game *pGame);
+
 
 int main(int argc, char *argv[])
 {
+    Game game = {0};
+    DisplayMode display = {0};
+    bool startGame = false;
+
     UDPsocket sd;
     IPaddress srvadd;
     UDPpacket *p, *p2;
-
     int is_server = 0;
-    if (argc > 1 && strcmp(argv[1], "server") == 0)
-    {
-        is_server = 1;
-    }
-
-    if (SDLNet_Init() < 0)
-    {
-        fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
-        exit(EXIT_FAILURE);
-    }
-
-    if (!(sd = SDLNet_UDP_Open(is_server ? 2000 : 0)))
-    {
-        fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
-        exit(EXIT_FAILURE);
-    }
-
-    if (!is_server)
-    {
-        if (argc < 3)
-        {
-            fprintf(stderr, "Usage: %s client <server_ip>\n", argv[0]);
-            exit(EXIT_FAILURE);
-        }
-
-        if (SDLNet_ResolveHost(&srvadd, argv[2], 2000) == -1)
-        {
-            fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    if (!((p = SDLNet_AllocPacket(512)) && (p2 = SDLNet_AllocPacket(512))))
-    {
-        fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
-        exit(EXIT_FAILURE);
-    }
-
-    Game game = {0};
-    DisplayMode display = {0};
-
-    bool startGame = false;
-
-    if (!initiate(&display, &game))
-    {
-        return 1;
-    }
-
+    
+    initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, argv);
+    initGame(&game);
     initDisplayMode(&game, &display);
 
     if (!showMenu(game.pRenderer, display.window_width, display.window_height))
     {
-        cleanUp(&game);
+        cleanUpGame(&game);
         return 1;
     }
 
@@ -122,7 +82,7 @@ int main(int argc, char *argv[])
     game.pCamera = camera(display.window_width, display.window_height);
     if (!game.pGameMusic || !game.pBackground || !game.pBlockImage || !game.pPlayer)
     {
-        cleanUp(&game);
+        cleanUpGame(&game);
         return 1;
     }
     bool closeWindow = false;
@@ -167,17 +127,69 @@ int main(int argc, char *argv[])
         SDL_RenderPresent(game.pRenderer);
         SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
     }
-    cleanUp(&game);
+
+    cleanUpNetwork(&sd, &p, &p2);
+    cleanUpGame(&game);
     return 0;
 }
 
-int initiate(DisplayMode *pDisplay, Game *pGame)
+void initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char *argv[]) {
+    *is_server = 0;
+
+    if (argc > 1 && strcmp(argv[1], "server") == 0)
+    {
+        *is_server = 1;
+    }
+
+    if (SDLNet_Init() < 0)
+    {
+        fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    *sd = NULL;
+    *p = NULL;
+    *p2 = NULL;
+
+    if (!(*sd = SDLNet_UDP_Open(*is_server ? 2000 : 0)))
+    {
+        fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
+        cleanUpNetwork(sd, p, p2);
+        exit(EXIT_FAILURE);
+    }
+
+    if (!(*is_server))
+    {
+        if (argc < 3)
+        {
+            fprintf(stderr, "Usage: %s client <server_ip>\n", argv[0]);
+            cleanUpNetwork(sd, p, p2);
+            exit(EXIT_FAILURE);
+        }
+
+        if (SDLNet_ResolveHost(srvadd, argv[2], 2000) == -1)
+        {
+            fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
+            cleanUpNetwork(sd, p, p2);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (!((*p = SDLNet_AllocPacket(512)) && (*p2 = SDLNet_AllocPacket(512))))
+    {
+        fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
+        cleanUpNetwork(sd, p, p2);
+        exit(EXIT_FAILURE);
+    }
+}
+
+void initGame(Game *pGame)
 {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) != 0)
     {
         printf("Error: %s\n", SDL_GetError());
-        cleanUp(pGame);
-        return 0;
+        cleanUpGame(pGame);
+        exit(EXIT_FAILURE);
     }
 
     // Initialize SDL_image for PNG loading
@@ -185,24 +197,24 @@ int initiate(DisplayMode *pDisplay, Game *pGame)
     if (!(IMG_Init(iconImage) & iconImage))
     {
         printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-        cleanUp(pGame);
-        return 0;
+        cleanUpGame(pGame);
+        exit(EXIT_FAILURE);
     }
 
     // Initialize SDL_mixer
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
     {
         printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-        cleanUp(pGame);
-        return 0;
+        cleanUpGame(pGame);
+        exit(EXIT_FAILURE);
     }
 
     // Initialize SDL_mixer
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
     {
         printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-        cleanUp(pGame);
-        return 0;
+        cleanUpGame(pGame);
+        exit(EXIT_FAILURE);
     }
 
     // Create window with explicit cursor support
@@ -210,8 +222,8 @@ int initiate(DisplayMode *pDisplay, Game *pGame)
     if (!pGame->pWindow)
     {
         printf("Error: %s\n", SDL_GetError());
-        cleanUp(pGame);
-        return 0;
+        cleanUpGame(pGame);
+        exit(EXIT_FAILURE);
     }
 
     pGame->pJumpSound = NULL; // Initialize jump sound to NULL
@@ -220,8 +232,8 @@ int initiate(DisplayMode *pDisplay, Game *pGame)
     if (!pGame->pRenderer)
     {
         printf("Error: %s\n", SDL_GetError());
-        cleanUp(pGame);
-        return 0;
+        cleanUpGame(pGame);
+        exit(EXIT_FAILURE);
     }
 
     // Initialize SDL_image for cursor loading
@@ -229,8 +241,8 @@ int initiate(DisplayMode *pDisplay, Game *pGame)
     if (!(IMG_Init(cursor) & cursor))
     {
         printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-        cleanUp(pGame);
-        return 0;
+        cleanUpGame(pGame);
+        exit(EXIT_FAILURE);
     }
 
     // Force cursor to be visible first
@@ -264,8 +276,67 @@ int initiate(DisplayMode *pDisplay, Game *pGame)
     {
         SDL_ShowCursor(SDL_ENABLE);
     }
+}
 
-    return 1;
+void initDisplayMode(Game *pGame, DisplayMode *pDisplay) {
+    SDL_GetWindowSize(pGame->pWindow, &pDisplay->window_width, &pDisplay->window_height);
+    float currentAspect = (float)pDisplay->window_width / pDisplay->window_height;
+
+    pDisplay->modified_width = pDisplay->window_width;
+    pDisplay->modified_height = pDisplay->window_height;
+
+    if (currentAspect > TARGET_ASPECT_RATIO) { // Om skärmen är "för bred" - fyller ut med svarta fält på sidor
+        int targetWidth = (int)(pDisplay->window_height * TARGET_ASPECT_RATIO);
+        int sidePadding = (pDisplay->window_width - targetWidth) / 2;
+
+        pDisplay->leftRect = (SDL_Rect){0, 0, sidePadding, pDisplay->window_height};
+        pDisplay->rightRect = (SDL_Rect){pDisplay->window_width - sidePadding, 0, sidePadding, pDisplay->window_height};
+        pDisplay->topRect = (SDL_Rect){0, 0, 0, 0};
+        pDisplay->bottomRect = (SDL_Rect){0, 0, 0, 0};
+
+        pDisplay->modified_width = targetWidth;
+    }
+    else if (currentAspect < TARGET_ASPECT_RATIO) { // Om skärmen är "för hög" - fyller ut med svarta fält ovanför och under
+        int targetHeight = (int)(pDisplay->window_width / TARGET_ASPECT_RATIO);
+        int verticalPadding = (pDisplay->window_height - targetHeight) / 2;
+
+        pDisplay->topRect = (SDL_Rect){0, 0, pDisplay->window_width, verticalPadding};
+        pDisplay->bottomRect = (SDL_Rect){0, pDisplay->window_height - verticalPadding, pDisplay->window_width, verticalPadding};
+        pDisplay->leftRect = (SDL_Rect){0, 0, 0, 0};
+        pDisplay->rightRect = (SDL_Rect){0, 0, 0, 0};
+
+        pDisplay->modified_height = targetHeight;
+    }
+    else {  // Rätt aspect ratio – inga svarta fält behövs
+        pDisplay->topRect = pDisplay->bottomRect = pDisplay->leftRect = pDisplay->rightRect = (SDL_Rect){0, 0, 0, 0};
+    }
+
+    // Skrivs ut i terminalen för att kontrollera siffrorna - behåll nu tills vidare
+    printf("Original window width: %d \n", pDisplay->window_width);
+    printf("Original window height: %d \n", pDisplay->window_height);
+    printf("Modified window width: %d \n", pDisplay->modified_width); 
+    printf("Modified window height: %d \n", pDisplay->modified_height);
+    printf("topRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->topRect.x, pDisplay->topRect.y, pDisplay->topRect.w, pDisplay->topRect.h);
+    printf("bottomRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->bottomRect.x, pDisplay->bottomRect.y, pDisplay->bottomRect.w, pDisplay->bottomRect.h);
+    printf("leftRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->leftRect.x, pDisplay->leftRect.y, pDisplay->leftRect.w, pDisplay->leftRect.h);
+    printf("rightRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->rightRect.x, pDisplay->rightRect.y, pDisplay->rightRect.w, pDisplay->rightRect.h);
+}
+
+void drawScreenPadding(Game *pGame, DisplayMode *pDisplay) {
+    SDL_SetRenderDrawColor(pGame->pRenderer, 0, 0, 0, 255);
+    
+    if (pDisplay->topRect.w > 0 && pDisplay->topRect.h > 0) {
+        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->topRect);
+    }
+    if (pDisplay->bottomRect.w > 0 && pDisplay->bottomRect.h > 0) {
+        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->bottomRect);
+    }
+    if (pDisplay->leftRect.w > 0 && pDisplay->leftRect.h > 0) {
+        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->leftRect);
+    }
+    if (pDisplay->rightRect.w > 0 && pDisplay->rightRect.h > 0) {
+        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->rightRect);
+    }
 }
 
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
@@ -345,69 +416,23 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
     }
 }
 
-
-void initDisplayMode(Game *pGame, DisplayMode *pDisplay) {
-    SDL_GetWindowSize(pGame->pWindow, &pDisplay->window_width, &pDisplay->window_height);
-    float currentAspect = (float)pDisplay->window_width / pDisplay->window_height;
-
-    pDisplay->modified_width = pDisplay->window_width;
-    pDisplay->modified_height = pDisplay->window_height;
-
-    if (currentAspect > TARGET_ASPECT_RATIO) { // Om skärmen är "för bred" - fyller ut med svarta fält på sidor
-        int targetWidth = (int)(pDisplay->window_height * TARGET_ASPECT_RATIO);
-        int sidePadding = (pDisplay->window_width - targetWidth) / 2;
-
-        pDisplay->leftRect = (SDL_Rect){0, 0, sidePadding, pDisplay->window_height};
-        pDisplay->rightRect = (SDL_Rect){pDisplay->window_width - sidePadding, 0, sidePadding, pDisplay->window_height};
-        pDisplay->topRect = (SDL_Rect){0, 0, 0, 0};
-        pDisplay->bottomRect = (SDL_Rect){0, 0, 0, 0};
-
-        pDisplay->modified_width = targetWidth;
+void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2) {
+    if (*p != NULL) {
+        SDLNet_FreePacket(*p);
+        *p = NULL; 
     }
-    else if (currentAspect < TARGET_ASPECT_RATIO) { // Om skärmen är "för hög" - fyller ut med svarta fält ovanför och under
-        int targetHeight = (int)(pDisplay->window_width / TARGET_ASPECT_RATIO);
-        int verticalPadding = (pDisplay->window_height - targetHeight) / 2;
-
-        pDisplay->topRect = (SDL_Rect){0, 0, pDisplay->window_width, verticalPadding};
-        pDisplay->bottomRect = (SDL_Rect){0, pDisplay->window_height - verticalPadding, pDisplay->window_width, verticalPadding};
-        pDisplay->leftRect = (SDL_Rect){0, 0, 0, 0};
-        pDisplay->rightRect = (SDL_Rect){0, 0, 0, 0};
-
-        pDisplay->modified_height = targetHeight;
+    if (*p2 != NULL) {
+        SDLNet_FreePacket(*p2);
+        *p2 = NULL; 
     }
-    else {  // Rätt aspect ratio – inga svarta fält behövs
-        pDisplay->topRect = pDisplay->bottomRect = pDisplay->leftRect = pDisplay->rightRect = (SDL_Rect){0, 0, 0, 0};
+    if (*sd != NULL) {
+        SDLNet_UDP_Close(*sd);
+        *sd = NULL; 
     }
-
-    // Behåll tills vidare, skrivs ut i terminalen för att kontrollera siffrorna
-    printf("Original window width: %d \n", pDisplay->window_width);
-    printf("Original window height: %d \n", pDisplay->window_height);
-    printf("Modified window width: %d \n", pDisplay->modified_width); 
-    printf("Modified window height: %d \n", pDisplay->modified_height);
-    printf("topRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->topRect.x, pDisplay->topRect.y, pDisplay->topRect.w, pDisplay->topRect.h);
-    printf("bottomRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->bottomRect.x, pDisplay->bottomRect.y, pDisplay->bottomRect.w, pDisplay->bottomRect.h);
-    printf("leftRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->leftRect.x, pDisplay->leftRect.y, pDisplay->leftRect.w, pDisplay->leftRect.h);
-    printf("rightRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->rightRect.x, pDisplay->rightRect.y, pDisplay->rightRect.w, pDisplay->rightRect.h);
+    SDLNet_Quit();
 }
 
-void drawScreenPadding(Game *pGame, DisplayMode *pDisplay) {
-    SDL_SetRenderDrawColor(pGame->pRenderer, 0, 0, 0, 255);
-    
-    if (pDisplay->topRect.w > 0 && pDisplay->topRect.h > 0) {
-        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->topRect);
-    }
-    if (pDisplay->bottomRect.w > 0 && pDisplay->bottomRect.h > 0) {
-        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->bottomRect);
-    }
-    if (pDisplay->leftRect.w > 0 && pDisplay->leftRect.h > 0) {
-        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->leftRect);
-    }
-    if (pDisplay->rightRect.w > 0 && pDisplay->rightRect.h > 0) {
-        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->rightRect);
-    }
-}
-
-void cleanUp(Game *pGame)
+void cleanUpGame(Game *pGame)
 {
     if (pGame == NULL)
         return;
