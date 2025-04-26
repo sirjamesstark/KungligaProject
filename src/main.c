@@ -16,6 +16,7 @@
 
 #define NUM_MENU 2
 #define TARGET_ASPECT_RATIO (16.0f / 9.0f)
+#define GAMEAREA_SCALEFACTOR 1.0f
 
 typedef struct
 {
@@ -34,8 +35,7 @@ typedef struct
 typedef struct
 {
     int window_width, window_height;
-    int modified_width, modified_height;
-    SDL_Rect topRect, bottomRect, leftRect, rightRect;
+    SDL_Rect gameAreaRect;
 } DisplayMode;
 
 
@@ -43,7 +43,6 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2,
 int initGame(Game *pGame);
 void initDisplayMode(Game *pGame, DisplayMode *pDisplay);
 
-void drawScreenPadding(Game *pGame, DisplayMode *pDisplay);     // Anropas ej i nuläget - kan komma att användas senare 
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, bool *pUp, bool *pDown, bool *pLeft, bool *pRight);
 void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2);
 void cleanUpGame(Game *pGame);
@@ -68,23 +67,24 @@ int main(int argc, char *argv[])
     
     initDisplayMode(&game, &display);
 
-    if (!showMenu(game.pRenderer, display.window_width, display.window_height))
+    if (!showMenu(game.pRenderer, display.gameAreaRect.w, display.gameAreaRect.h))
     {
         cleanUpGame(&game);
         return 1;
     }
 
     game.pGameMusic = initiateMusic(game.pGameMusic);
-    game.pBackground = createBackground(game.pRenderer, display.window_width, display.window_height);
+    game.pBackground = createBackground(game.pRenderer, display.gameAreaRect.w, display.gameAreaRect.h);
     //game.pBlockImage = createBlockImage(game.pRenderer);
-    game.pBlock = createBlock(game.pRenderer, display.window_width, display.window_height);
-    SDL_Rect blockRect = getRectBlock(game.pBlock);
+    game.pBlock = createBlock(game.pRenderer, &display.gameAreaRect);
+    SDL_Rect blockRect = getBlockRect(game.pBlock);
     for (int i = 0; i < MAX_NROFPLAYERS; i++)
     {
-        game.pPlayer[i] = createPlayer(i, blockRect, game.pRenderer, display.window_width, display.window_height);
+        game.pPlayer[i] = createPlayer(i, game.pRenderer, &display.gameAreaRect);
+        initStartPosition(game.pPlayer[i], blockRect);
     }
-    game.pCamera = camera(display.window_width, display.window_height);
-    if (!game.pGameMusic || !game.pBackground || !game.pBlock || !game.pPlayer)
+    game.pCamera = camera(display.gameAreaRect.w, display.gameAreaRect.h);
+    if (!game.pGameMusic || !game.pBackground || !game.pBlock || !game.pPlayer[0])
     {
         cleanUpGame(&game);
         return 1;
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
         buildTheMap(gameMap, game.pBlock, CamY);
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
-            drawPlayer(game.pPlayer[i], CamX, CamY, display.window_width, display.window_height);
+            drawPlayer(game.pPlayer[i], CamX, CamY);
         }
 
         SDL_RenderPresent(game.pRenderer);
@@ -279,62 +279,28 @@ int initGame(Game *pGame)
 void initDisplayMode(Game *pGame, DisplayMode *pDisplay) {
     SDL_GetWindowSize(pGame->pWindow, &pDisplay->window_width, &pDisplay->window_height);
     float currentAspect = (float)pDisplay->window_width / pDisplay->window_height;
+    int targetWidth = pDisplay->window_width;
+    int targetHeight = pDisplay->window_height;
 
-    pDisplay->modified_width = pDisplay->window_width;
-    pDisplay->modified_height = pDisplay->window_height;
-
-    if (currentAspect > TARGET_ASPECT_RATIO) { // Om skärmen är "för bred" - fyller ut med svarta fält på sidor
-        int targetWidth = (int)(pDisplay->window_height * TARGET_ASPECT_RATIO);
-        int sidePadding = (pDisplay->window_width - targetWidth) / 2;
-
-        pDisplay->leftRect = (SDL_Rect){0, 0, sidePadding, pDisplay->window_height};
-        pDisplay->rightRect = (SDL_Rect){pDisplay->window_width - sidePadding, 0, sidePadding, pDisplay->window_height};
-        pDisplay->topRect = (SDL_Rect){0, 0, 0, 0};
-        pDisplay->bottomRect = (SDL_Rect){0, 0, 0, 0};
-
-        pDisplay->modified_width = targetWidth;
+    if (currentAspect > TARGET_ASPECT_RATIO) {
+        targetWidth = (int)(pDisplay->window_height * TARGET_ASPECT_RATIO + 0.5f);
     }
-    else if (currentAspect < TARGET_ASPECT_RATIO) { // Om skärmen är "för hög" - fyller ut med svarta fält ovanför och under
-        int targetHeight = (int)(pDisplay->window_width / TARGET_ASPECT_RATIO);
-        int verticalPadding = (pDisplay->window_height - targetHeight) / 2;
-
-        pDisplay->topRect = (SDL_Rect){0, 0, pDisplay->window_width, verticalPadding};
-        pDisplay->bottomRect = (SDL_Rect){0, pDisplay->window_height - verticalPadding, pDisplay->window_width, verticalPadding};
-        pDisplay->leftRect = (SDL_Rect){0, 0, 0, 0};
-        pDisplay->rightRect = (SDL_Rect){0, 0, 0, 0};
-
-        pDisplay->modified_height = targetHeight;
-    }
-    else {  // Rätt aspect ratio – inga svarta fält behövs
-        pDisplay->topRect = pDisplay->bottomRect = pDisplay->leftRect = pDisplay->rightRect = (SDL_Rect){0, 0, 0, 0};
+    else if (currentAspect < TARGET_ASPECT_RATIO) {
+        targetHeight = (int)(pDisplay->window_width / TARGET_ASPECT_RATIO + 0.5f);
     }
 
-    // Skrivs ut i terminalen för att kontrollera siffrorna - behåll nu tills vidare
+    pDisplay->gameAreaRect.w = (int)(targetWidth * GAMEAREA_SCALEFACTOR + 0.5f);
+    pDisplay->gameAreaRect.h = (int)(targetHeight * GAMEAREA_SCALEFACTOR + 0.5f);
+    pDisplay->gameAreaRect.x = (int)((pDisplay->window_width - targetWidth * GAMEAREA_SCALEFACTOR) / 2 + 0.5f);
+    pDisplay->gameAreaRect.y = (int)((pDisplay->window_height - targetHeight * GAMEAREA_SCALEFACTOR) / 2 + 0.5f);    
+    
     printf("Original window width: %d \n", pDisplay->window_width);
     printf("Original window height: %d \n", pDisplay->window_height);
-    printf("Modified window width: %d \n", pDisplay->modified_width); 
-    printf("Modified window height: %d \n", pDisplay->modified_height);
-    printf("topRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->topRect.x, pDisplay->topRect.y, pDisplay->topRect.w, pDisplay->topRect.h);
-    printf("bottomRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->bottomRect.x, pDisplay->bottomRect.y, pDisplay->bottomRect.w, pDisplay->bottomRect.h);
-    printf("leftRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->leftRect.x, pDisplay->leftRect.y, pDisplay->leftRect.w, pDisplay->leftRect.h);
-    printf("rightRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->rightRect.x, pDisplay->rightRect.y, pDisplay->rightRect.w, pDisplay->rightRect.h);
-}
+    printf("gameAreaRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->gameAreaRect.x, pDisplay->gameAreaRect.y, pDisplay->gameAreaRect.w, pDisplay->gameAreaRect.h);
 
-void drawScreenPadding(Game *pGame, DisplayMode *pDisplay) {
-    SDL_SetRenderDrawColor(pGame->pRenderer, 0, 0, 0, 255);
-    
-    if (pDisplay->topRect.w > 0 && pDisplay->topRect.h > 0) {
-        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->topRect);
-    }
-    if (pDisplay->bottomRect.w > 0 && pDisplay->bottomRect.h > 0) {
-        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->bottomRect);
-    }
-    if (pDisplay->leftRect.w > 0 && pDisplay->leftRect.h > 0) {
-        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->leftRect);
-    }
-    if (pDisplay->rightRect.w > 0 && pDisplay->rightRect.h > 0) {
-        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->rightRect);
-    }
+    // Dessa raderna under ska tas bort så småningom! Men vi har detta tills vidare!
+    pDisplay->gameAreaRect.w = pDisplay->window_width;
+    pDisplay->gameAreaRect.h = pDisplay->window_height;
 }
 
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
@@ -491,7 +457,5 @@ void cleanUpGame(Game *pGame)
             pGame->pMaps[i] = NULL; // skyddar mot dubbel-free
         }
     }
-
-    // Nu har jag lagt in blocks
     SDL_Quit();
 }
