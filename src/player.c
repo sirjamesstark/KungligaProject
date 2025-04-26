@@ -210,37 +210,37 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
     networkUDP(pPlayer, p, p2, pIs_server, srvadd, pSd, space);
 
     // Check Collision
-    if ((*pGoLeft) == 1)
+    if ((*pGoLeft) != 0)
     {
         // printf("y: %d\n", (((int)pPlayer->y - 4) + pPlayer->playerRect.h)/blockRect.h);
         // printf("x: %d\n", ((int)pPlayer->x)/blockRect.w);
-        if (gameMap[(int)(pPlayer[0]->y + 22 + pPlayer[0]->frames.character_h) / blockRect.h][((int)pPlayer[0]->x + 25) / blockRect.w] == 1) // Bottom edge blocked on left?
+        if (gameMap[(int)(pPlayer[0]->y + 22 + pPlayer[0]->frames.character_h) / blockRect.h][((int)pPlayer[0]->x + 25) / blockRect.w] != 0) // Bottom edge blocked on left?
         {
             pPlayer[0]->x -= (pPlayer[0]->vx * 5 * deltaTime); // Dont move
         }
-        else if (gameMap[((int)pPlayer[0]->y + 25) / blockRect.h][((int)pPlayer[0]->x + 25) / blockRect.w] == 1) // Top edge blocked on left?
+        else if (gameMap[((int)pPlayer[0]->y + 25) / blockRect.h][((int)pPlayer[0]->x + 25) / blockRect.w] != 0) // Top edge blocked on left?
         {
             pPlayer[0]->x -= (pPlayer[0]->vx * 5 * deltaTime); // Dont move
         }
     }
 
-    if ((*pGoRight) == 1)
+    if ((*pGoRight) != 0)
     {
         // printf("y: %d\n", (((int)pPlayer->y - 4) + pPlayer->playerRect.h)/blockRect.h);
         // printf("x: %d\n", (((int)pPlayer->x) + pPlayer->playerRect.w) / blockRect.w);
-        if (gameMap[(int)(pPlayer[0]->y + 22 + pPlayer[0]->frames.character_h) / blockRect.h][(int)(pPlayer[0]->x + 10 + pPlayer[0]->frames.character_w) / blockRect.w] == 1 || // Bottom edge blocked on right?
-            gameMap[((int)pPlayer[0]->y + 25) / blockRect.h][(int)(pPlayer[0]->x + 10 + pPlayer[0]->frames.character_w) / blockRect.w] == 1)                                    // Top edge blocked on right?
+        if (gameMap[(int)(pPlayer[0]->y + 22 + pPlayer[0]->frames.character_h) / blockRect.h][(int)(pPlayer[0]->x + 10 + pPlayer[0]->frames.character_w) / blockRect.w] != 0 || // Bottom edge blocked on right?
+            gameMap[((int)pPlayer[0]->y + 25) / blockRect.h][(int)(pPlayer[0]->x + 10 + pPlayer[0]->frames.character_w) / blockRect.w] != 0)                                    // Top edge blocked on right?
         {
             pPlayer[0]->x -= (pPlayer[0]->vx * 5 * deltaTime); // Dont move
         }
     }
 
-    if ((*pGoUp) == 1)
+    if ((*pGoUp) != 0)
     {
         // printf("y: %d,\n", ((int)pPlayer->y + 1)/blockRect.h);
         // printf("x: %d,\n", ((int)pPlayer->x + 1)/blockRect.w);
-        if (gameMap[((int)pPlayer[0]->y + 25) / blockRect.h][((int)pPlayer[0]->x + 25) / blockRect.w] == 1 ||                                // Left edge blocked on top?
-            gameMap[((int)pPlayer[0]->y + 25) / blockRect.h][(int)(pPlayer[0]->x + 10 + pPlayer[0]->frames.character_w) / blockRect.w] == 1) // Right edge blocked on top?
+        if (gameMap[((int)pPlayer[0]->y + 25) / blockRect.h][((int)pPlayer[0]->x + 25) / blockRect.w] != 0 ||                                // Left edge blocked on top?
+            gameMap[((int)pPlayer[0]->y + 25) / blockRect.h][(int)(pPlayer[0]->x + 10 + pPlayer[0]->frames.character_w) / blockRect.w] != 0) // Right edge blocked on top?
         {
 
             pPlayer[0]->y -= (pPlayer[0]->vy * deltaTime); // Dont move
@@ -248,10 +248,10 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
         }
     }
 
-    if ((*pGoDown) == 1)
+    if ((*pGoDown) != 0)
     {
-        if (gameMap[(int)(pPlayer[0]->y + 22 + pPlayer[0]->frames.character_h) / blockRect.h][((int)pPlayer[0]->x + 25) / blockRect.w] == 1 ||                                // Left edge blocked on bottom?
-            gameMap[(int)(pPlayer[0]->y + 22 + pPlayer[0]->frames.character_h) / blockRect.h][(int)(pPlayer[0]->x + 10 + pPlayer[0]->frames.character_w) / blockRect.w] == 1) // Right edge blocked on bottom?
+        if (gameMap[(int)(pPlayer[0]->y + 22 + pPlayer[0]->frames.character_h) / blockRect.h][((int)pPlayer[0]->x + 25) / blockRect.w] != 0 ||                                // Left edge blocked on bottom?
+            gameMap[(int)(pPlayer[0]->y + 22 + pPlayer[0]->frames.character_h) / blockRect.h][(int)(pPlayer[0]->x + 10 + pPlayer[0]->frames.character_w) / blockRect.w] != 0) // Right edge blocked on bottom?
         {
             pPlayer[0]->y -= (pPlayer[0]->vy * deltaTime); // Dont move
             (*pOnGround) = true;

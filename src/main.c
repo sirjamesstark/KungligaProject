@@ -24,7 +24,7 @@ typedef struct
     Player *pPlayer[MAX_NROFPLAYERS];
     Mix_Chunk *pJumpSound;
     Mix_Music *pGameMusic;
-    BlockImage *pBlockImage;
+    //BlockImage *pBlockImage;
     Block *pBlock;
     Maps *pMaps[NROFMAPS];
     Background *pBackground;
@@ -39,8 +39,8 @@ typedef struct
 } DisplayMode;
 
 
-void initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char *argv[]);
-void initGame(Game *pGame);
+int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char *argv[]);
+int initGame(Game *pGame);
 void initDisplayMode(Game *pGame, DisplayMode *pDisplay);
 
 void drawScreenPadding(Game *pGame, DisplayMode *pDisplay);     // Anropas ej i nuläget - kan komma att användas senare 
@@ -60,8 +60,12 @@ int main(int argc, char *argv[])
     UDPpacket *p, *p2;
     int is_server = 0;
     
-    initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, argv);
-    initGame(&game);
+    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, argv) || !initGame(&game)) {
+        cleanUpNetwork(sd, p, p2);
+        cleanUpGame(&game);
+        exit(EXIT_FAILURE);
+    }
+    
     initDisplayMode(&game, &display);
 
     if (!showMenu(game.pRenderer, display.window_width, display.window_height))
@@ -72,15 +76,15 @@ int main(int argc, char *argv[])
 
     game.pGameMusic = initiateMusic(game.pGameMusic);
     game.pBackground = createBackground(game.pRenderer, display.window_width, display.window_height);
-    game.pBlockImage = createBlockImage(game.pRenderer);
-    game.pBlock = createBlock(game.pBlockImage, display.window_width, display.window_height);
+    //game.pBlockImage = createBlockImage(game.pRenderer);
+    game.pBlock = createBlock(game.pRenderer, display.window_width, display.window_height);
     SDL_Rect blockRect = getRectBlock(game.pBlock);
     for (int i = 0; i < MAX_NROFPLAYERS; i++)
     {
         game.pPlayer[i] = createPlayer(i, blockRect, game.pRenderer, display.window_width, display.window_height);
     }
     game.pCamera = camera(display.window_width, display.window_height);
-    if (!game.pGameMusic || !game.pBackground || !game.pBlockImage || !game.pPlayer)
+    if (!game.pGameMusic || !game.pBackground || !game.pBlock || !game.pPlayer)
     {
         cleanUpGame(&game);
         return 1;
@@ -133,7 +137,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char *argv[]) {
+int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char *argv[]) {
     *is_server = 0;
 
     if (argc > 1 && strcmp(argv[1], "server") == 0)
@@ -144,7 +148,7 @@ void initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2
     if (SDLNet_Init() < 0)
     {
         fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
-        exit(EXIT_FAILURE);
+        return 0;
     }
 
     *sd = NULL;
@@ -154,8 +158,7 @@ void initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2
     if (!(*sd = SDLNet_UDP_Open(*is_server ? 2000 : 0)))
     {
         fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
-        cleanUpNetwork(sd, p, p2);
-        exit(EXIT_FAILURE);
+        return 0; 
     }
 
     if (!(*is_server))
@@ -163,33 +166,31 @@ void initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2
         if (argc < 3)
         {
             fprintf(stderr, "Usage: %s client <server_ip>\n", argv[0]);
-            cleanUpNetwork(sd, p, p2);
-            exit(EXIT_FAILURE);
+            return 0;
         }
 
         if (SDLNet_ResolveHost(srvadd, argv[2], 2000) == -1)
         {
             fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
-            cleanUpNetwork(sd, p, p2);
-            exit(EXIT_FAILURE);
+            return 0;
         }
     }
 
     if (!((*p = SDLNet_AllocPacket(512)) && (*p2 = SDLNet_AllocPacket(512))))
     {
         fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
-        cleanUpNetwork(sd, p, p2);
-        exit(EXIT_FAILURE);
+        return 0;
     }
+
+    return 1;
 }
 
-void initGame(Game *pGame)
+int initGame(Game *pGame)
 {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) != 0)
     {
         printf("Error: %s\n", SDL_GetError());
-        cleanUpGame(pGame);
-        exit(EXIT_FAILURE);
+        return 0; 
     }
 
     // Initialize SDL_image for PNG loading
@@ -197,24 +198,21 @@ void initGame(Game *pGame)
     if (!(IMG_Init(iconImage) & iconImage))
     {
         printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-        cleanUpGame(pGame);
-        exit(EXIT_FAILURE);
+        return 0; 
     }
 
     // Initialize SDL_mixer
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
     {
         printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-        cleanUpGame(pGame);
-        exit(EXIT_FAILURE);
+        return 0;
     }
 
     // Initialize SDL_mixer
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
     {
         printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-        cleanUpGame(pGame);
-        exit(EXIT_FAILURE);
+        return 0;
     }
 
     // Create window with explicit cursor support
@@ -222,8 +220,7 @@ void initGame(Game *pGame)
     if (!pGame->pWindow)
     {
         printf("Error: %s\n", SDL_GetError());
-        cleanUpGame(pGame);
-        exit(EXIT_FAILURE);
+        return 0;
     }
 
     pGame->pJumpSound = NULL; // Initialize jump sound to NULL
@@ -232,8 +229,7 @@ void initGame(Game *pGame)
     if (!pGame->pRenderer)
     {
         printf("Error: %s\n", SDL_GetError());
-        cleanUpGame(pGame);
-        exit(EXIT_FAILURE);
+        return 0;
     }
 
     // Initialize SDL_image for cursor loading
@@ -241,8 +237,7 @@ void initGame(Game *pGame)
     if (!(IMG_Init(cursor) & cursor))
     {
         printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-        cleanUpGame(pGame);
-        exit(EXIT_FAILURE);
+        return 0;
     }
 
     // Force cursor to be visible first
@@ -276,6 +271,8 @@ void initGame(Game *pGame)
     {
         SDL_ShowCursor(SDL_ENABLE);
     }
+
+    return 1;
 }
 
 void initDisplayMode(Game *pGame, DisplayMode *pDisplay) {
@@ -478,11 +475,13 @@ void cleanUpGame(Game *pGame)
         destroyBlock(pGame->pBlock);
         pGame->pBlock = NULL;
     }
+    /*
     if (pGame->pBlockImage)
     {
         destroyBlockImage(pGame->pBlockImage);
         pGame->pBlockImage = NULL;
     }
+    */
     for (int i = 0; i < NROFMAPS; i++)
     {
         if (pGame->pMaps[i] != NULL)
