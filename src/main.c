@@ -9,13 +9,13 @@
 #include "../include/menu.h"
 #include "../include/platform.h"
 #include "../include/player.h"
-// #include "../include/renderer.h"
 #include "../include/theme.h"
 #include "../include/maps.h"
 #include "../include/camera.h"
 #include <SDL_net.h>
 
 #define NUM_MENU 2
+#define TARGET_ASPECT_RATIO (16.0f / 9.0f)
 
 typedef struct
 {
@@ -33,11 +33,17 @@ typedef struct
 
 typedef struct
 {
-    int window_width;
-    int window_height;
+    int window_width, window_height;
+    int modified_width, modified_height;
+    SDL_Rect topRect, bottomRect, leftRect, rightRect;
 } DisplayMode;
 
-int initiate(DisplayMode *pdM, Game *pGame);
+int initiate(DisplayMode *pDisplay, Game *pGame);
+
+void initDisplayMode(Game *pGame, DisplayMode *pDisplay);
+void drawScreenPadding(Game *pGame, DisplayMode *pDisplay);
+
+
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, bool *pUp, bool *pDown, bool *pLeft, bool *pRight);
 void cleanUp(Game *pGame);
 
@@ -87,30 +93,33 @@ int main(int argc, char *argv[])
     }
 
     Game game = {0};
-    DisplayMode dM = {0};
+    DisplayMode display = {0};
 
     bool startGame = false;
 
-    if (!initiate(&dM, &game))
+    if (!initiate(&display, &game))
     {
         return 1;
     }
-    if (!showMenu(game.pRenderer, dM.window_width, dM.window_height))
+
+    initDisplayMode(&game, &display);
+
+    if (!showMenu(game.pRenderer, display.window_width, display.window_height))
     {
         cleanUp(&game);
         return 1;
     }
 
     game.pGameMusic = initiateMusic(game.pGameMusic);
-    game.pBackground = createBackground(game.pRenderer, dM.window_width, dM.window_height);
+    game.pBackground = createBackground(game.pRenderer, display.window_width, display.window_height);
     game.pBlockImage = createBlockImage(game.pRenderer);
-    game.pBlock = createBlock(game.pBlockImage, dM.window_width, dM.window_height);
+    game.pBlock = createBlock(game.pBlockImage, display.window_width, display.window_height);
     SDL_Rect blockRect = getRectBlock(game.pBlock);
     for (int i = 0; i < MAX_NROFPLAYERS; i++)
     {
-        game.pPlayer[i] = createPlayer(i, blockRect, game.pRenderer, dM.window_width, dM.window_height);
+        game.pPlayer[i] = createPlayer(i, blockRect, game.pRenderer, display.window_width, display.window_height);
     }
-    game.pCamera = camera(dM.window_width, dM.window_height);
+    game.pCamera = camera(display.window_width, display.window_height);
     if (!game.pGameMusic || !game.pBackground || !game.pBlockImage || !game.pPlayer)
     {
         cleanUp(&game);
@@ -152,7 +161,7 @@ int main(int argc, char *argv[])
         buildTheMap(gameMap, game.pBlock, CamY);
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
-            drawPlayer(game.pPlayer[i], CamX, CamY, dM.window_width, dM.window_height);
+            drawPlayer(game.pPlayer[i], CamX, CamY, display.window_width, display.window_height);
         }
 
         SDL_RenderPresent(game.pRenderer);
@@ -162,7 +171,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int initiate(DisplayMode *pdM, Game *pGame)
+int initiate(DisplayMode *pDisplay, Game *pGame)
 {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) != 0)
     {
@@ -204,8 +213,6 @@ int initiate(DisplayMode *pdM, Game *pGame)
         cleanUp(pGame);
         return 0;
     }
-    SDL_GetWindowSize(pGame->pWindow, &pdM->window_width, &pdM->window_height);
-
 
     pGame->pJumpSound = NULL; // Initialize jump sound to NULL
 
@@ -335,6 +342,68 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
             (*pRight) = false;
             break;
         }
+    }
+}
+
+
+void initDisplayMode(Game *pGame, DisplayMode *pDisplay) {
+    SDL_GetWindowSize(pGame->pWindow, &pDisplay->window_width, &pDisplay->window_height);
+    float currentAspect = (float)pDisplay->window_width / pDisplay->window_height;
+
+    pDisplay->modified_width = pDisplay->window_width;
+    pDisplay->modified_height = pDisplay->window_height;
+
+    if (currentAspect > TARGET_ASPECT_RATIO) { // Om skärmen är "för bred" - fyller ut med svarta fält på sidor
+        int targetWidth = (int)(pDisplay->window_height * TARGET_ASPECT_RATIO);
+        int sidePadding = (pDisplay->window_width - targetWidth) / 2;
+
+        pDisplay->leftRect = (SDL_Rect){0, 0, sidePadding, pDisplay->window_height};
+        pDisplay->rightRect = (SDL_Rect){pDisplay->window_width - sidePadding, 0, sidePadding, pDisplay->window_height};
+        pDisplay->topRect = (SDL_Rect){0, 0, 0, 0};
+        pDisplay->bottomRect = (SDL_Rect){0, 0, 0, 0};
+
+        pDisplay->modified_width = targetWidth;
+    }
+    else if (currentAspect < TARGET_ASPECT_RATIO) { // Om skärmen är "för hög" - fyller ut med svarta fält ovanför och under
+        int targetHeight = (int)(pDisplay->window_width / TARGET_ASPECT_RATIO);
+        int verticalPadding = (pDisplay->window_height - targetHeight) / 2;
+
+        pDisplay->topRect = (SDL_Rect){0, 0, pDisplay->window_width, verticalPadding};
+        pDisplay->bottomRect = (SDL_Rect){0, pDisplay->window_height - verticalPadding, pDisplay->window_width, verticalPadding};
+        pDisplay->leftRect = (SDL_Rect){0, 0, 0, 0};
+        pDisplay->rightRect = (SDL_Rect){0, 0, 0, 0};
+
+        pDisplay->modified_height = targetHeight;
+    }
+    else {  // Rätt aspect ratio – inga svarta fält behövs
+        pDisplay->topRect = pDisplay->bottomRect = pDisplay->leftRect = pDisplay->rightRect = (SDL_Rect){0, 0, 0, 0};
+    }
+
+    // Behåll tills vidare, skrivs ut i terminalen för att kontrollera siffrorna
+    printf("Original window width: %d \n", pDisplay->window_width);
+    printf("Original window height: %d \n", pDisplay->window_height);
+    printf("Modified window width: %d \n", pDisplay->modified_width); 
+    printf("Modified window height: %d \n", pDisplay->modified_height);
+    printf("topRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->topRect.x, pDisplay->topRect.y, pDisplay->topRect.w, pDisplay->topRect.h);
+    printf("bottomRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->bottomRect.x, pDisplay->bottomRect.y, pDisplay->bottomRect.w, pDisplay->bottomRect.h);
+    printf("leftRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->leftRect.x, pDisplay->leftRect.y, pDisplay->leftRect.w, pDisplay->leftRect.h);
+    printf("rightRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->rightRect.x, pDisplay->rightRect.y, pDisplay->rightRect.w, pDisplay->rightRect.h);
+}
+
+void drawScreenPadding(Game *pGame, DisplayMode *pDisplay) {
+    SDL_SetRenderDrawColor(pGame->pRenderer, 0, 0, 0, 255);
+    
+    if (pDisplay->topRect.w > 0 && pDisplay->topRect.h > 0) {
+        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->topRect);
+    }
+    if (pDisplay->bottomRect.w > 0 && pDisplay->bottomRect.h > 0) {
+        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->bottomRect);
+    }
+    if (pDisplay->leftRect.w > 0 && pDisplay->leftRect.h > 0) {
+        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->leftRect);
+    }
+    if (pDisplay->rightRect.w > 0 && pDisplay->rightRect.h > 0) {
+        SDL_RenderFillRect(pGame->pRenderer, &pDisplay->rightRect);
     }
 }
 

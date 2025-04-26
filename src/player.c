@@ -320,7 +320,7 @@ void updatePlayerRect(Player *pPlayer)
     pPlayer->srcRect.y = pPlayer->frames.currentFrame_y * pPlayer->srcRect.h;
 }
 
-void networkUDP (Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd, float space)
+void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd, float space)
 {
         if (pPlayer[0]->oldX != pPlayer[0]->x || pPlayer[0]->oldY != pPlayer[0]->y)
         {
