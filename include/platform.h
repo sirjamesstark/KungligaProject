@@ -3,8 +3,7 @@
 
 #define BOX_ROW 22
 #define BOX_COL 26
-#define BLOCK_SCALEFACTOR 0.045
-
+#define BLOCK_SCALEFACTOR 0.045f
 
 //typedef struct blockImage BlockImage;
 typedef struct block Block;

@@ -7,7 +7,7 @@
 #define BOX_COL 26
 #define COUNTER 20
 #define MAX_NROFPLAYERS 2
-#define PLAYER_SCALEFACTOR 0.04
+#define PLAYER_SCALEFACTOR 0.04f
 
 typedef struct player Player;
 typedef struct frames Frames;
