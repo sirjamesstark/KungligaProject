@@ -19,13 +19,19 @@ Mix_Music *initiateMusic()
         printf("Failed to load game music! SDL_mixer Error: %s\n", Mix_GetError());
         return 0;
     }
-    else
-    {
-        Mix_VolumeMusic((int)(MIX_MAX_VOLUME * 0.5)); // Set volume to 50%
-        Mix_PlayMusic(pGameMusic, -1);                // -1 means loop infinitely
-        return pGameMusic;
+    return pGameMusic;
+    
+}
+
+void playMusic(Mix_Music *pGameMusic)
+{
+    Mix_VolumeMusic((int)(MIX_MAX_VOLUME * 0.5));  // 50% volym
+    if (Mix_PlayMusic(pGameMusic, -1) == -1) 
+    { 
+        printf("Failed to play music: %s\n", Mix_GetError());
     }
 }
+
 
 Background *createBackground(SDL_Renderer *pRenderer, int window_width, int window_height)
 {

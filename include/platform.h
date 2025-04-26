@@ -12,7 +12,7 @@ typedef struct block Block;
 //BlockImage *createBlockImage(SDL_Renderer *pRenderer);
 Block *createBlock(SDL_Renderer *pRenderer, int window_width, int window_height);
 void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY);
-void drawBlock(Block *pBlock, int block_type);
+void drawBlock(Block *pBlock, int block_type, SDL_Rect *dstRect) ;
 void destroyBlock(Block *pBlock);
 SDL_Rect getRectBlock(Block *pBlock);
 //void destroyBlockImage(BlockImage *pBlockImage);
