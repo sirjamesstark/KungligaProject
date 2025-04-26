@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     int is_server = 0;
     
     if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, argv) || !initGame(&game)) {
-        cleanUpNetwork(sd, p, p2);
+        cleanUpNetwork(&sd, &p, &p2);
         cleanUpGame(&game);
         exit(EXIT_FAILURE);
     }
