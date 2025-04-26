@@ -13,9 +13,9 @@ struct blockImage
 
 struct block
 {
-    int window_width, window_height;
     int nrOfFrames_blocks;
     SDL_Renderer *pRenderer;
+    SDL_Rect *pGameAreaRect;
     SDL_Texture *pTexture;
     SDL_Rect srcRect;   // srcRect.w och srcRect.h lagrar den verkliga storleken av en frame i spritesheetet, srcRect.x och srcRect.y anger vilken frame i spritesheetet för blocks som väljs
     SDL_Rect dstRect;   // dstRect.w och dstRect.h är en nerskalad variant av srcRect.w och srcRect.h, dstRect.x och dstRect.y anger var i fönstret som den aktuella framen i srcRect.x och srcRect.y ska ritas upp
@@ -49,28 +49,36 @@ BlockImage *createBlockImage(SDL_Renderer *pRenderer)
 }
 */
 
-Block *createBlock(SDL_Renderer *pRenderer, int window_width, int window_height)
+Block *createBlock(SDL_Renderer *pRenderer, SDL_Rect *pGameAreaRect)
 {
+    if (!pRenderer || !pGameAreaRect) {
+        printf("Error: Invalid parameters. Renderer or GameAreaRect is NULL.\n");
+        return NULL;
+    }
+
     Block *pBlock = malloc(sizeof(struct block));
-    if (pBlock == NULL) return NULL;
+    if (pBlock == NULL) {
+        printf("Error: Failed to allocate memory for block.\n");
+        return NULL;
+    }
 
     SDL_Surface *pSurface = IMG_Load("resources/blocks_spritesheet_test.png");
     if (!pSurface) {
         destroyBlock(pBlock);
-        printf("Error: %s\n",SDL_GetError());
+        printf("Error: Failed to initialize block frames.\n");
         return NULL;
     }
-    
-    pBlock->window_width = window_width;
-    pBlock->window_height = window_height;
-    pBlock->nrOfFrames_blocks = 3;
+
     pBlock->pRenderer = pRenderer;
+    pBlock->pGameAreaRect = pGameAreaRect;
+    pBlock->nrOfFrames_blocks = 3;
+
+
     pBlock->pTexture = SDL_CreateTextureFromSurface(pRenderer, pSurface);
     SDL_FreeSurface(pSurface);
-
     if (!pBlock->pTexture) {
         destroyBlock(pBlock);
-        printf("Error: %s\n",SDL_GetError());
+        printf("Error: Failed to create block texture.\n");
         return NULL;
     }
 
@@ -78,21 +86,23 @@ Block *createBlock(SDL_Renderer *pRenderer, int window_width, int window_height)
     pBlock->srcRect.w /=3;
 
     /*
-    float scaleFactor = (float)pBlock->window_width/(pBlock->srcRect.w) * BLOCK_SCALEFACTOR;
-    pBlock->dstRect.w = (int)(pBlock->srcRect.w * scaleFactor);
-    pBlock->dstRect.h = (int)(pBlock->srcRect.h * scaleFactor);
+    printf("Block frame size (before scaling): w: %d, h: %d\n", pBlock->srcRect.w, pBlock->srcRect.h);
+    float scaleFactor = (float)pBlock->pGameAreaRect->w / (float)pBlock->srcRect.w * BLOCK_SCALEFACTOR;
+    pBlock->dstRect.w = (int)(pBlock->srcRect.w * scaleFactor + 0.5f);    
+    pBlock->dstRect.h = (int)(pBlock->srcRect.h * scaleFactor + 0.5f);
+    printf("Block frame size (after scaling): w: %d, h: %d\n", pBlock->dstRect.w, pBlock->dstRect.h);
     */
 
     // koden nedanför bör skrivas om, men används sålänge: 
     pBlock->dstRect.w = pBlock->srcRect.w;
     pBlock->dstRect.h = pBlock->srcRect.h;
-    pBlock->dstRect.w = window_width / BOX_COL;
-    pBlock->dstRect.h = window_height / BOX_ROW;
+    pBlock->dstRect.w = pBlock->pGameAreaRect->w / BOX_COL;
+    pBlock->dstRect.h = pBlock->pGameAreaRect->h / BOX_ROW;
 
     return pBlock;
 }
 
-SDL_Rect getRectBlock(Block *pBlock) {
+SDL_Rect getBlockRect(Block *pBlock) {
     return pBlock->dstRect;
 }
 

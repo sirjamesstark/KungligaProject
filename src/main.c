@@ -16,7 +16,7 @@
 
 #define NUM_MENU 2
 #define TARGET_ASPECT_RATIO (16.0f / 9.0f)
-#define GAMEAREA_SCALEFACTOR 0.9f
+#define GAMEAREA_SCALEFACTOR 1.0f
 
 typedef struct
 {
@@ -67,22 +67,23 @@ int main(int argc, char *argv[])
     
     initDisplayMode(&game, &display);
 
-    if (!showMenu(game.pRenderer, display.window_width, display.window_height))
+    if (!showMenu(game.pRenderer, display.gameAreaRect.w, display.gameAreaRect.h))
     {
         cleanUpGame(&game);
         return 1;
     }
 
     game.pGameMusic = initiateMusic(game.pGameMusic);
-    game.pBackground = createBackground(game.pRenderer, display.window_width, display.window_height);
+    game.pBackground = createBackground(game.pRenderer, display.gameAreaRect.w, display.gameAreaRect.h);
     //game.pBlockImage = createBlockImage(game.pRenderer);
-    game.pBlock = createBlock(game.pRenderer, display.window_width, display.window_height);
-    SDL_Rect blockRect = getRectBlock(game.pBlock);
+    game.pBlock = createBlock(game.pRenderer, &display.gameAreaRect);
+    SDL_Rect blockRect = getBlockRect(game.pBlock);
     for (int i = 0; i < MAX_NROFPLAYERS; i++)
     {
-        game.pPlayer[i] = createPlayer(i, blockRect, game.pRenderer, display.window_width, display.window_height);
+        game.pPlayer[i] = createPlayer(i, game.pRenderer, &display.gameAreaRect);
+        initStartPosition(game.pPlayer[i], blockRect);
     }
-    game.pCamera = camera(display.window_width, display.window_height);
+    game.pCamera = camera(display.gameAreaRect.w, display.gameAreaRect.h);
     if (!game.pGameMusic || !game.pBackground || !game.pBlock || !game.pPlayer[0])
     {
         cleanUpGame(&game);
@@ -124,7 +125,7 @@ int main(int argc, char *argv[])
         buildTheMap(gameMap, game.pBlock, CamY);
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
-            drawPlayer(game.pPlayer[i], CamX, CamY, display.window_width, display.window_height);
+            drawPlayer(game.pPlayer[i], CamX, CamY);
         }
 
         SDL_RenderPresent(game.pRenderer);
@@ -295,6 +296,10 @@ void initDisplayMode(Game *pGame, DisplayMode *pDisplay) {
     printf("Original window width: %d \n", pDisplay->window_width);
     printf("Original window height: %d \n", pDisplay->window_height);
     printf("gameAreaRect: x=%d, y=%d, w=%d, h=%d\n", pDisplay->gameAreaRect.x, pDisplay->gameAreaRect.y, pDisplay->gameAreaRect.w, pDisplay->gameAreaRect.h);
+
+    // Dessa raderna under ska tas bort så småningom! Men vi har detta tills vidare!
+    pDisplay->gameAreaRect.w = pDisplay->window_width;
+    pDisplay->gameAreaRect.h = pDisplay->window_height;
 }
 
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
@@ -451,7 +456,5 @@ void cleanUpGame(Game *pGame)
             pGame->pMaps[i] = NULL; // skyddar mot dubbel-free
         }
     }
-
-    // Nu har jag lagt in blocks
     SDL_Quit();
 }
