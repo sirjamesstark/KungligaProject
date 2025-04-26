@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
         cleanUpGame(&game);
         return 1;
     }
+    
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
     bool onGround = true;

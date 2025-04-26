@@ -106,19 +106,27 @@ void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY)
             {
                 pBlock->dstRect.x = col * pBlock->dstRect.w;
                 pBlock->dstRect.y = row * pBlock->dstRect.h;
-                pBlock->dstRect.y -= CamY;
-                drawBlock(pBlock, gameMap[row][col]);
+                SDL_Rect tempRect = pBlock->dstRect;
+                tempRect.y -= CamY;
+                drawBlock(pBlock, gameMap[row][col], &tempRect); 
                 pBlock->dstRect.y += CamY;
             }
         }
     }
 }
 
-void drawBlock(Block *pBlock, int block_type)
+void drawBlock(Block *pBlock, int block_type, SDL_Rect *dstRect) 
 {
-    if (block_type >= 1 && block_type <= 3) {    // Det finns tre olika bilder i spritesheetet för blocktyp
-        pBlock->srcRect.x = pBlock->srcRect.w * (block_type-1);    // Bestämmer om det är 1, 2 eller 3 block som ska ritas ut
-        SDL_RenderCopy(pBlock->pRenderer, pBlock->pTexture, &pBlock->srcRect, &pBlock->dstRect);
+    if (block_type >= 1 && block_type <= 3) 
+    {
+        SDL_Rect srcRect = 
+        {
+            .x = (block_type - 1) * pBlock->srcRect.w,  // Välj rätt block i spritesheet
+            .y = 0,
+            .w = pBlock->srcRect.w,
+            .h = pBlock->srcRect.h
+        };
+        SDL_RenderCopy(pBlock->pRenderer, pBlock->pTexture, &srcRect, dstRect);
     }
 }
 
