@@ -89,7 +89,10 @@ int main(int argc, char *argv[])
         cleanUpGame(&game);
         return 1;
     }
-    
+    playMusic(game.pGameMusic);
+    // Debug: Kontrollera om musiken laddades OCH spelas
+    printf("[DEBUG] Music loaded: %s\n", game.pGameMusic ? "YES" : "NO");
+    printf("[DEBUG] Music playing: %s\n", Mix_PlayingMusic() ? "YES" : "NO");
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
     bool onGround = true;
@@ -193,27 +196,12 @@ int initGame(Game *pGame)
         printf("Error: %s\n", SDL_GetError());
         return 0; 
     }
-
     // Initialize SDL_image for PNG loading
     int iconImage = IMG_INIT_PNG;
     if (!(IMG_Init(iconImage) & iconImage))
     {
         printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
         return 0; 
-    }
-
-    // Initialize SDL_mixer
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
-    {
-        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-        return 0;
-    }
-
-    // Initialize SDL_mixer
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
-    {
-        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-        return 0;
     }
 
     // Create window with explicit cursor support
@@ -224,12 +212,17 @@ int initGame(Game *pGame)
         return 0;
     }
 
-    pGame->pJumpSound = NULL; // Initialize jump sound to NULL
-
     pGame->pRenderer = SDL_CreateRenderer(pGame->pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!pGame->pRenderer)
     {
         printf("Error: %s\n", SDL_GetError());
+        return 0;
+    }
+
+    // Initialize SDL_mixer
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+    {
+        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
         return 0;
     }
 
@@ -273,6 +266,13 @@ int initGame(Game *pGame)
         SDL_ShowCursor(SDL_ENABLE);
     }
 
+
+    pGame->pJumpSound = Mix_LoadWAV("resources/jump_sound.wav");
+    if (!pGame->pJumpSound)
+    {
+        printf("Failed to load jump sound! SDL_mixer Error: %s\n", Mix_GetError());
+    }
+
     return 1;
 }
 
@@ -306,16 +306,6 @@ void initDisplayMode(Game *pGame, DisplayMode *pDisplay) {
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
                  bool *pUp, bool *pDown, bool *pLeft, bool *pRight)
 {
-    // First time jumping? I'll load the sound - then it's ready for next time
-    if (!pGame->pJumpSound)
-    {
-        pGame->pJumpSound = Mix_LoadWAV("resources/jump_sound.wav");
-        if (!pGame->pJumpSound)
-        {
-            printf("Failed to load jump sound! SDL_mixer Error: %s\n", Mix_GetError());
-        }
-    }
-
     if (pEvent->type == SDL_KEYDOWN)
     {
         switch (pEvent->key.keysym.scancode)
@@ -345,11 +335,6 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
             (*pRight) = true;
             break;
         case SDL_SCANCODE_ESCAPE:
-            if (pGame->pJumpSound)
-            {
-                Mix_FreeChunk(pGame->pJumpSound); // Clean up jump sound
-                pGame->pJumpSound = NULL;
-            }
             (*pCloseWindow) = true;
             break;
         }
@@ -406,10 +391,43 @@ void cleanUpGame(Game *pGame)
         pGame->pTexture = NULL;
     }
     */
-    destroyBackground(pGame->pBackground);
-    // Stop and free game music
-    Mix_HaltMusic();
-    Mix_FreeMusic(pGame->pGameMusic);
+
+    if (pGame->pJumpSound) {
+        Mix_FreeChunk(pGame->pJumpSound);
+        pGame->pJumpSound = NULL;
+    }
+    if (pGame->pGameMusic) {
+        Mix_HaltMusic();
+        Mix_FreeMusic(pGame->pGameMusic);
+        pGame->pGameMusic = NULL;
+    }
+
+    for (int i = 0; i < MAX_NROFPLAYERS; i++)
+    {
+        if (pGame->pPlayer[i] != NULL)
+        {
+            destroyPlayer(pGame->pPlayer[i]);
+            pGame->pPlayer[i] = NULL;
+        }
+    }
+
+    if (pGame->pBlock != NULL)
+    {
+        destroyBlock(pGame->pBlock);
+        pGame->pBlock = NULL;
+    }
+
+    if (pGame->pBackground) {
+        destroyBackground(pGame->pBackground);
+        pGame->pBackground = NULL;
+    }
+
+    if (pGame->pCamera != NULL)
+    {
+        destroyCamera(pGame->pCamera);
+        pGame->pCamera = NULL;
+    }
+
     if (pGame->pRenderer != NULL)
     {
         SDL_DestroyRenderer(pGame->pRenderer);
@@ -422,26 +440,8 @@ void cleanUpGame(Game *pGame)
         pGame->pWindow = NULL;
     }
 
-    for (int i = 0; i < MAX_NROFPLAYERS; i++)
-    {
-        if (pGame->pPlayer[i] != NULL)
-        {
-            destroyPlayer(pGame->pPlayer[i]);
-            pGame->pPlayer[i] = NULL;
-        }
-    }
-    if (pGame->pCamera != NULL)
-    {
-        destroyCamera(pGame->pCamera);
-        pGame->pCamera = NULL;
-    }
-
     // Här lägger vi till mer kod som frigör tidigare allokerat minne ifall det behövs (t.ex. för platforms sen)
-    if (pGame->pBlock != NULL)
-    {
-        destroyBlock(pGame->pBlock);
-        pGame->pBlock = NULL;
-    }
+
     /*
     if (pGame->pBlockImage)
     {
@@ -457,5 +457,7 @@ void cleanUpGame(Game *pGame)
             pGame->pMaps[i] = NULL; // skyddar mot dubbel-free
         }
     }
+    Mix_CloseAudio();
+    IMG_Quit();
     SDL_Quit();
 }
