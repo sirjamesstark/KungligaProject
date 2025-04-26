@@ -77,9 +77,15 @@ Block *createBlock(SDL_Renderer *pRenderer, int window_width, int window_height)
     SDL_QueryTexture(pBlock->pTexture, NULL, NULL, &(pBlock->srcRect.w), &(pBlock->srcRect.h));
     pBlock->srcRect.w /=3;
 
+    /*
+    float scaleFactor = (float)pBlock->window_width/(pBlock->srcRect.w) * BLOCK_SCALEFACTOR;
+    pBlock->dstRect.w = (int)(pBlock->srcRect.w * scaleFactor);
+    pBlock->dstRect.h = (int)(pBlock->srcRect.h * scaleFactor);
+    */
+
+    // koden nedanför bör skrivas om, men används sålänge: 
     pBlock->dstRect.w = pBlock->srcRect.w;
     pBlock->dstRect.h = pBlock->srcRect.h;
-
     pBlock->dstRect.w = window_width / BOX_COL;
     pBlock->dstRect.h = window_height / BOX_ROW;
 
@@ -131,4 +137,4 @@ void destroyBlockImage(BlockImage *pBlockImage)
 {
     SDL_DestroyTexture(pBlockImage->pTexture);
 }
-    */
+*/

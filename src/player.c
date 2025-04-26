@@ -6,8 +6,6 @@
 #include <stdbool.h>
 #include "../include/player.h"
 
-#define PLAYER_SCALEFACTOR 0.04
-
 struct frames
 {
     int nrOfFrames_idle, nrOfFrames_sprint, nrOfFrames_jump;
