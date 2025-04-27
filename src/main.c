@@ -117,7 +117,8 @@ int main(int argc, char *argv[])
         }
         goDown = goLeft = goRight = goUp = 0;
         setSpeed(up, down, left, right, &goUp, &goDown, &goLeft, &goRight, &upCounter, onGround, game.pPlayer[0]);
-        updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround, &goUp, &goDown, &goLeft, &goRight, p, p2, &is_server, srvadd, &sd);
+        updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround, &goUp, &goDown, 
+                        &goLeft, &goRight, p, p2, &is_server, srvadd, &sd,display.window_height);
         // updatePlayer(game.pPlayer, blockRect);
         int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]), PlyY = getPlyY(game.pPlayer[0]);
         updateCamera(game.pCamera, PlyX, PlyY);
