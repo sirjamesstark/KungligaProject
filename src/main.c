@@ -10,7 +10,6 @@
 #include "../include/platform.h"
 #include "../include/player.h"
 #include "../include/theme.h"
-#include "../include/maps.h"
 #include "../include/camera.h"
 #include <SDL_net.h>
 
@@ -30,9 +29,7 @@ typedef struct
 
     Player *pPlayer[MAX_NROFPLAYERS];
     Block *pBlock;
-    Maps *pMaps[NROFMAPS];
     Camera *pCamera;
-
     //BlockImage *pBlockImage;
 } Game;
 
@@ -362,15 +359,6 @@ void cleanUpGame(Game *pGame) {
     {
         destroyCamera(pGame->pCamera);
         pGame->pCamera = NULL;
-    }
-
-    for (int i = 0; i < NROFMAPS; i++)
-    {
-        if (pGame->pMaps[i] != NULL)
-        {
-            destroyMap(pGame->pMaps[i]);
-            pGame->pMaps[i] = NULL; // skyddar mot dubbel-free
-        }
     }
 }
 
