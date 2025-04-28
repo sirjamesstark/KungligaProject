@@ -150,8 +150,8 @@ SDL_Surface *initPlayerFrames(Player *pPlayer, int player_ID)
 void initStartPosition(Player *pPlayer, SDL_Rect blockRect)
 {
     pPlayer->oldX = pPlayer->x = blockRect.w * 2;
-    pPlayer->oldY = pPlayer->y = BOX_SCREEN_Y * blockRect.h - blockRect.h * 2 - pPlayer->dstRect.h;
-    // pPlayer->oldY = pPlayer->y = 0;
+    // pPlayer->oldY = pPlayer->y = BOX_SCREEN_Y * blockRect.h - blockRect.h * 2 - pPlayer->dstRect.h;
+    pPlayer->oldY = pPlayer->y = 0;
     /*
     pPlayer->dstRect.x = (float)(pPlayer->pGameAreaRect->x + blockRect.w / 2);  // Börjar i mitten av ett block i x-led
     pPlayer->dstRect.y = (float)(pPlayer->pGameAreaRect->y + pPlayer->pGameAreaRect->h - blockRect.h - pPlayer->frames.characterRect.h);
