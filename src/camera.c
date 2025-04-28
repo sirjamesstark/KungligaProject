@@ -54,7 +54,7 @@ void updateCamera(Camera *pCamera, int targetX, int targetY)
     {
         if (pCamera->count == 20)
         {
-            pCamera->view.y = pCamera->latestY - 1;
+            pCamera->view.y = pCamera->latestY;
             pCamera->count = 0;
         }
         else
