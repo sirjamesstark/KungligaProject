@@ -9,116 +9,98 @@
 #include "../include/menu.h"
 #include "../include/platform.h"
 #include "../include/player.h"
-// #include "../include/renderer.h"
 #include "../include/theme.h"
 #include "../include/maps.h"
 #include "../include/camera.h"
 #include <SDL_net.h>
 
 #define NUM_MENU 2
+#define TARGET_ASPECT_RATIO (16.0f / 9.0f)
+#define SCREEN_SCALEFACTOR 1.0f
 
 typedef struct
 {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
-    Player *pPlayer[MAX_NROFPLAYERS];
+    SDL_Cursor *pCursor;
     Mix_Chunk *pJumpSound;
+    SDL_Rect screenRect;
     Mix_Music *pGameMusic;
-    BlockImage *pBlockImage;
+    Background *pBackground;
+
+    Player *pPlayer[MAX_NROFPLAYERS];
     Block *pBlock;
     Maps *pMaps[NROFMAPS];
-    Background *pBackground;
     Camera *pCamera;
+
+    // BlockImage *pBlockImage;
 } Game;
 
-typedef struct
-{
-    int window_width;
-    int window_height;
-    int speed_x;
-    int speed_y;
-    bool continue_game;
-} DisplayMode;
+int initSDL();
+void cleanUpSDL();
+int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char *argv[]);
+void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2);
+int initGame(Game *pGame);
+void initScreenRect(Game *pGame);
+void cleanUpGame(Game *pGame);
+void readMap(int (*map)[BOX_COL]);
 
-int initiate(DisplayMode *pdM, Game *pGame);
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, bool *pUp, bool *pDown, bool *pLeft, bool *pRight);
-void cleanUp(Game *pGame);
 
 int main(int argc, char *argv[])
 {
+    printf("\n \n");
+    if (!initSDL())
+    {
+        cleanUpSDL();
+        exit(EXIT_FAILURE);
+    }
+
     UDPsocket sd;
     IPaddress srvadd;
     UDPpacket *p, *p2;
-
     int is_server = 0;
-    if (argc > 1 && strcmp(argv[1], "server") == 0)
-    {
-        is_server = 1;
-    }
 
-    if (SDLNet_Init() < 0)
+    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, argv))
     {
-        fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
-        exit(EXIT_FAILURE);
-    }
-
-    if (!(sd = SDLNet_UDP_Open(is_server ? 2000 : 0)))
-    {
-        fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
-        exit(EXIT_FAILURE);
-    }
-
-    if (!is_server)
-    {
-        if (argc < 3)
-        {
-            fprintf(stderr, "Usage: %s client <server_ip>\n", argv[0]);
-            exit(EXIT_FAILURE);
-        }
-
-        if (SDLNet_ResolveHost(&srvadd, argv[2], 2000) == -1)
-        {
-            fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    if (!((p = SDLNet_AllocPacket(512)) && (p2 = SDLNet_AllocPacket(512))))
-    {
-        fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
+        cleanUpNetwork(&sd, &p, &p2);
+        cleanUpSDL();
         exit(EXIT_FAILURE);
     }
 
     Game game = {0};
-    DisplayMode dM = {0};
-
-    bool startGame = false;
-
-    if (!initiate(&dM, &game))
+    if (!initGame(&game))
     {
-        return 1;
+        cleanUpGame(&game);
+        cleanUpNetwork(&sd, &p, &p2);
+        cleanUpSDL();
+        exit(EXIT_FAILURE);
     }
-    if (!showMenu(game.pRenderer, dM.window_width, dM.window_height))
+    initScreenRect(&game);
+
+    if (!showMenu(game.pRenderer, game.screenRect.w, game.screenRect.h))
     {
-        cleanUp(&game);
-        return 1;
+        cleanUpGame(&game);
+        cleanUpNetwork(&sd, &p, &p2);
+        cleanUpSDL();
+        exit(EXIT_FAILURE);
     }
 
-    game.pGameMusic = initiateMusic(game.pGameMusic);
-    game.pBackground = createBackground(game.pRenderer, dM.window_width, dM.window_height);
-    game.pBlockImage = createBlockImage(game.pRenderer);
-    game.pBlock = createBlock(game.pBlockImage, dM.window_width, dM.window_height);
-    SDL_Rect blockRect = getRectBlock(game.pBlock);
+    game.pBackground = createBackground(game.pRenderer, game.screenRect.w, game.screenRect.h);
+    game.pBlock = createBlock(game.pRenderer, &game.screenRect);
+    SDL_Rect blockRect = getBlockRect(game.pBlock);
     for (int i = 0; i < MAX_NROFPLAYERS; i++)
     {
-        game.pPlayer[i] = createPlayer(blockRect, (&game)->pRenderer, dM.window_width, dM.window_height);
+        game.pPlayer[i] = createPlayer(i, game.pRenderer, &game.screenRect);
+        initStartPosition(game.pPlayer[i], blockRect);
     }
-    game.pCamera = camera(dM.window_width, dM.window_height);
-    if (!game.pGameMusic || !game.pBackground || !game.pBlockImage || !game.pPlayer)
+    game.pCamera = camera(game.screenRect.w, game.screenRect.h);
+    if (!game.pBlock || !game.pPlayer[0])
     {
-        cleanUp(&game);
+        cleanUpGame(&game);
         return 1;
     }
+    playMusic(game.pGameMusic);
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
     bool onGround = true;
@@ -128,8 +110,12 @@ int main(int argc, char *argv[])
     Uint32 lastTime = SDL_GetTicks(); // Tidpunkt för senaste uppdateringen
     Uint32 currentTime;
     float deltaTime;
-    drawBlueprints(game.pMaps);
-    chooseMap(gameMap, game.pMaps[chosenMap]);
+
+    readMap(gameMap);
+
+    // drawBlueprints(game.pMaps);
+    // chooseMap(gameMap, game.pMaps[chosenMap]);
+
     while (!closeWindow)
     {
         // Beräkna tid sedan senaste frame
@@ -145,164 +131,298 @@ int main(int argc, char *argv[])
                 handleInput(&game, &event, &closeWindow, &up, &down, &left, &right);
         }
         goDown = goLeft = goRight = goUp = 0;
-        setSpeed(up, down, left, right, &goUp, &goDown, &goLeft, &goRight, &upCounter, onGround, game.pPlayer[0], dM.speed_x, dM.speed_y);
-        updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround, &goUp, &goDown, &goLeft, &goRight, p, p2, &is_server, srvadd, &sd);
+        setSpeed(up, down, left, right, &goUp, &goDown, &goLeft, &goRight, &upCounter, onGround, game.pPlayer[0]);
+        updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround, &goUp, &goDown,
+                     &goLeft, &goRight, p, p2, &is_server, srvadd, &sd, game.screenRect.h);
         // updatePlayer(game.pPlayer, blockRect);
-        int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]), PlyY = getPlyY(game.pPlayer[0]);
+        int PlyY = game.screenRect.h;
+        for (int i = 0; i < MAX_NROFPLAYERS; i++)
+        {
+            int PlyYtemp = getPlyY(game.pPlayer[i]);
+            if (PlyY > PlyYtemp)
+            {
+                PlyY = PlyYtemp;
+            }
+        }
+
+        int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]);
         updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground, CamX, CamY);
-        buildTheMap(gameMap, game.pBlock, CamY);
+        buildTheMap(gameMap, game.pBlock, CamY, game.screenRect.h);
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
-            drawPlayer(game.pPlayer[i], CamX, CamY, dM.window_width, dM.window_height);
+            drawPlayer(game.pPlayer[i], CamX, CamY);
         }
 
         SDL_RenderPresent(game.pRenderer);
         SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
     }
-    cleanUp(&game);
+
+    cleanUpGame(&game);
+    cleanUpNetwork(&sd, &p, &p2);
+    cleanUpSDL();
+
     return 0;
 }
 
-int initiate(DisplayMode *pdM, Game *pGame)
+int initSDL()
 {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) != 0)
     {
-        printf("Error: %s\n", SDL_GetError());
-        cleanUp(pGame);
+        printf("Error initializing SDL_Init: %s\n", SDL_GetError());
         return 0;
     }
-
-    // Initialize SDL_image for PNG loading
-    int iconImage = IMG_INIT_PNG;
-    if (!(IMG_Init(iconImage) & iconImage))
+    if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG))
     {
-        printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-        cleanUp(pGame);
+        printf("Error initializing IMG_Init: %s\n", IMG_GetError());
         return 0;
     }
-
-    // Initialize SDL_mixer
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
     {
-        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-        cleanUp(pGame);
+        printf("Error initializing Mix_OpenAudio: %s\n", Mix_GetError());
+        return 0;
+    }
+    return 1;
+}
+
+void cleanUpSDL()
+{
+    Mix_CloseAudio();
+    IMG_Quit();
+    SDL_Quit();
+}
+
+int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char *argv[])
+{
+    *is_server = 0;
+
+    if (argc > 1 && strcmp(argv[1], "server") == 0)
+    {
+        *is_server = 1;
+    }
+
+    if (SDLNet_Init() < 0)
+    {
+        fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
         return 0;
     }
 
-    // Initialize SDL_mixer
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+    *sd = NULL;
+    *p = NULL;
+    *p2 = NULL;
+
+    if (!(*sd = SDLNet_UDP_Open(*is_server ? 2000 : 0)))
     {
-        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
-        cleanUp(pGame);
+        fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
         return 0;
     }
 
-    SDL_DisplayMode currentDisplay;
-    if (SDL_GetCurrentDisplayMode(0, &currentDisplay) != 0)
+    if (!(*is_server))
     {
-        printf("Error: %s\n", SDL_GetError());
-        cleanUp(pGame);
-        return 0;
-    }
-
-    pdM->window_width = currentDisplay.w;
-    pdM->window_height = currentDisplay.h;
-
-    /*
-    float aspect_ratio = (float)(pdM->window_width/pdM->window_height);
-    if (aspect_ratio != (16.0f / 9.0f)) {
-        // Här tvingar vi till en 16:9 aspect ratio genom att justera höjd eller bredd
-        if (aspect_ratio > (16.0f / 9.0f)) {
-            // Om bredden är för stor (mer än 16:9)
-            pdM->window_width = pdM->window_height * 16 / 9;
-        } else {
-            // Om höjden är för stor (mer än 9:16)
-            pdM->window_height = pdM->window_width * 9 / 16;
-        }
-    }
-    */
-
-    pdM->speed_x = pdM->window_width / 20;
-    pdM->speed_y = pdM->window_height / 20;
-
-    // Create window with explicit cursor support
-    pGame->pWindow = SDL_CreateWindow("Lavan?", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, pdM->window_width, pdM->window_height, SDL_WINDOW_FULLSCREEN_DESKTOP);
-    if (!pGame->pWindow)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        cleanUp(pGame);
-        return 0;
-    }
-
-    pGame->pJumpSound = NULL; // Initialize jump sound to NULL
-
-    pGame->pRenderer = SDL_CreateRenderer(pGame->pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!pGame->pRenderer)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        cleanUp(pGame);
-        return 0;
-    }
-
-    // Initialize SDL_image for cursor loading
-    int cursor = IMG_INIT_PNG;
-    if (!(IMG_Init(cursor) & cursor))
-    {
-        printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-        cleanUp(pGame);
-        return 0;
-    }
-
-    // Force cursor to be visible first
-    SDL_ShowCursor(SDL_ENABLE);
-
-    // Load and set custom cursor
-    SDL_Surface *cursorSurface = IMG_Load("resources/cursor.png");
-    if (!cursorSurface)
-    {
-        printf("Failed to load cursor image! SDL_image Error: %s\n", IMG_GetError());
-    }
-    else
-    {
-        // Create cursor with hotspot at top-left for better precision
-        SDL_Cursor *cursor = SDL_CreateColorCursor(cursorSurface, 0, 0);
-        if (!cursor)
+        if (argc < 3)
         {
-            printf("Failed to create cursor! SDL Error: %s\n", SDL_GetError());
+            fprintf(stderr, "Usage: %s client <server_ip>\n", argv[0]);
+            return 0;
         }
-        else
+
+        if (SDLNet_ResolveHost(srvadd, argv[2], 2000) == -1)
         {
-            SDL_SetCursor(cursor);
-            // Make sure cursor stays visible
-            SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
+            fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
+            return 0;
         }
-        SDL_FreeSurface(cursorSurface);
     }
 
-    // Double check cursor visibility
-    if (SDL_ShowCursor(-1) != SDL_ENABLE)
+    if (!((*p = SDLNet_AllocPacket(512)) && (*p2 = SDLNet_AllocPacket(512))))
     {
-        SDL_ShowCursor(SDL_ENABLE);
+        fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
+        return 0;
     }
 
     return 1;
 }
 
-void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
-                 bool *pUp, bool *pDown, bool *pLeft, bool *pRight)
+void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2)
 {
-    // First time jumping? I'll load the sound - then it's ready for next time
+    if (*p != NULL)
+    {
+        SDLNet_FreePacket(*p);
+        *p = NULL;
+    }
+    if (*p2 != NULL)
+    {
+        SDLNet_FreePacket(*p2);
+        *p2 = NULL;
+    }
+    if (*sd != NULL)
+    {
+        SDLNet_UDP_Close(*sd);
+        *sd = NULL;
+    }
+    SDLNet_Quit();
+}
+
+int initGame(Game *pGame)
+{
+    pGame->pWindow = SDL_CreateWindow("KungligaProject", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    if (!pGame->pWindow)
+    {
+        printf("Error creating window: %s\n", SDL_GetError());
+        return 0;
+    }
+
+    pGame->pRenderer = SDL_CreateRenderer(pGame->pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (!pGame->pRenderer)
+    {
+        printf("Error creating renderer: %s\n", SDL_GetError());
+        return 0;
+    }
+
+    SDL_Surface *pCursorSurface = IMG_Load("resources/cursor.png"); // Load and set custom cursor
+    if (!pCursorSurface)
+    {
+        printf("SDL Error: Failed to create cursor image. %s\n", IMG_GetError());
+    }
+    else
+    {
+        pGame->pCursor = SDL_CreateColorCursor(pCursorSurface, 0, 0); // Create cursor with hotspot at top-left (0,0) for precision
+        if (!pGame->pCursor)
+        {
+            printf("SDL Error: Failed to create cursor. %s\n", SDL_GetError());
+        }
+        else
+        {
+            SDL_SetCursor(pGame->pCursor);
+            SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1"); // Make sure cursor stays visible
+        }
+        SDL_FreeSurface(pCursorSurface);
+    }
+
+    if (SDL_ShowCursor(-1) != SDL_ENABLE)
+    { // Double check cursor visibility
+        SDL_ShowCursor(SDL_ENABLE);
+    }
+
+    pGame->pJumpSound = Mix_LoadWAV("resources/jump_sound.wav");
     if (!pGame->pJumpSound)
     {
-        pGame->pJumpSound = Mix_LoadWAV("resources/jump_sound.wav");
-        if (!pGame->pJumpSound)
+        printf("Failed to load jump sound! SDL_mixer Error: %s\n", Mix_GetError());
+    }
+
+    pGame->pGameMusic = initiateMusic();
+    if (!pGame->pGameMusic)
+    {
+        printf("Failed to load music sound! SDL_mixer Error: %s\n", SDL_GetError());
+        return 0;
+    }
+
+    return 1;
+}
+
+void initScreenRect(Game *pGame)
+{
+    int window_width, window_height;
+
+    SDL_GetWindowSize(pGame->pWindow, &window_width, &window_height);
+    float currentAspect = (float)window_width / window_height;
+    int targetWidth = window_width;
+    int targetHeight = window_height;
+
+    if (currentAspect > TARGET_ASPECT_RATIO)
+    {
+        targetWidth = (int)(window_height * TARGET_ASPECT_RATIO + 0.5f);
+    }
+    else if (currentAspect < TARGET_ASPECT_RATIO)
+    {
+        targetHeight = (int)(window_width / TARGET_ASPECT_RATIO + 0.5f);
+    }
+
+    pGame->screenRect.w = (int)(targetWidth * SCREEN_SCALEFACTOR + 0.5f);
+    pGame->screenRect.h = (int)(targetHeight * SCREEN_SCALEFACTOR + 0.5f);
+    pGame->screenRect.x = (int)((window_width - targetWidth * SCREEN_SCALEFACTOR) / 2 + 0.5f);
+    pGame->screenRect.y = (int)((window_height - targetHeight * SCREEN_SCALEFACTOR) / 2 + 0.5f);
+
+    printf("Original window size: w: %d, h: %d \n", window_width, window_height);
+    printf("screenRect: x=%d, y=%d, w=%d, h=%d\n", pGame->screenRect.x, pGame->screenRect.y, pGame->screenRect.w, pGame->screenRect.h);
+
+    // Dessa raderna under ska tas bort så småningom! Men vi har detta tills vidare!
+    pGame->screenRect.w = window_width;
+    pGame->screenRect.h = window_height;
+}
+
+void cleanUpGame(Game *pGame)
+{
+    if (pGame->pBackground)
+    {
+        destroyBackground(pGame->pBackground);
+        pGame->pBackground = NULL;
+    }
+
+    if (pGame->pGameMusic)
+    {
+        Mix_HaltMusic();
+        Mix_FreeMusic(pGame->pGameMusic);
+        pGame->pGameMusic = NULL;
+    }
+
+    if (pGame->pJumpSound)
+    {
+        Mix_FreeChunk(pGame->pJumpSound);
+        pGame->pJumpSound = NULL;
+    }
+
+    if (pGame->pCursor)
+    {
+        SDL_FreeCursor(pGame->pCursor);
+        pGame->pRenderer = NULL;
+    }
+
+    if (pGame->pRenderer)
+    {
+        SDL_DestroyRenderer(pGame->pRenderer);
+        pGame->pRenderer = NULL;
+    }
+
+    if (pGame->pWindow)
+    {
+        SDL_DestroyWindow(pGame->pWindow);
+        pGame->pWindow = NULL;
+    }
+
+    // Raderna under behöver vi gå igenom mer noggrant sen
+    for (int i = 0; i < MAX_NROFPLAYERS; i++)
+    {
+        if (pGame->pPlayer[i] != NULL)
         {
-            printf("Failed to load jump sound! SDL_mixer Error: %s\n", Mix_GetError());
+            destroyPlayer(pGame->pPlayer[i]);
+            pGame->pPlayer[i] = NULL;
         }
     }
 
+    if (pGame->pBlock != NULL)
+    {
+        destroyBlock(pGame->pBlock);
+        pGame->pBlock = NULL;
+    }
+    if (pGame->pCamera != NULL)
+    {
+        destroyCamera(pGame->pCamera);
+        pGame->pCamera = NULL;
+    }
+
+    for (int i = 0; i < NROFMAPS; i++)
+    {
+        if (pGame->pMaps[i] != NULL)
+        {
+            destroyMap(pGame->pMaps[i]);
+            pGame->pMaps[i] = NULL; // skyddar mot dubbel-free
+        }
+    }
+}
+
+void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
+                 bool *pUp, bool *pDown, bool *pLeft, bool *pRight)
+{
     if (pEvent->type == SDL_KEYDOWN)
     {
         switch (pEvent->key.keysym.scancode)
@@ -332,11 +452,6 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
             (*pRight) = true;
             break;
         case SDL_SCANCODE_ESCAPE:
-            if (pGame->pJumpSound)
-            {
-                Mix_FreeChunk(pGame->pJumpSound); // Clean up jump sound
-                pGame->pJumpSound = NULL;
-            }
             (*pCloseWindow) = true;
             break;
         }
@@ -367,66 +482,24 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
     }
 }
 
-void cleanUp(Game *pGame)
+void readMap(int (*map)[BOX_COL])
 {
-    if (pGame == NULL)
-        return;
-    /*
-    if (pGame->pTexture != NULL) {
-        SDL_DestroyTexture(pGame->pTexture);
-        pGame->pTexture = NULL;
-    }
-    */
-    destroyBackground(pGame->pBackground);
-    // Stop and free game music
-    Mix_HaltMusic();
-    Mix_FreeMusic(pGame->pGameMusic);
-    if (pGame->pRenderer != NULL)
-    {
-        SDL_DestroyRenderer(pGame->pRenderer);
-        pGame->pRenderer = NULL;
-    }
+    FILE *fp;
+    char tmp[BOX_COL + 1];
 
-    if (pGame->pWindow != NULL)
-    {
-        SDL_DestroyWindow(pGame->pWindow);
-        pGame->pWindow = NULL;
-    }
+    fp = fopen("map.txt", "r");
 
-    for (int i = 0; i < MAX_NROFPLAYERS; i++)
+    if (fp != NULL)
     {
-        if (pGame->pPlayer[i] != NULL)
+        for (int i = 0; i < BOX_ROW; i++)
         {
-            destroyPlayer(pGame->pPlayer[i]);
-            pGame->pPlayer[i] = NULL;
+            fscanf(fp, "%s", tmp);
+            for (int j = 0; j < BOX_COL; j++)
+            {
+                map[i][j] = tmp[j] - 48;
+            }
         }
     }
-    if (pGame->pCamera != NULL)
-    {
-        destroyCamera(pGame->pCamera);
-        pGame->pCamera = NULL;
-    }
-
-    // Här lägger vi till mer kod som frigör tidigare allokerat minne ifall det behövs (t.ex. för platforms sen)
-    if (pGame->pBlock != NULL)
-    {
-        destroyBlock(pGame->pBlock);
-        pGame->pBlock = NULL;
-    }
-    if (pGame->pBlockImage)
-    {
-        destroyBlockImage(pGame->pBlockImage);
-        pGame->pBlockImage = NULL;
-    }
-    for (int i = 0; i < NROFMAPS; i++)
-    {
-        if (pGame->pMaps[i] != NULL)
-        {
-            destroyMap(pGame->pMaps[i]);
-            pGame->pMaps[i] = NULL; // skyddar mot dubbel-free
-        }
-    }
-
-    // Nu har jag lagt in blocks
-    SDL_Quit();
+    else
+        printf("no map file\n");
 }

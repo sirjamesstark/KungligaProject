@@ -60,7 +60,6 @@ bool showMenu(SDL_Renderer *pRenderer, int window_width, int window_height)
     // Wait a tiny bit to ensure sound effects finish playing
     SDL_Delay(100);
     Mix_FreeChunk(pButtonSound);
-    Mix_CloseAudio();
 
     return letTheGameBegin;
 }

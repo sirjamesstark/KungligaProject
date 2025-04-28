@@ -15,6 +15,7 @@ struct camera
     View view;
     int window_height, window_width;
     int latestY;
+    int count;
 };
 
 int getCamX(Camera *pCamera)
@@ -51,7 +52,16 @@ void updateCamera(Camera *pCamera, int targetX, int targetY)
 
     if (pCamera->latestY < pCamera->view.y)
     {
-        pCamera->view.y = pCamera->latestY;
+        if (pCamera->count == 20)
+        {
+            pCamera->view.y = pCamera->latestY - 1;
+            pCamera->count = 0;
+        }
+        else
+        {
+            pCamera->view.y = pCamera->latestY;
+            pCamera->count++;
+        }
     }
 
     if (pCamera->view.x < 0)
