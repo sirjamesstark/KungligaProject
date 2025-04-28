@@ -127,6 +127,7 @@ int main(int argc, char *argv[])
         }
         goDown = goLeft = goRight = goUp = 0;
         setSpeed(up, down, left, right, &goUp, &goDown, &goLeft, &goRight, &upCounter, onGround, game.pPlayer[0]);
+        setAnimation(game.pPlayer[1]);
         updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround, &goUp, &goDown, 
                         &goLeft, &goRight, p, p2, &is_server, srvadd, &sd,game.screenRect.h);
         // updatePlayer(game.pPlayer, blockRect);

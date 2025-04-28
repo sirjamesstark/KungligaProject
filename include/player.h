@@ -39,9 +39,10 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
                     UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd, int window_height);
 void syncCharacterRect(Player *pPlayer);
 void updatePlayerFrame(Player *pPlayer);
-void networkUDP (Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd, float space);
+void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int *pIs_server, IPaddress srvadd, 
+    UDPsocket *pSd, float space);
 void drawPlayer(Player *pPlayer, int CamX, int CamY);
-
+void setAnimation(Player *pPlayer);
 void destroyPlayer(Player *pPlayer);
 void setSpeed(bool up, bool down, bool left, bool right, bool *pGoUp, bool *pGoDown, bool *pGoLeft, bool *pGoRight,
                 int *pUpCounter, bool onGround, Player *pPlayer);
