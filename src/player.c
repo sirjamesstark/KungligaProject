@@ -104,7 +104,8 @@ Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pGameArea
     return pPlayer;
 }
 
-SDL_Surface *initPlayerFrames(Player *pPlayer, int player_ID) {
+SDL_Surface *initPlayerFrames(Player *pPlayer, int player_ID) 
+{
     pPlayer->frames.currentFrame_x = pPlayer->frames.currentFrame_y = 0;
     pPlayer->frames.is_mirrored = false;
     pPlayer->frames.frameDelay = 200; // 100 ms = 10 frames per sekund
@@ -146,8 +147,8 @@ SDL_Surface *initPlayerFrames(Player *pPlayer, int player_ID) {
 
 void initStartPosition(Player *pPlayer, SDL_Rect blockRect) {
     pPlayer->oldX = pPlayer->x = blockRect.w * 2;
-    // testing pPlayer->oldY = pPlayer->y = BOX_SCREEN_Y * blockRect.h - blockRect.h * 2 - pPlayer->dstRect.h;
-    pPlayer->oldY = pPlayer->y = 0;
+    pPlayer->oldY = pPlayer->y = BOX_SCREEN_Y * blockRect.h - blockRect.h * 2 - pPlayer->dstRect.h;
+    // pPlayer->oldY = pPlayer->y = 0;
     /*
     pPlayer->dstRect.x = (float)(pPlayer->pGameAreaRect->x + blockRect.w / 2);  // Börjar i mitten av ett block i x-led
     pPlayer->dstRect.y = (float)(pPlayer->pGameAreaRect->y + pPlayer->pGameAreaRect->h - blockRect.h - pPlayer->frames.characterRect.h);
