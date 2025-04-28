@@ -373,7 +373,7 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, i
 {
         if (pPlayer[0]->oldX != pPlayer[0]->x || pPlayer[0]->oldY != pPlayer[0]->y)
         {
-            sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->pGameAreaRect->w, (pPlayer[0]->y + space) / pPlayer[0]->pGameAreaRect->h);
+            sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->pGameAreaRect->w, (pPlayer[0]->y) / pPlayer[0]->pGameAreaRect->h);
             p->len = strlen((char *)p->data) + 1;
     
             if (!(*pIs_server))
@@ -391,11 +391,11 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, i
             float a, b;
             sscanf((char *)p2->data, "%f %f", &a, &b);
             pPlayer[1]->x = a * pPlayer[0]->pGameAreaRect->w;
-            pPlayer[1]->y = b * pPlayer[0]->pGameAreaRect->h - space;
+            pPlayer[1]->y = b * pPlayer[0]->pGameAreaRect->h;
             pPlayer[1]->active = true;
             if (*pIs_server)
             {
-                sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->pGameAreaRect->w, (pPlayer[0]->y + space) / pPlayer[0]->pGameAreaRect->h);
+                sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->pGameAreaRect->w, (pPlayer[0]->y) / pPlayer[0]->pGameAreaRect->h);
                 p->address = p2->address;
                 p->len = strlen((char *)p->data) + 1;
                 SDLNet_UDP_Send(*pSd, -1, p);
