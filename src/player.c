@@ -221,6 +221,43 @@ void setSpeed(bool up, bool down, bool left, bool right, bool *pGoUp, bool *pGoD
     }
 }
 
+void setAnimation(Player *pPlayer)
+{
+    if (pPlayer->oldX > pPlayer->dstRect.x) // going left
+    {
+        pPlayer->frames.is_mirrored = true;
+
+        if (pPlayer->oldY < pPlayer->dstRect.y) // and up
+        {
+            pPlayer->frames.currentFrame_y = 2;
+        }
+        else // not going up
+        {
+            pPlayer->frames.currentFrame_y = 1;
+        }
+    }
+    else if (pPlayer->oldX < pPlayer->dstRect.x) // going right
+    {
+        pPlayer->frames.is_mirrored = false;
+
+        if (pPlayer->oldY < pPlayer->dstRect.y) // and up
+        {
+            pPlayer->frames.currentFrame_y = 2;
+        }
+        else // not going up
+        {
+            pPlayer->frames.currentFrame_y = 1;
+        }
+    }
+    else // idel
+    {
+        pPlayer->frames.currentFrame_y = 0;
+    }
+
+    pPlayer->oldX = pPlayer->dstRect.x;
+    pPlayer->oldY = pPlayer->dstRect.y;
+}
+
 void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap[BOX_ROW][BOX_COL], SDL_Rect blockRect,
                   int *pUpCounter, bool *pOnGround, bool *pGoUp, bool *pGoDown, bool *pGoLeft, bool *pGoRight, UDPpacket *p,
                   UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd, int window_height)
@@ -382,7 +419,8 @@ void updatePlayerFrame(Player *pPlayer)
     pPlayer->srcRect.y = pPlayer->frames.currentFrame_y * pPlayer->srcRect.h;
 }
 
-void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd, float space)
+void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int *pIs_server, IPaddress srvadd,
+                UDPsocket *pSd, float space)
 {
     static int lastSentTime = 0;
     int now = SDL_GetTicks();
@@ -405,10 +443,16 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, i
     if (SDLNet_UDP_Recv(*pSd, p2))
     {
         float a, b;
+        pPlayer[1]->oldX = pPlayer[1]->x;
+        pPlayer[1]->oldY = pPlayer[1]->y;
+
         sscanf((char *)p2->data, "%f %f", &a, &b);
         pPlayer[1]->targetX = a * pPlayer[1]->pGameAreaRect->w;
         pPlayer[1]->targetY = b * pPlayer[1]->pGameAreaRect->h;
         pPlayer[1]->active = true;
+
+        setAnimation(pPlayer[1]);
+
         if (*pIs_server)
         {
             sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->pGameAreaRect->w, (pPlayer[0]->y) / pPlayer[0]->pGameAreaRect->h);
