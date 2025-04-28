@@ -18,10 +18,7 @@ struct frames
 
 struct player
 {
-    float x, y, vx, vy;
-    // testing
-    float oldX, oldY;
-    // new variables
+    float x, y, vx, vy, oldX, oldY,targetX,targetY;
     Frames frames;
     SDL_Renderer *pRenderer;
     SDL_Rect *pGameAreaRect;
@@ -234,6 +231,9 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
     }
     
     networkUDP(pPlayer, p, p2, pIs_server, srvadd, pSd, space);
+    float lerpSpeed = 0.1f; // Testa mellan 0.1 och 0.2
+    pPlayer[1]->x += (pPlayer[1]->targetX - pPlayer[1]->x) * lerpSpeed;
+    pPlayer[1]->y += (pPlayer[1]->targetY - pPlayer[1]->y) * lerpSpeed;
 
     // Check Collision
     if ((*pGoLeft) != 0)
@@ -286,12 +286,14 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
     if (gameMap[(int)(checkY + offset.gravity + pPlayer[0]->frames.characterRect.h) / blockRect.h][((int)pPlayer[0]->x + 25) / blockRect.w] == 0 &&                                // Left edge blocked on bottom?
         gameMap[(int)(checkY + offset.gravity + pPlayer[0]->frames.characterRect.h) / blockRect.h][(int)(pPlayer[0]->x + 10 + pPlayer[0]->frames.characterRect.w) / blockRect.w] == 0) // Right edge blocked on bottom?
     {
-        (*pOnGround) = false;
+        (*pOnGround) = false;   
     }
     pPlayer[0]->dstRect.x = pPlayer[0]->x;
     pPlayer[0]->dstRect.y = pPlayer[0]->y;
+    syncCharacterRect(pPlayer[0]);
     pPlayer[1]->dstRect.x = pPlayer[1]->x;
     pPlayer[1]->dstRect.y = pPlayer[1]->y;
+    syncCharacterRect(pPlayer[1]);
     if (pPlayer[0]->x < 0)
     {
         pPlayer[0]->x = 0; // gör så att man inte kan falla ned i vänster hörnet
@@ -319,6 +321,12 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
     pPlayer[0]->dstRect.x = pPlayer[0]->frames.characterRect.x - (pPlayer[0]->dstRect.w - pPlayer[0]->frames.characterRect.w) / 2; 
     pPlayer[0]->dstRect.y = pPlayer[0]->frames.characterRect.y - (pPlayer[0]->dstRect.h - pPlayer[0]->frames.characterRect.h);
     */
+}
+
+void syncCharacterRect(Player *pPlayer) 
+{
+    pPlayer->frames.characterRect.x = pPlayer->dstRect.x + (pPlayer->dstRect.w - pPlayer->frames.characterRect.w) / 2;
+    pPlayer->frames.characterRect.y = pPlayer->dstRect.y + (pPlayer->dstRect.h - pPlayer->frames.characterRect.h);
 }
 
 void updatePlayerFrame(Player *pPlayer)
@@ -371,22 +379,9 @@ void updatePlayerFrame(Player *pPlayer)
 
 void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd, float space)
 {
-    if (SDLNet_UDP_Recv(*pSd, p2))
-    {
-        float a, b;
-        sscanf((char *)p2->data, "%f %f", &a, &b);
-        pPlayer[1]->x = a * pPlayer[0]->pGameAreaRect->w;
-        pPlayer[1]->y = b * pPlayer[0]->pGameAreaRect->h;
-        pPlayer[1]->active = true;
-        if (*pIs_server)
-        {
-            sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->pGameAreaRect->w, (pPlayer[0]->y) / pPlayer[0]->pGameAreaRect->h);
-            p->address = p2->address;
-            p->len = strlen((char *)p->data) + 1;
-            SDLNet_UDP_Send(*pSd, -1, p);
-        }
-    }
-    if (pPlayer[0]->oldX != pPlayer[0]->x || pPlayer[0]->oldY != pPlayer[0]->y)
+    static int lastSentTime = 0;
+    int now = SDL_GetTicks();
+    if ((now - lastSentTime) > 50 && (pPlayer[0]->oldX != pPlayer[0]->x || pPlayer[0]->oldY != pPlayer[0]->y))
     {
         sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->pGameAreaRect->w, (pPlayer[0]->y) / pPlayer[0]->pGameAreaRect->h);
         p->len = strlen((char *)p->data) + 1;
@@ -400,6 +395,22 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, i
         SDLNet_UDP_Send(*pSd, -1, p);
         pPlayer[0]->oldX = pPlayer[0]->x;
         pPlayer[0]->oldY = pPlayer[0]->y;
+        lastSentTime = now;
+    }
+    if (SDLNet_UDP_Recv(*pSd, p2))
+    {
+        float a, b;
+        sscanf((char *)p2->data, "%f %f", &a, &b);
+        pPlayer[1]->targetX = a * pPlayer[1]->pGameAreaRect->w;
+        pPlayer[1]->targetY = b * pPlayer[1]->pGameAreaRect->h;
+        pPlayer[1]->active = true;
+        if (*pIs_server)
+        {
+            sprintf((char *)p->data, "%f %f", pPlayer[0]->x / pPlayer[0]->pGameAreaRect->w, (pPlayer[0]->y) / pPlayer[0]->pGameAreaRect->h);
+            p->address = p2->address;
+            p->len = strlen((char *)p->data) + 1;
+            SDLNet_UDP_Send(*pSd, -1, p);
+        }
     }
 }
 
