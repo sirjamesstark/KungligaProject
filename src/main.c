@@ -43,7 +43,7 @@ void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2);
 int initGame(Game *pGame);
 void initScreenRect(Game *pGame);
 void cleanUpGame(Game *pGame);
-
+void readMap(int (*map)[BOX_COL]);
 
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, bool *pUp, bool *pDown, bool *pLeft, bool *pRight);
 
@@ -108,8 +108,12 @@ int main(int argc, char *argv[])
     Uint32 lastTime = SDL_GetTicks(); // Tidpunkt för senaste uppdateringen
     Uint32 currentTime;
     float deltaTime;
-    drawBlueprints(game.pMaps);
-    chooseMap(gameMap, game.pMaps[chosenMap]);
+
+    readMap(gameMap);
+
+    // drawBlueprints(game.pMaps);
+    // chooseMap(gameMap, game.pMaps[chosenMap]);
+
     while (!closeWindow)
     {
         // Beräkna tid sedan senaste frame
@@ -431,4 +435,26 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
             break;
         }
     }
+}
+
+void readMap(int (*map)[BOX_COL])
+{
+    FILE *fp;
+    char tmp[BOX_COL+1];
+
+    fp = fopen("map.txt", "r");
+
+    if (fp != NULL)
+    {
+        for (int i = 0; i < BOX_ROW; i++)
+        {
+            fscanf(fp, "%s", tmp);
+            for (int j = 0; j < BOX_COL; j++)
+            {
+                map[i][j] = tmp[j] - 48;
+            }
+            
+        } 
+    }
+    else printf("no map file\n");
 }
