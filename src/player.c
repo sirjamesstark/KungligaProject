@@ -231,7 +231,7 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
     }
     
     networkUDP(pPlayer, p, p2, pIs_server, srvadd, pSd, space);
-    float lerpSpeed = 0.1f; // Testa mellan 0.1 och 0.2
+    float lerpSpeed = 0.2f; // Testa mellan 0.1 och 0.2
     pPlayer[1]->x += (pPlayer[1]->targetX - pPlayer[1]->x) * lerpSpeed;
     pPlayer[1]->y += (pPlayer[1]->targetY - pPlayer[1]->y) * lerpSpeed;
 
