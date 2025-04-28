@@ -62,7 +62,7 @@ Block *createBlock(SDL_Renderer *pRenderer, SDL_Rect *pGameAreaRect)
         return NULL;
     }
 
-    SDL_Surface *pSurface = IMG_Load("resources/blocks_spritesheet_test.png");
+    SDL_Surface *pSurface = IMG_Load("resources/block_sprites_effects23.png");
     if (!pSurface) {
         destroyBlock(pBlock);
         printf("Error: Failed to initialize block frames.\n");
