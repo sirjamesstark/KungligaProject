@@ -73,7 +73,6 @@ int main(int argc, char *argv[])
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
-    initScreenRect(&game);
 
     if (!showMenu(game.pRenderer, game.screenRect.w, game.screenRect.h))
     {
@@ -275,6 +274,8 @@ int initGame(Game *pGame)
         printf("Error creating renderer: %s\n", SDL_GetError());
         return 0;
     }
+
+    initScreenRect(pGame);
 
     SDL_Surface *pCursorSurface = IMG_Load("resources/cursor.png"); // Load and set custom cursor
     if (!pCursorSurface)
