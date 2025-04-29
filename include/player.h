@@ -25,7 +25,7 @@ typedef struct offsets Offsets;
 typedef struct player Player;
 typedef struct frames Frames;
 
-Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pGameAreaRect);
+Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pScreenRect);
 SDL_Surface *initPlayerFrames(Player *pPlayer, int player_ID);
 void initStartPosition(Player *pPlayer, SDL_Rect blockRect);
 
@@ -41,7 +41,7 @@ void syncCharacterRect(Player *pPlayer);
 void updatePlayerFrame(Player *pPlayer);
 void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int *pIs_server, IPaddress srvadd,
     UDPsocket *pSd, float space, SDL_Rect blockRect, int window_height);
-void drawPlayer(Player *pPlayer);
+void drawPlayer(Player *pPlayer, int CamX, int CamY);
 void setAnimation(Player *pPlayer);
 void destroyPlayer(Player *pPlayer);
 void setSpeed(bool up, bool down, bool left, bool right, bool *pGoUp, bool *pGoDown, bool *pGoLeft, bool *pGoRight,

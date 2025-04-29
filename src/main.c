@@ -31,7 +31,6 @@ typedef struct
     Player *pPlayer[MAX_NROFPLAYERS];
     Block *pBlock;
     Camera *pCamera;
-    // BlockImage *pBlockImage;
 } Game;
 
 int initSDL();
@@ -93,7 +92,7 @@ int main(int argc, char *argv[])
     }
 
 
-
+    // flytta ev in dessa initieringar i initGameAfterMenu
     SDL_Rect blockRect = getBlockRect(game.pBlock);
     for (int i = 0; i < MAX_NROFPLAYERS; i++)
     {
@@ -141,8 +140,7 @@ int main(int argc, char *argv[])
         setSpeed(up, down, left, right, &goUp, &goDown, &goLeft, &goRight, &upCounter, onGround, game.pPlayer[0]);
         setAnimation(game.pPlayer[1]);
         updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround, &goUp, &goDown,
-                     &goLeft, &goRight, p, p2, &is_server, srvadd, &sd, game.screenRect.h);
-        // updatePlayer(game.pPlayer, blockRect);
+            &goLeft, &goRight, p, p2, &is_server, srvadd, &sd, game.screenRect.h);
 
         int PlyY = game.screenRect.y;
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
@@ -154,20 +152,14 @@ int main(int argc, char *argv[])
             }
         }
 
-        //int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]);
-        game.screenRect.x = getCamX(game.pCamera);
-        game.screenRect.y = getCamY(game.pCamera);
-        int PlyX = getPlyX(game.pPlayer[0]);
-        
+        int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]);
         updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
-        drawBackground(game.pBackground, game.screenRect.x, game.screenRect.y);
-        //drawBackground(game.pBackground, CamX, CamY);
-
-        buildTheMap(gameMap, game.pBlock);
+        drawBackground(game.pBackground, CamX, CamY);
+        buildTheMap(gameMap, game.pBlock, CamY);
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
-            drawPlayer(game.pPlayer[i]);
+            drawPlayer(game.pPlayer[i], CamX, CamY);
         }
 
         SDL_RenderPresent(game.pRenderer);

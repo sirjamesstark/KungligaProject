@@ -463,12 +463,12 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, i
     }
 }
 
-void drawPlayer(Player *pPlayer)
+void drawPlayer(Player *pPlayer, int CamX, int CamY)
 {
     updatePlayerFrame(pPlayer);
 
-    //pPlayer->dstRect.x = (pPlayer->x - CamX);
-    //pPlayer->dstRect.y = (pPlayer->y - CamY);
+    pPlayer->dstRect.x = (pPlayer->x - CamX);
+    pPlayer->dstRect.y = (pPlayer->y - CamY);
 
     if (pPlayer->frames.is_mirrored == true)
     {

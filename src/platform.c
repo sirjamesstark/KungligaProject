@@ -3,14 +3,6 @@
 #include <stdlib.h>
 #include "../include/platform.h"
 
-/*
-struct blockImage
-{
-    SDL_Renderer *pRenderer;
-    SDL_Texture *pTexture;
-};
-*/
-
 struct block
 {
     int nrOfFrames_blocks;
@@ -19,35 +11,7 @@ struct block
     SDL_Texture *pTexture;
     SDL_Rect srcRect;   // srcRect.w och srcRect.h lagrar den verkliga storleken av en frame i spritesheetet, srcRect.x och srcRect.y anger vilken frame i spritesheetet för blocks som väljs
     SDL_Rect dstRect;   // dstRect.w och dstRect.h är en nerskalad variant av srcRect.w och srcRect.h, dstRect.x och dstRect.y anger var i fönstret som den aktuella framen i srcRect.x och srcRect.y ska ritas upp
-};
-
-/*
-BlockImage *createBlockImage(SDL_Renderer *pRenderer)
-{
-    BlockImage *pBlockImage = NULL;
-    if (pBlockImage == NULL)
-    {
-        pBlockImage = malloc(sizeof(struct blockImage));
-        if (pBlockImage == NULL)
-            return NULL;
-        SDL_Surface *surface = IMG_Load("resources/box8.png");
-        if (!surface)
-        {
-            printf("Error: %s\n", SDL_GetError());
-            return NULL;
-        }
-        pBlockImage->pRenderer = pRenderer;
-        pBlockImage->pTexture = SDL_CreateTextureFromSurface(pRenderer, surface);
-        SDL_FreeSurface(surface);
-        if (!pBlockImage->pTexture)
-        {
-            printf("Error: %s\n", SDL_GetError());
-            return NULL;
-        }
-    }
-    return pBlockImage;
-}
-*/
+};   
 
 Block *createBlock(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
 {
@@ -103,44 +67,21 @@ SDL_Rect getBlockRect(Block *pBlock) {
     return pBlock->dstRect;
 }
 
-void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock)
+void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY)
 {
     float shift_col_0 = (float)(pBlock->pScreenRect->w - (pBlock->dstRect.w * BOX_COL)) / 2.0f; 
     float shift_row_0 = (float)(pBlock->pScreenRect->h - (pBlock->dstRect.h * BOX_ROW)) / 2.0f;
 
     for (int row = 0; row < BOX_ROW; row++) {
         for (int col = 0; col < BOX_COL; col++) {
-            pBlock->dstRect.x = (int)((col * pBlock->dstRect.w) + shift_col_0);
-            pBlock->dstRect.y = (int)((row * pBlock->dstRect.h) + shift_row_0);
+            pBlock->dstRect.x = (int)((col * pBlock->dstRect.w) + shift_col_0 + pBlock->pScreenRect->x);
+            pBlock->dstRect.y = (int)((row * pBlock->dstRect.h) + shift_row_0 + pBlock->pScreenRect->y);
             SDL_Rect tempRect = pBlock->dstRect;
-            //tempRect.y -= CamY;
+            tempRect.y -= CamY;
             drawBlock(pBlock, gameMap[row][col], &tempRect); 
-            //pBlock->dstRect.y += CamY;
-
-            //drawBlock(pBlock, gameMap[row][col], &tempRect); 
-
-            //drawBlock(pBlock, row, col);
+            pBlock->dstRect.y += CamY;
         }
-    }
-
-    /*
-    for (int row = BOX_ROW - 1; row > 0; row--)
-    {
-        for (int col = 0; col < BOX_COL; col++)
-        {
-            if (gameMap[row][col] != 0)
-            {
-                pBlock->dstRect.x = col * pBlock->dstRect.w;
-                // pBlock->dstRect.y = row * pBlock->dstRect.h;
-                pBlock->dstRect.y = window_height - (BOX_ROW - row) * pBlock->dstRect.h;
-                SDL_Rect tempRect = pBlock->dstRect;
-                tempRect.y -= CamY;
-                drawBlock(pBlock, gameMap[row][col], &tempRect); 
-                pBlock->dstRect.y += CamY;
-            }
-        }
-    }
-        */
+    }  
 }
 
 void drawBlock(Block *pBlock, int block_type, SDL_Rect *dstRect) 
@@ -176,10 +117,3 @@ void destroyBlock(Block *pBlock) {
     free(pBlock);
     pBlock = NULL;
 }
-
-/*
-void destroyBlockImage(BlockImage *pBlockImage)
-{
-    SDL_DestroyTexture(pBlockImage->pTexture);
-}
-*/
