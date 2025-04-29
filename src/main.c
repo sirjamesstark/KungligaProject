@@ -37,8 +37,9 @@ int initSDL();
 void cleanUpSDL();
 int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char *argv[]);
 void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2);
-int initGame(Game *pGame);
+int initGameBeforeMenu(Game *pGame);
 void initScreenRect(Game *pGame);
+int initGameAfterMenu(Game *pGame);
 void cleanUpGame(Game *pGame);
 void readMap(int (*map)[BOX_COL]);
 
@@ -66,7 +67,7 @@ int main(int argc, char *argv[])
     }
 
     Game game = {0};
-    if (!initGame(&game))
+    if (!initGameBeforeMenu(&game))
     {
         cleanUpGame(&game);
         cleanUpNetwork(&sd, &p, &p2);
@@ -82,8 +83,16 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    game.pBackground = createBackground(game.pRenderer, game.screenRect.w, game.screenRect.h);
-    game.pBlock = createBlock(game.pRenderer, &game.screenRect);
+    if (!initGameAfterMenu(&game))
+    {
+        cleanUpGame(&game);
+        cleanUpNetwork(&sd, &p, &p2);
+        cleanUpSDL();
+        exit(EXIT_FAILURE);
+    }
+
+
+    
     SDL_Rect blockRect = getBlockRect(game.pBlock);
     for (int i = 0; i < MAX_NROFPLAYERS; i++)
     {
@@ -91,11 +100,12 @@ int main(int argc, char *argv[])
         initStartPosition(game.pPlayer[i], blockRect);
     }
     game.pCamera = camera(game.screenRect.w, game.screenRect.h);
-    if (!game.pBlock || !game.pPlayer[0])
+    if (!game.pPlayer[0])
     {
         cleanUpGame(&game);
         return 1;
     }
+
     playMusic(game.pGameMusic);
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
@@ -259,7 +269,7 @@ void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2)
     SDLNet_Quit();
 }
 
-int initGame(Game *pGame)
+int initGameBeforeMenu(Game *pGame)
 {
     pGame->pWindow = SDL_CreateWindow("KungligaProject", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
     if (!pGame->pWindow)
@@ -348,6 +358,24 @@ void initScreenRect(Game *pGame)
     pGame->screenRect.w = window_width;
     pGame->screenRect.h = window_height;
 }
+
+int initGameAfterMenu(Game *pGame) {
+    pGame->pBackground = createBackground(pGame->pRenderer, pGame->screenRect.w, pGame->screenRect.h);
+    if (!pGame->pBackground) {
+        cleanUpGame(pGame);
+        printf("Error creating pBackground: %s\n", SDL_GetError());
+        return 0;
+    }
+
+    pGame->pBlock = createBlock(pGame->pRenderer, &pGame->screenRect);
+    if (!pGame->pBlock) {
+        cleanUpGame(pGame);
+        printf("Error creating pBlock: %s\n", SDL_GetError());
+        return 0;
+    }
+    return 1;
+}
+
 
 void cleanUpGame(Game *pGame)
 {
