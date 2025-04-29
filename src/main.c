@@ -360,7 +360,7 @@ void initScreenRect(Game *pGame)
 }
 
 int initGameAfterMenu(Game *pGame) {
-    pGame->pBackground = createBackground(pGame->pRenderer, pGame->screenRect.w, pGame->screenRect.h);
+    pGame->pBackground = createBackground(pGame->pRenderer, &pGame->screenRect);
     if (!pGame->pBackground) {
         cleanUpGame(pGame);
         printf("Error creating pBackground: %s\n", SDL_GetError());

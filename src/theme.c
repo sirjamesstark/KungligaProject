@@ -8,7 +8,7 @@ struct background
 {
     SDL_Renderer *pRenderer;
     SDL_Texture *pTexture;
-    SDL_Rect rect;
+    SDL_Rect *pScreenRect;
 };
 
 Mix_Music *initiateMusic()
@@ -33,7 +33,7 @@ void playMusic(Mix_Music *pGameMusic)
 }
 
 
-Background *createBackground(SDL_Renderer *pRenderer, int window_width, int window_height)
+Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
 {
     Background *pBackground = malloc(sizeof(struct background));
     if (!pBackground)
@@ -57,7 +57,7 @@ Background *createBackground(SDL_Renderer *pRenderer, int window_width, int wind
         free(pBackground);
         return 0;
     }
-    pBackground->rect = (SDL_Rect){0, 0, window_width, window_height};
+    pBackground->pScreenRect = pScreenRect; 
     return pBackground;
 }
 
@@ -66,7 +66,7 @@ void drawBackground(Background *pBackground, int CamX, int CamY)
 
     // pBackground->rect.x = -CamX;
     // pBackground->rect.y = -CamY;
-    SDL_RenderCopy(pBackground->pRenderer, pBackground->pTexture, NULL, &(pBackground->rect));
+    SDL_RenderCopy(pBackground->pRenderer, pBackground->pTexture, NULL, pBackground->pScreenRect);
 }
 
 void destroyBackground(Background *pBackground)

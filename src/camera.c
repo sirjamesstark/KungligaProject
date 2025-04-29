@@ -30,7 +30,6 @@ int getCamY(Camera *pCamera)
 
 Camera *createCamera(SDL_Rect *pScreenRect)
 {
-    printf(" HEEEEJ");
     Camera *pCamera = malloc(sizeof(struct camera));
     if (pCamera == NULL)
         return NULL;
