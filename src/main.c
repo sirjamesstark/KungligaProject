@@ -353,10 +353,6 @@ void initScreenRect(Game *pGame)
 
     printf("Original window size: w: %d, h: %d \n", window_width, window_height);
     printf("screenRect: x=%d, y=%d, w=%d, h=%d\n", pGame->screenRect.x, pGame->screenRect.y, pGame->screenRect.w, pGame->screenRect.h);
-
-    // Dessa raderna under ska tas bort så småningom! Men vi har detta tills vidare!
-    //pGame->screenRect.w = window_width;
-    //pGame->screenRect.h = window_height;
 }
 
 int initGameAfterMenu(Game *pGame) {

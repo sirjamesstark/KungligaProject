@@ -97,10 +97,11 @@ void drawBlock(Block *pBlock, int block_type, SDL_Rect *dstRect)
         };
         SDL_RenderCopy(pBlock->pRenderer, pBlock->pTexture, &srcRect, dstRect);
     }
-    SDL_Rect leftPadding = {0, pBlock->pScreenRect->y, pBlock->pScreenRect->x, pBlock->pScreenRect->h};  // Svart på vänster sida
+
+    SDL_Rect leftPadding = {0, pBlock->pScreenRect->y, pBlock->pScreenRect->x, pBlock->pScreenRect->h};
     SDL_Rect rightPadding = {pBlock->pScreenRect->x + pBlock->pScreenRect->w, pBlock->pScreenRect->y, pBlock->pScreenRect->x, pBlock->pScreenRect->h};
-    SDL_Rect topPadding = {pBlock->pScreenRect->x, 0, pBlock->pScreenRect->w, pBlock->pScreenRect->y};
-    SDL_Rect bottomPadding = {pBlock->pScreenRect->x, pBlock->pScreenRect->y + pBlock->pScreenRect->h, pBlock->pScreenRect->w, pBlock->pScreenRect->y};
+    SDL_Rect topPadding = {0, 0, pBlock->pScreenRect->x + pBlock->pScreenRect->w + pBlock->pScreenRect->x, pBlock->pScreenRect->y};
+    SDL_Rect bottomPadding = {0, pBlock->pScreenRect->y + pBlock->pScreenRect->h, pBlock->pScreenRect->x + pBlock->pScreenRect->w + pBlock->pScreenRect->x, pBlock->pScreenRect->y};
     SDL_SetRenderDrawColor(pBlock->pRenderer, 0, 0, 0, 255);
     SDL_RenderFillRect(pBlock->pRenderer, &leftPadding);
     SDL_RenderFillRect(pBlock->pRenderer, &rightPadding);
