@@ -27,6 +27,7 @@ typedef struct
     Mix_Music *pGameMusic;
     Background *pBackground;
 
+
     Player *pPlayer[MAX_NROFPLAYERS];
     Block *pBlock;
     Camera *pCamera;
@@ -92,14 +93,14 @@ int main(int argc, char *argv[])
     }
 
 
-    
+
     SDL_Rect blockRect = getBlockRect(game.pBlock);
     for (int i = 0; i < MAX_NROFPLAYERS; i++)
     {
         game.pPlayer[i] = createPlayer(i, game.pRenderer, &game.screenRect);
         initStartPosition(game.pPlayer[i], blockRect);
     }
-    game.pCamera = camera(game.screenRect.w, game.screenRect.h);
+    game.pCamera = createCamera(&game.screenRect);
     if (!game.pPlayer[0])
     {
         cleanUpGame(&game);
@@ -142,7 +143,8 @@ int main(int argc, char *argv[])
         updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround, &goUp, &goDown,
                      &goLeft, &goRight, p, p2, &is_server, srvadd, &sd, game.screenRect.h);
         // updatePlayer(game.pPlayer, blockRect);
-        int PlyY = game.screenRect.h;
+
+        int PlyY = game.screenRect.y;
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
             int PlyYtemp = getPlyY(game.pPlayer[i]);
@@ -152,14 +154,20 @@ int main(int argc, char *argv[])
             }
         }
 
-        int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]);
+        //int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]);
+        game.screenRect.x = getCamX(game.pCamera);
+        game.screenRect.y = getCamY(game.pCamera);
+        int PlyX = getPlyX(game.pPlayer[0]);
+        
         updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
-        drawBackground(game.pBackground, CamX, CamY);
-        buildTheMap(gameMap, game.pBlock, CamY, game.screenRect.h);
+        drawBackground(game.pBackground, game.screenRect.x, game.screenRect.y);
+        //drawBackground(game.pBackground, CamX, CamY);
+
+        buildTheMap(gameMap, game.pBlock);
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
-            drawPlayer(game.pPlayer[i], CamX, CamY);
+            drawPlayer(game.pPlayer[i]);
         }
 
         SDL_RenderPresent(game.pRenderer);
@@ -355,8 +363,8 @@ void initScreenRect(Game *pGame)
     printf("screenRect: x=%d, y=%d, w=%d, h=%d\n", pGame->screenRect.x, pGame->screenRect.y, pGame->screenRect.w, pGame->screenRect.h);
 
     // Dessa raderna under ska tas bort så småningom! Men vi har detta tills vidare!
-    pGame->screenRect.w = window_width;
-    pGame->screenRect.h = window_height;
+    //pGame->screenRect.w = window_width;
+    //pGame->screenRect.h = window_height;
 }
 
 int initGameAfterMenu(Game *pGame) {

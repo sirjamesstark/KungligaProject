@@ -21,7 +21,7 @@ struct player
     float x, y, vx, vy, oldX, oldY, targetX, targetY;
     Frames frames;
     SDL_Renderer *pRenderer;
-    SDL_Rect *pGameAreaRect;
+    SDL_Rect *pScreenRect;
     SDL_Texture *pTexture;
     SDL_Rect srcRect; // srcRect.w och srcRect.h lagrar den verkliga storleken av en frame i spritesheetet, srcRect.x och srcRect.y anger vilken frame i spritesheetet som väljs
     SDL_Rect dstRect; // dstRect.w och dstRect.h är en nerskalad variant av srcRect.w och srcRect.h, srcRect.x och srcRect.y anger var i fönstret som den aktuella framen i srcRect.x och srcRect.y ska ritas upp
@@ -43,11 +43,11 @@ int getPlyY(Player *pPlayer)
     return pPlayer->dstRect.y;
 }
 
-Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pGameAreaRect)
+Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
 {
-    if (!pRenderer || !pGameAreaRect)
+    if (!pRenderer || !pScreenRect)
     {
-        printf("Error: Invalid parameters. Renderer or GameAreaRect is NULL.\n");
+        printf("Error: Invalid parameters. pRenderer or pScreenRect is NULL.\n");
         return NULL;
     }
 
@@ -59,7 +59,7 @@ Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pGameArea
     }
 
     pPlayer->pRenderer = pRenderer;
-    pPlayer->pGameAreaRect = pGameAreaRect;
+    pPlayer->pScreenRect = pScreenRect;
 
     SDL_Surface *pSurface = initPlayerFrames(pPlayer, player_ID);
     if (!pSurface)
@@ -84,7 +84,7 @@ Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pGameArea
     pPlayer->srcRect.y = (pPlayer->frames.currentFrame_y) * pPlayer->srcRect.h;
     printf("Player frame size (before scaling): w: %d, h: %d\n", pPlayer->srcRect.w, pPlayer->srcRect.h);
 
-    float scaleFactor = (float)pPlayer->pGameAreaRect->w / (float)pPlayer->srcRect.w * PLAYER_SCALEFACTOR;
+    float scaleFactor = (float)pPlayer->pScreenRect->w / (float)pPlayer->srcRect.w * PLAYER_SCALEFACTOR;
     pPlayer->dstRect.w = (int)(pPlayer->srcRect.w * scaleFactor + 0.5f);
     pPlayer->dstRect.h = (int)(pPlayer->srcRect.h * scaleFactor + 0.5f);
     printf("Player frame size (after scaling): w: %d, h: %d\n", pPlayer->dstRect.w, pPlayer->dstRect.h);
@@ -153,8 +153,8 @@ void initStartPosition(Player *pPlayer, SDL_Rect blockRect)
     // pPlayer->oldY = pPlayer->y = BOX_SCREEN_Y * blockRect.h - blockRect.h * 2 - pPlayer->dstRect.h;
     pPlayer->oldY = pPlayer->y = 0;
     /*
-    pPlayer->dstRect.x = (float)(pPlayer->pGameAreaRect->x + blockRect.w / 2);  // Börjar i mitten av ett block i x-led
-    pPlayer->dstRect.y = (float)(pPlayer->pGameAreaRect->y + pPlayer->pGameAreaRect->h - blockRect.h - pPlayer->frames.characterRect.h);
+    pPlayer->dstRect.x = (float)(pPlayer->pScreenRect->x + blockRect.w / 2);  // Börjar i mitten av ett block i x-led
+    pPlayer->dstRect.y = (float)(pPlayer->pScreenRect->y + pPlayer->pScreenRect->h - blockRect.h - pPlayer->frames.characterRect.h);
     printf("pPlayer->dstRect: x=%d, y=%d\n", pPlayer->dstRect.x, pPlayer->dstRect.y);
 
     pPlayer->frames.characterRect.x = pPlayer->dstRect.x + (int)(((float)(pPlayer->dstRect.w - pPlayer->frames.characterRect.w) / 2.0f) + 0.5f);
@@ -176,8 +176,8 @@ void initStartPosition(Player *pPlayer, SDL_Rect blockRect)
 void setSpeed(bool up, bool down, bool left, bool right, bool *pGoUp, bool *pGoDown, bool *pGoLeft, bool *pGoRight,
               int *pUpCounter, bool onGround, Player *pPlayer)
 {
-    int speedX = pPlayer->pGameAreaRect->w / 20;
-    int speedY = pPlayer->pGameAreaRect->h / 20;
+    int speedX = pPlayer->pScreenRect->w / 20;
+    int speedY = pPlayer->pScreenRect->h / 20;
 
     pPlayer->vx = pPlayer->vy = 0;
     pPlayer->frames.currentFrame_y = 0;
@@ -262,7 +262,7 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
                   int *pUpCounter, bool *pOnGround, bool *pGoUp, bool *pGoDown, bool *pGoLeft, bool *pGoRight, UDPpacket *p,
                   UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd, int window_height)
 {
-    float space = pPlayer[0]->pGameAreaRect->h - blockRect.h * (BOX_SCREEN_Y), checkY;
+    float space = pPlayer[0]->pScreenRect->h - blockRect.h * (BOX_SCREEN_Y), checkY;
     Offsets offset = {(window_height / TOP_OFFSETSCALER) - space, window_height / BOT_OFFSETSCALER - space, window_height / GRAVITY_OFFSETSCALER - space};
     pPlayer[0]->active = true;
     pPlayer[0]->x += pPlayer[0]->vx * 5 * deltaTime;
@@ -347,18 +347,18 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
     pPlayer[0]->frames.characterRect.y = pPlayer[0]->dstRect.y + (pPlayer[0]->dstRect.h - pPlayer[0]->frames.characterRect.h);
 
     // Kontrollerar så att spelaren inte kan röra sig utanför "spelets bana"
-    if (pPlayer[0]->frames.characterRect.x <= pPlayer[0]->pGameAreaRect->x) {
-        pPlayer[0]->frames.characterRect.x = pPlayer[0]->pGameAreaRect->x;
+    if (pPlayer[0]->frames.characterRect.x <= pPlayer[0]->pScreenRect->x) {
+        pPlayer[0]->frames.characterRect.x = pPlayer[0]->pScreenRect->x;
     }
-    else if (pPlayer[0]->frames.characterRect.x >= (pPlayer[0]->pGameAreaRect->x + pPlayer[0]->pGameAreaRect->w)) {
-        pPlayer[0]->frames.characterRect.x = (pPlayer[0]->pGameAreaRect->x + pPlayer[0]->pGameAreaRect->w);
+    else if (pPlayer[0]->frames.characterRect.x >= (pPlayer[0]->pScreenRect->x + pPlayer[0]->pScreenRect->w)) {
+        pPlayer[0]->frames.characterRect.x = (pPlayer[0]->pScreenRect->x + pPlayer[0]->pScreenRect->w);
     }
 
-    if (pPlayer[0]->frames.characterRect.y <= pPlayer[0]->pGameAreaRect->y) {
-        pPlayer[0]->frames.characterRect.x = pPlayer[0]->pGameAreaRect->y;
+    if (pPlayer[0]->frames.characterRect.y <= pPlayer[0]->pScreenRect->y) {
+        pPlayer[0]->frames.characterRect.x = pPlayer[0]->pScreenRect->y;
     }
-    else if (pPlayer[0]->frames.characterRect.y >= (pPlayer[0]->pGameAreaRect->y + pPlayer[0]->pGameAreaRect->h)) {
-        pPlayer[0]->frames.characterRect.x = (pPlayer[0]->pGameAreaRect->y + pPlayer[0]->pGameAreaRect->h);
+    else if (pPlayer[0]->frames.characterRect.y >= (pPlayer[0]->pScreenRect->y + pPlayer[0]->pScreenRect->h)) {
+        pPlayer[0]->frames.characterRect.x = (pPlayer[0]->pScreenRect->y + pPlayer[0]->pScreenRect->h);
     }
     pPlayer[0]->dstRect.x = pPlayer[0]->frames.characterRect.x - (pPlayer[0]->dstRect.w - pPlayer[0]->frames.characterRect.w) / 2;
     pPlayer[0]->dstRect.y = pPlayer[0]->frames.characterRect.y - (pPlayer[0]->dstRect.h - pPlayer[0]->frames.characterRect.h);
@@ -463,12 +463,12 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, i
     }
 }
 
-void drawPlayer(Player *pPlayer, int CamX, int CamY)
+void drawPlayer(Player *pPlayer)
 {
     updatePlayerFrame(pPlayer);
 
-    pPlayer->dstRect.x = (pPlayer->x - CamX);
-    pPlayer->dstRect.y = (pPlayer->y - CamY);
+    //pPlayer->dstRect.x = (pPlayer->x - CamX);
+    //pPlayer->dstRect.y = (pPlayer->y - CamY);
 
     if (pPlayer->frames.is_mirrored == true)
     {

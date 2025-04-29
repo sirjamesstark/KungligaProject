@@ -5,7 +5,7 @@
 typedef struct camera Camera;
 typedef struct view View;
 
-Camera *camera(int screenWidth, int screenHeight);
+Camera *createCamera(SDL_Rect *pScreenRect);
 int getCamX(Camera *pCamera);
 int getCamY(Camera *pCamera);
 void updateCamera(Camera *pCamera, int targetX, int targetY);

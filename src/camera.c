@@ -13,7 +13,7 @@ struct view
 struct camera
 {
     View view;
-    int window_height, window_width;
+    SDL_Rect *pScreenRect;
     int latestY;
     int count;
 };
@@ -28,18 +28,19 @@ int getCamY(Camera *pCamera)
     return pCamera->view.y;
 }
 
-Camera *camera(int window_width, int window_height)
+
+
+Camera *createCamera(SDL_Rect *pScreenRect)
 {
     Camera *pCamera = malloc(sizeof(struct camera));
     if (pCamera == NULL)
         return NULL;
 
-    pCamera->view.x = 0;
-    pCamera->view.y = 0;
-    pCamera->view.w = window_width;
-    pCamera->view.h = window_height;
-    pCamera->window_height = window_height;
-    pCamera->window_width = window_width;
+    pCamera->pScreenRect = pScreenRect; 
+    pCamera->view.x = pCamera->pScreenRect->x;
+    pCamera->view.y = pCamera->pScreenRect->y;
+    pCamera->view.w = pCamera->pScreenRect->w;
+    pCamera->view.h = pCamera->pScreenRect->h;
 
     return pCamera;
 }
@@ -68,10 +69,10 @@ void updateCamera(Camera *pCamera, int targetX, int targetY)
         pCamera->view.x = 0;
     // if (pCamera->view.y < 0)
     //     pCamera->view.y = 0;
-    if (pCamera->view.x + pCamera->view.w > pCamera->window_width)
-        pCamera->view.x = pCamera->window_width - pCamera->view.w;
-    if (pCamera->view.y + pCamera->view.h > pCamera->window_height)
-        pCamera->view.y = pCamera->window_height - pCamera->view.h;
+    if (pCamera->view.x + pCamera->view.w > pCamera->pScreenRect->w)
+        pCamera->view.x = pCamera->pScreenRect->w - pCamera->view.w;
+    if (pCamera->view.y + pCamera->view.h > pCamera->pScreenRect->h)
+        pCamera->view.y = pCamera->pScreenRect->h - pCamera->view.h;
 
     pCamera->latestY = pCamera->view.y;
 }

@@ -8,10 +8,11 @@
 #define BOX_SCREEN_Y 22
 #define COUNTER 20
 #define MAX_NROFPLAYERS 2
-#define PLAYER_SCALEFACTOR 0.04f
+#define PLAYER_SCALEFACTOR 0.065f
 #define TOP_OFFSETSCALER 34
 #define BOT_OFFSETSCALER 39
 #define GRAVITY_OFFSETSCALER 33
+
 // #define TOP_OFFSET 25
 // #define BOT_OFFSET 22
 // #define GRAVITY_OFFSET 26
@@ -40,7 +41,7 @@ void syncCharacterRect(Player *pPlayer);
 void updatePlayerFrame(Player *pPlayer);
 void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int *pIs_server, IPaddress srvadd,
     UDPsocket *pSd, float space, SDL_Rect blockRect, int window_height);
-void drawPlayer(Player *pPlayer, int CamX, int CamY);
+void drawPlayer(Player *pPlayer);
 void setAnimation(Player *pPlayer);
 void destroyPlayer(Player *pPlayer);
 void setSpeed(bool up, bool down, bool left, bool right, bool *pGoUp, bool *pGoDown, bool *pGoLeft, bool *pGoRight,
