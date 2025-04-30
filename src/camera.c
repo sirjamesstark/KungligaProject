@@ -47,7 +47,6 @@ Camera *createCamera(SDL_Rect *pScreenRect)
 
 void updateCamera(Camera *pCamera, int targetX, int targetY)
 {
-
     // pCamera->view.x = targetX - (pCamera->view.w / 2);
     pCamera->view.y = targetY - (pCamera->view.h / 2);
 

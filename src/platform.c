@@ -70,21 +70,19 @@ SDL_Rect getBlockRect(Block *pBlock) {
 void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY)
 {
     float shift_col_0 = (float)(pBlock->pScreenRect->w - (pBlock->dstRect.w * BOX_COL)) / 2.0f; 
-    float shift_row_0 = (float)(pBlock->pScreenRect->h - (pBlock->dstRect.h * BOX_ROW)) / 2.0f;
-
+    
     for (int row = 0; row < BOX_ROW; row++) {
         for (int col = 0; col < BOX_COL; col++) {
             pBlock->dstRect.x = (int)((col * pBlock->dstRect.w) + shift_col_0 + pBlock->pScreenRect->x);
-            pBlock->dstRect.y = (int)((row * pBlock->dstRect.h) + shift_row_0 + pBlock->pScreenRect->y);
-            SDL_Rect tempRect = pBlock->dstRect;
-            tempRect.y -= CamY;
-            drawBlock(pBlock, gameMap[row][col], &tempRect); 
+            pBlock->dstRect.y = (int)((row * pBlock->dstRect.h) + pBlock->pScreenRect->y);
+            pBlock->dstRect.y -= CamY; 
+            drawBlock(pBlock, gameMap[row][col]); 
             pBlock->dstRect.y += CamY;
         }
-    }  
+    }
 }
 
-void drawBlock(Block *pBlock, int block_type, SDL_Rect *dstRect) 
+void drawBlock(Block *pBlock, int block_type) 
 {
     if (block_type >= 1 && block_type <= 3) 
     {
@@ -95,7 +93,8 @@ void drawBlock(Block *pBlock, int block_type, SDL_Rect *dstRect)
             .w = pBlock->srcRect.w,
             .h = pBlock->srcRect.h
         };
-        SDL_RenderCopy(pBlock->pRenderer, pBlock->pTexture, &srcRect, dstRect);
+
+        SDL_RenderCopy(pBlock->pRenderer, pBlock->pTexture, &pBlock->srcRect, &pBlock->dstRect);
     }
 
     SDL_Rect leftPadding = {0, pBlock->pScreenRect->y, pBlock->pScreenRect->x, pBlock->pScreenRect->h};
