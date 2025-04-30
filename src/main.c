@@ -156,6 +156,8 @@ int main(int argc, char *argv[])
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground, CamX, CamY);
         buildTheMap(gameMap, game.pBlock, CamY);
+
+        
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
             drawPlayer(game.pPlayer[i], CamX, CamY);
