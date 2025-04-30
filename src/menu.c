@@ -4,6 +4,9 @@
 #include <stdbool.h>
 #include "../include/menu.h"
 
+enum buttons{DEFAULT, START, EXIT};
+typedef enum buttons Buttons;
+
 struct buttonImages
 {
     SDL_Renderer *pRenderer;
@@ -206,19 +209,19 @@ void runMenu(ButtonImages *pButtonImages[NROFPICS], ButtonsAndBackground *pButto
         }
 
         // Default state (no hover)
-        if (pMenuVariables->menuChoice == 0)
+        if (pMenuVariables->menuChoice == DEFAULT)
         {
             SDL_RenderCopy(pRenderer, pButtonImages[1]->pTexture, NULL, &(pButtonsAndBackground[0]->rect));
             SDL_RenderCopy(pRenderer, pButtonImages[3]->pTexture, NULL, &(pButtonsAndBackground[1]->rect));
         }
         // Start button hover
-        else if (pMenuVariables->menuChoice == 1)
+        else if (pMenuVariables->menuChoice == START)
         {
             SDL_RenderCopy(pRenderer, pButtonImages[2]->pTexture, NULL, &(pButtonsAndBackground[0]->rect));
             SDL_RenderCopy(pRenderer, pButtonImages[3]->pTexture, NULL, &(pButtonsAndBackground[1]->rect));
         }
         // Exit button hover
-        else if (pMenuVariables->menuChoice == 2)
+        else if (pMenuVariables->menuChoice == EXIT)
         {
             SDL_RenderCopy(pRenderer, pButtonImages[1]->pTexture, NULL, &(pButtonsAndBackground[0]->rect));
             SDL_RenderCopy(pRenderer, pButtonImages[4]->pTexture, NULL, &(pButtonsAndBackground[1]->rect));

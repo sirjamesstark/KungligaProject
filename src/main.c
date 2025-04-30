@@ -118,9 +118,6 @@ int main(int argc, char *argv[])
 
     readMap(gameMap);
 
-    // drawBlueprints(game.pMaps);
-    // chooseMap(gameMap, game.pMaps[chosenMap]);
-
     while (!closeWindow)
     {
         // Beräkna tid sedan senaste frame
