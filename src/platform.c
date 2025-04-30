@@ -2,6 +2,8 @@
 #include <SDL_image.h>
 #include <stdlib.h>
 #include "../include/platform.h"
+#include "../include/common.h"
+
 
 struct block
 {
@@ -47,18 +49,8 @@ Block *createBlock(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
 
     SDL_QueryTexture(pBlock->pTexture, NULL, NULL, &(pBlock->srcRect.w), &(pBlock->srcRect.h));
     pBlock->srcRect.w /=3;
-
-    printf("Block frame size (before scaling): w: %d, h: %d\n", pBlock->srcRect.w, pBlock->srcRect.h);
-    float scaleFactor = (float)pBlock->pScreenRect->w / (float)pBlock->srcRect.w * BLOCK_SCALEFACTOR;
-    pBlock->dstRect.w = (int)(pBlock->srcRect.w * scaleFactor + 0.5f);    
-    pBlock->dstRect.h = (int)(pBlock->srcRect.h * scaleFactor + 0.5f);
-    printf("Block frame size (after scaling): w: %d, h: %d\n", pBlock->dstRect.w, pBlock->dstRect.h);
-
-    // koden nedanför bör skrivas om, men används sålänge: 
-    //pBlock->dstRect.w = pBlock->srcRect.w;
-    //pBlock->dstRect.h = pBlock->srcRect.h;
-    //pBlock->dstRect.w = pBlock->pScreenRect->w / BOX_COL;
-    //pBlock->dstRect.h = pBlock->pScreenRect->h / BOX_SCREEN_Y;
+    printf("\nBlock size:\n");
+    pBlock->dstRect = scaleAndCenterRect(pBlock->srcRect, *pBlock->pScreenRect, BLOCK_SCALEFACTOR); 
 
     return pBlock;
 }

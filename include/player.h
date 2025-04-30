@@ -1,6 +1,7 @@
 #ifndef player_h
 #define player_h
 
+#include "../include/common.h"
 #include <SDL_net.h>
 
 #define BOX_ROW 220
@@ -8,7 +9,7 @@
 #define BOX_SCREEN_Y 22
 #define COUNTER 20
 #define MAX_NROFPLAYERS 2
-#define PLAYER_SCALEFACTOR 0.065f
+#define PLAYER_SCALEFACTOR 0.1f
 #define TOP_OFFSETSCALER 34
 #define BOT_OFFSETSCALER 39
 #define GRAVITY_OFFSETSCALER 33

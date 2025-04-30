@@ -26,13 +26,16 @@ OBJDIR = ./obj
 
 # Lista över filer
 SRC = $(SRCDIR)/main.c $(SRCDIR)/menu.c $(SRCDIR)/platform.c \
-       $(SRCDIR)/player.c $(SRCDIR)/theme.c $(SRCDIR)/camera.c
+       $(SRCDIR)/player.c $(SRCDIR)/theme.c $(SRCDIR)/camera.c \
+       $(SRCDIR)/common.c
 
 OBJS = $(OBJDIR)/main.o $(OBJDIR)/menu.o $(OBJDIR)/platform.o \
-        $(OBJDIR)/player.o  $(OBJDIR)/theme.o $(OBJDIR)/camera.o
+        $(OBJDIR)/player.o  $(OBJDIR)/theme.o $(OBJDIR)/camera.o \
+        $(OBJDIR)/common.o
+
 
 HEADERS =  $(INCDIR)/menu.h $(INCDIR)/platform.h $(INCDIR)/player.h \
-            $(INCDIR)/theme.h $(INCDIR)/camera.h
+            $(INCDIR)/theme.h $(INCDIR)/camera.h $(INCDIR)/common.h
 
 
 # Välj rätt kommando för att skapa kataloger och radera filer

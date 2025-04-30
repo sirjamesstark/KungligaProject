@@ -5,6 +5,8 @@
 #include <math.h>
 #include <stdbool.h>
 #include "../include/player.h"
+#include "../include/common.h"
+
 
 struct frames
 {
@@ -82,26 +84,10 @@ Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pScreenRe
     pPlayer->srcRect.w = pPlayer->srcRect.h = pPlayer->srcRect.h / 3;
     pPlayer->srcRect.x = (pPlayer->frames.currentFrame_x) * pPlayer->srcRect.w;
     pPlayer->srcRect.y = (pPlayer->frames.currentFrame_y) * pPlayer->srcRect.h;
-    printf("Player frame size (before scaling): w: %d, h: %d\n", pPlayer->srcRect.w, pPlayer->srcRect.h);
+    printf("\nPlayer size:\n");
+    pPlayer->dstRect = scaleAndCenterRect(pPlayer->srcRect, *pPlayer->pScreenRect, PLAYER_SCALEFACTOR); 
+    pPlayer->frames.characterRect = scaleAndCenterRect(pPlayer->frames.characterRect, *pPlayer->pScreenRect, PLAYER_SCALEFACTOR); 
 
-    float scaleFactor = (float)pPlayer->pScreenRect->w / (float)pPlayer->srcRect.w * PLAYER_SCALEFACTOR;
-    pPlayer->dstRect.w = (int)(pPlayer->srcRect.w * scaleFactor + 0.5f);
-    pPlayer->dstRect.h = (int)(pPlayer->srcRect.h * scaleFactor + 0.5f);
-    printf("Player frame size (after scaling): w: %d, h: %d\n", pPlayer->dstRect.w, pPlayer->dstRect.h);
-
-    printf("Player character size (before scaling): w: %d, h: %d\n", pPlayer->frames.characterRect.w, pPlayer->frames.characterRect.h);
-    pPlayer->frames.characterRect.w = (int)(pPlayer->frames.characterRect.w * scaleFactor + 0.5f);
-    pPlayer->frames.characterRect.h = (int)(pPlayer->frames.characterRect.h * scaleFactor + 0.5f);
-    printf("Player character size (after scaling): w: %d, h: %d\n", pPlayer->frames.characterRect.w, pPlayer->frames.characterRect.h);
-
-    // pPlayer->dstRect.w = ((pPlayer->window_width)/BOX_COL);
-    // pPlayer->dstRect.h = ((pPlayer->window_height)/BOX_ROW);
-
-    // pPlayer->dstRect.w = (pPlayer->srcRect.w) <-- multiplicera med skalfaktor
-    // pPlayer->dstRect.h = (pPlayer->srcRect.h) <-- multiplicera med skalfaktor
-    // pPlayer->dstRect.w = pPlayer->window_width/pPlayer->srcRect.w;
-    // pPlayer->dstRect.x = pPlayer->x - (pPlayer->dstRect.w/2); // Anger koordinaterna för gubbens placering på skärmen vänster i övre hörn
-    // pPlayer->dstRect.y = pPlayer->y - (pPlayer->dstRect.h/2);
     return pPlayer;
 }
 

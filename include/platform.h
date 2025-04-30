@@ -1,10 +1,12 @@
 #ifndef platform_h
 #define platform_h
 
+#include "../include/common.h"
+
 #define BOX_ROW 220
 #define BOX_COL 26
 #define BOX_SCREEN_Y 22
-#define BLOCK_SCALEFACTOR 0.04f
+#define BLOCK_SCALEFACTOR 0.072f
 
 typedef struct block Block;
 

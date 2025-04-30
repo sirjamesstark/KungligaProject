@@ -11,6 +11,7 @@
 #include "../include/player.h"
 #include "../include/theme.h"
 #include "../include/camera.h"
+#include "../include/common.h"
 #include <SDL_net.h>
 
 #define NUM_MENU 2
@@ -20,11 +21,13 @@ typedef struct
 {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
+    SDL_Rect screenRect;
+
+    Theme *pTheme;
+
     SDL_Cursor *pCursor;
     Mix_Chunk *pJumpSound;
-    SDL_Rect screenRect;
-    Mix_Music *pGameMusic;
-    Background *pBackground;
+
 
 
     Player *pPlayer[MAX_NROFPLAYERS];
@@ -105,7 +108,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    playMusic(game.pGameMusic);
+    playMusic(game.pTheme);
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
     bool onGround = true;
@@ -151,7 +154,7 @@ int main(int argc, char *argv[])
         int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]);
         updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
-        drawBackground(game.pBackground, CamX, CamY);
+        drawBackground(game.pTheme, CamX, CamY);
         buildTheMap(gameMap, game.pBlock, CamY);
 
         
@@ -316,13 +319,6 @@ int initGameBeforeMenu(Game *pGame)
         printf("Failed to load jump sound! SDL_mixer Error: %s\n", Mix_GetError());
     }
 
-    pGame->pGameMusic = initiateMusic();
-    if (!pGame->pGameMusic)
-    {
-        printf("Failed to load music sound! SDL_mixer Error: %s\n", SDL_GetError());
-        return 0;
-    }
-
     return 1;
 }
 
@@ -354,10 +350,10 @@ void initScreenRect(Game *pGame)
 }
 
 int initGameAfterMenu(Game *pGame) {
-    pGame->pBackground = createBackground(pGame->pRenderer, &pGame->screenRect);
-    if (!pGame->pBackground) {
+    pGame->pTheme = createTheme(pGame->pRenderer, &pGame->screenRect, GAME);
+    if (!pGame->pTheme) {
         cleanUpGame(pGame);
-        printf("Error creating pBackground: %s\n", SDL_GetError());
+        printf("Error creating pTheme: %s\n", SDL_GetError());
         return 0;
     }
 
@@ -373,17 +369,10 @@ int initGameAfterMenu(Game *pGame) {
 
 void cleanUpGame(Game *pGame)
 {
-    if (pGame->pBackground)
+    if (pGame->pTheme)
     {
-        destroyBackground(pGame->pBackground);
-        pGame->pBackground = NULL;
-    }
-
-    if (pGame->pGameMusic)
-    {
-        Mix_HaltMusic();
-        Mix_FreeMusic(pGame->pGameMusic);
-        pGame->pGameMusic = NULL;
+        destroyTheme(pGame->pTheme);
+        pGame->pTheme = NULL;
     }
 
     if (pGame->pJumpSound)
