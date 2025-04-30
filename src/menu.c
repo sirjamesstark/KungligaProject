@@ -241,18 +241,18 @@ void chooseMenuOption(ButtonsAndBackground *pButtonsAndBackground[NROFBUTTONS], 
             (pMenuVariables->mousey > pButtonsAndBackground[1]->rect.y && pMenuVariables->mousey <
                                                                               pButtonsAndBackground[1]->rect.y + pButtonsAndBackground[1]->rect.h))
         {
-            pMenuVariables->menuChoice = 2;
+            pMenuVariables->menuChoice = EXIT;
         }
         else if ((pMenuVariables->mousex > pButtonsAndBackground[0]->rect.x && pMenuVariables->mousex <
                                                                                    pButtonsAndBackground[0]->rect.x + pButtonsAndBackground[0]->rect.w) &&
                  (pMenuVariables->mousey > pButtonsAndBackground[0]->rect.y && pMenuVariables->mousey <
                                                                                    pButtonsAndBackground[0]->rect.y + pButtonsAndBackground[0]->rect.h))
         {
-            pMenuVariables->menuChoice = 1;
+            pMenuVariables->menuChoice = START;
         }
         else
         {
-            pMenuVariables->menuChoice = 0;
+            pMenuVariables->menuChoice = DEFAULT;
         }
     }
     else if (pEvent->type == SDL_MOUSEBUTTONDOWN)
