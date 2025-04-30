@@ -15,7 +15,6 @@
 
 #define NUM_MENU 2
 #define TARGET_ASPECT_RATIO (16.0f / 9.0f)
-#define SCREEN_SCALEFACTOR 1.0f
 
 typedef struct
 {
@@ -346,10 +345,10 @@ void initScreenRect(Game *pGame)
         targetHeight = (int)(window_width / TARGET_ASPECT_RATIO + 0.5f);
     }
 
-    pGame->screenRect.w = (int)(targetWidth * SCREEN_SCALEFACTOR + 0.5f);
-    pGame->screenRect.h = (int)(targetHeight * SCREEN_SCALEFACTOR + 0.5f);
-    pGame->screenRect.x = (int)((window_width - targetWidth * SCREEN_SCALEFACTOR) / 2 + 0.5f);
-    pGame->screenRect.y = (int)((window_height - targetHeight * SCREEN_SCALEFACTOR) / 2 + 0.5f);
+    pGame->screenRect.w = (int)(targetWidth + 0.5f);
+    pGame->screenRect.h = (int)(targetHeight + 0.5f);
+    pGame->screenRect.x = (int)((window_width - targetWidth) / 2 + 0.5f);
+    pGame->screenRect.y = (int)((window_height - targetHeight) / 2 + 0.5f);
 
     printf("Original window size: w: %d, h: %d \n", window_width, window_height);
     printf("screenRect: x=%d, y=%d, w=%d, h=%d\n", pGame->screenRect.x, pGame->screenRect.y, pGame->screenRect.w, pGame->screenRect.h);
