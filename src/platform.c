@@ -85,19 +85,8 @@ void drawBlock(Block *pBlock, int block_type)
             .w = pBlock->srcRect.w,
             .h = pBlock->srcRect.h
         };
-
         SDL_RenderCopy(pBlock->pRenderer, pBlock->pTexture, &pBlock->srcRect, &pBlock->dstRect);
     }
-
-    SDL_Rect leftPadding = {0, pBlock->pScreenRect->y, pBlock->pScreenRect->x, pBlock->pScreenRect->h};
-    SDL_Rect rightPadding = {pBlock->pScreenRect->x + pBlock->pScreenRect->w, pBlock->pScreenRect->y, pBlock->pScreenRect->x, pBlock->pScreenRect->h};
-    SDL_Rect topPadding = {0, 0, pBlock->pScreenRect->x + pBlock->pScreenRect->w + pBlock->pScreenRect->x, pBlock->pScreenRect->y};
-    SDL_Rect bottomPadding = {0, pBlock->pScreenRect->y + pBlock->pScreenRect->h, pBlock->pScreenRect->x + pBlock->pScreenRect->w + pBlock->pScreenRect->x, pBlock->pScreenRect->y};
-    SDL_SetRenderDrawColor(pBlock->pRenderer, 0, 0, 0, 255);
-    SDL_RenderFillRect(pBlock->pRenderer, &leftPadding);
-    SDL_RenderFillRect(pBlock->pRenderer, &rightPadding);
-    SDL_RenderFillRect(pBlock->pRenderer, &topPadding);
-    SDL_RenderFillRect(pBlock->pRenderer, &bottomPadding);
 }
 
 void destroyBlock(Block *pBlock) {

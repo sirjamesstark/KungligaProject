@@ -13,18 +13,12 @@ struct background {
     SDL_Rect dstRect;
 };
 
-struct cursor {
-    SDL_Cursor *pCursor;
-    int x, y, w, h;
-    bool isVisible; 
-};
-
 struct theme {
     Background *pBackground;
-    //Cursor *pCursor;
+    SDL_Cursor *pCursor;
     Mix_Music *pMusic;
+    bool is_muted;
 };
-
 
 Theme *createTheme(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_type) {
     if (!pRenderer || !pScreenRect) {
@@ -45,12 +39,23 @@ Theme *createTheme(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_t
         return NULL;
     }
 
+    pTheme->pCursor = initCursor(pTheme);
+    if (!pTheme->pCursor) {
+        printf("Error in createTheme: pTheme->pCursor is NULL.\n");
+        destroyTheme(pTheme);
+        return NULL;
+    }
+    SDL_SetCursor(pTheme->pCursor);
+    SDL_ShowCursor(SDL_QUERY);
+    //if (theme_type == GAME) SDL_ShowCursor(SDL_DISABLE);  <-- om vi vill att musen ska vara osynlig under spelets gång
+
     pTheme->pMusic = initMusic(theme_type);
     if (!pTheme->pMusic) {
         printf("Error in createTheme: pTheme->pMusic is NULL.\n");
         destroyTheme(pTheme);
         return NULL;
     }
+    pTheme->is_muted = false;
 
     return pTheme;
 }
@@ -106,6 +111,20 @@ Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, Sta
     return pBackground;
 }
 
+SDL_Cursor *initCursor(Theme *pTheme) {
+    SDL_Cursor *pCursor = NULL; 
+    SDL_Surface *pSurface = IMG_Load("resources/cursor.png");
+
+    if (!pSurface) {
+        printf("Error in initCursor: pSurface is NULL.\n");
+        return SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+    }
+
+    pCursor = SDL_CreateColorCursor(pSurface, 0, 0);
+    SDL_FreeSurface(pSurface);
+    return pCursor; 
+}
+
 Mix_Music *initMusic(State theme_type) {
     Mix_Music *pMusic = NULL;
     switch (theme_type) {
@@ -135,12 +154,26 @@ void drawBackground(Theme *pTheme, int CamX, int CamY) {
 
 void playMusic(Theme *pTheme) {
     if (!pTheme->pMusic) return;
-    if (Mix_PlayingMusic() == 0) {
-        Mix_VolumeMusic((int)(MIX_MAX_VOLUME * 0.5));
+    if (pTheme->is_muted) {
+        Mix_VolumeMusic(0);
+        return;
+    }
+    if (!Mix_PlayingMusic()) {
         if (Mix_PlayMusic(pTheme->pMusic, -1) == -1) { 
             printf("Failed to play music: %s\n", Mix_GetError());
         }
     }
+    Mix_VolumeMusic((int)(MIX_MAX_VOLUME * 0.5));
+}
+
+void playSound(Mix_Chunk *pSound, Theme *pTheme) {
+    if (pTheme->is_muted) return;
+    Mix_PlayChannel(-1, pSound, 0);
+}
+
+void muteOrUnmute(Theme *pTheme) {
+    if (pTheme->is_muted) pTheme->is_muted = false;
+    else pTheme->is_muted = true;
 }
 
 void destroyBackground(Background *pBackground) {
@@ -157,6 +190,10 @@ void destroyTheme(Theme *pTheme) {
     if (pTheme->pBackground) {
         destroyBackground(pTheme->pBackground);
         pTheme->pBackground = NULL;
+    }
+    if (pTheme->pCursor) {
+        SDL_FreeCursor(pTheme->pCursor);
+        pTheme->pCursor = NULL;
     }
     if (pTheme->pMusic) {
         Mix_HaltMusic();

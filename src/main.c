@@ -22,14 +22,9 @@ typedef struct
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     SDL_Rect screenRect;
-
     Theme *pTheme;
 
-    SDL_Cursor *pCursor;
     Mix_Chunk *pJumpSound;
-
-
-
     Player *pPlayer[MAX_NROFPLAYERS];
     Block *pBlock;
     Camera *pCamera;
@@ -77,7 +72,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (!showMenu(game.pRenderer, game.screenRect.w, game.screenRect.h))
+    if (!runMenu(game.pRenderer, &game.screenRect))
     {
         cleanUpGame(&game);
         cleanUpNetwork(&sd, &p, &p2);
@@ -157,12 +152,11 @@ int main(int argc, char *argv[])
         drawBackground(game.pTheme, CamX, CamY);
         buildTheMap(gameMap, game.pBlock, CamY);
 
-        
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
             drawPlayer(game.pPlayer[i], CamX, CamY);
         }
-
+        drawPadding(game.pRenderer, game.screenRect);   // fyller ut med svarta kanter
         SDL_RenderPresent(game.pRenderer);
         SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
     }
@@ -288,31 +282,6 @@ int initGameBeforeMenu(Game *pGame)
 
     initScreenRect(pGame);
 
-    SDL_Surface *pCursorSurface = IMG_Load("resources/cursor.png"); // Load and set custom cursor
-    if (!pCursorSurface)
-    {
-        printf("SDL Error: Failed to create cursor image. %s\n", IMG_GetError());
-    }
-    else
-    {
-        pGame->pCursor = SDL_CreateColorCursor(pCursorSurface, 0, 0); // Create cursor with hotspot at top-left (0,0) for precision
-        if (!pGame->pCursor)
-        {
-            printf("SDL Error: Failed to create cursor. %s\n", SDL_GetError());
-        }
-        else
-        {
-            SDL_SetCursor(pGame->pCursor);
-            SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1"); // Make sure cursor stays visible
-        }
-        SDL_FreeSurface(pCursorSurface);
-    }
-
-    if (SDL_ShowCursor(-1) != SDL_ENABLE)
-    { // Double check cursor visibility
-        SDL_ShowCursor(SDL_ENABLE);
-    }
-
     pGame->pJumpSound = Mix_LoadWAV("resources/jump_sound.wav");
     if (!pGame->pJumpSound)
     {
@@ -350,6 +319,11 @@ void initScreenRect(Game *pGame)
 }
 
 int initGameAfterMenu(Game *pGame) {
+    if (pGame->pTheme) {
+        destroyTheme(pGame->pTheme);
+        pGame->pTheme = NULL;
+    }
+
     pGame->pTheme = createTheme(pGame->pRenderer, &pGame->screenRect, GAME);
     if (!pGame->pTheme) {
         cleanUpGame(pGame);
@@ -379,12 +353,6 @@ void cleanUpGame(Game *pGame)
     {
         Mix_FreeChunk(pGame->pJumpSound);
         pGame->pJumpSound = NULL;
-    }
-
-    if (pGame->pCursor)
-    {
-        SDL_FreeCursor(pGame->pCursor);
-        pGame->pRenderer = NULL;
     }
 
     if (pGame->pRenderer)

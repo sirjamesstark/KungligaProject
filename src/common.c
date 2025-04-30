@@ -14,3 +14,39 @@ SDL_Rect scaleAndCenterRect(const SDL_Rect srcRect, const SDL_Rect screenRect, f
 
     return dstRect; 
 }
+
+void drawPadding(SDL_Renderer *pRenderer, const SDL_Rect screenRect) {
+    SDL_Rect leftPadding = {
+        .x = 0,
+        .y = screenRect.y,
+        .w = screenRect.x,
+        .h = screenRect.h
+    };
+
+    SDL_Rect rightPadding = {
+        .x = screenRect.x + screenRect.w,
+        .y = screenRect.y,
+        .w = screenRect.x,
+        .h = screenRect.h
+    };
+
+    SDL_Rect topPadding = {
+        .x = 0,
+        .y = 0,
+        .w = screenRect.x * 2 + screenRect.w,
+        .h = screenRect.y
+    };
+
+    SDL_Rect bottomPadding = {
+        .x = 0,
+        .y = screenRect.y + screenRect.h,
+        .w = screenRect.x * 2 + screenRect.w,
+        .h = screenRect.y
+    };
+
+    SDL_SetRenderDrawColor(pRenderer, 0, 0, 0, 255);
+    SDL_RenderFillRect(pRenderer, &leftPadding);
+    SDL_RenderFillRect(pRenderer, &rightPadding);
+    SDL_RenderFillRect(pRenderer, &topPadding);
+    SDL_RenderFillRect(pRenderer, &bottomPadding);
+}

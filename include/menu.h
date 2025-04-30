@@ -1,24 +1,25 @@
-#ifndef menu_h
-#define menu_h
+#ifndef MENU_H
+#define MENU_H
 
-#define NROFPICS 7
-#define NROFBUTTONS 4
+#define NROFBUTTONS 3
+#define BOTTON_SCALEFACTOR 0.35f
 
-typedef struct buttonImages ButtonImages;
-typedef struct buttonsAndBackground ButtonsAndBackground;
-typedef struct menuVariables MenuVariables;
+#include "../include/theme.h"
+#include "../include/common.h"
 
-bool showMenu(SDL_Renderer *pRenderer, int window_width, int window_height);
-int createAllImages(ButtonImages *pButtonImages[NROFPICS] ,SDL_Renderer *pRenderer);
-void createButtonsAndBackground(ButtonsAndBackground *pButtonsAndBackground[NROFBUTTONS], ButtonImages *pButtonImages[NROFPICS],
-                                int window_width,int window_height);
-void freeAllSurface(SDL_Surface *pBackgroundSurface, SDL_Surface *pStart0Surface,
-                    SDL_Surface *pStart1Surface, SDL_Surface *pExit0Surface, 
-                    SDL_Surface *pExit1Surface,SDL_Surface *pSoundOnSurface,
-                    SDL_Surface *pSoundOffSurface);
-void runMenu(ButtonImages *pButtonImages[NROFPICS], ButtonsAndBackground *pButtonsAndBackground[NROFBUTTONS], 
-                MenuVariables *pMenuVariables, Mix_Chunk *pButtonSound, Mix_Music *pMenuMusic, SDL_Renderer *pRenderer);
-void chooseMenuOption(ButtonsAndBackground *pButtonsAndBackground[NROFBUTTONS], SDL_Event *pEvent, 
-                        Mix_Chunk *pButtonSound, Mix_Music *pMenuMusic,  MenuVariables *pMenuVariables);
-void cleanMenu(ButtonImages *pButtonImages[NROFPICS], ButtonsAndBackground *pButtonsAndBackground[NROFBUTTONS],MenuVariables *pMenuVariables);
+typedef enum buttons Buttons;
+typedef struct button Button;
+typedef struct menu Menu;
+
+Menu *createMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect);
+Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, Buttons button_type);
+void destroyMenu(Menu *pMenu);
+void destroyButton(Button *pButton);
+void drawButton(Button *pButton);
+bool runMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect);
+void handleKeyDown(SDL_Event *pEvent, Menu *pMenu);
+void handleMouseMotion(SDL_Event *pEvent, Menu *pMenu);
+void handleMouseButtonDown(SDL_Event *pEvent, Menu *pMenu);
+bool isMouseOverButton(int x, int y, Button *pButton);
+
 #endif

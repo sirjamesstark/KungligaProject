@@ -11,9 +11,12 @@ typedef struct theme Theme;
 
 Theme *createTheme(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_type);
 Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_type);
+SDL_Cursor *initCursor(Theme *pTheme);
 Mix_Music *initMusic(State theme_type);
 void drawBackground(Theme *pTheme, int CamX, int CamY);
 void playMusic(Theme *pTheme);
+void playSound(Mix_Chunk *pSound, Theme *pTheme);
+void muteOrUnmute(Theme *pTheme);
 void destroyBackground(Background *pBackground);
 void destroyTheme(Theme *pTheme);
 
