@@ -54,6 +54,7 @@ Menu *createMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect) {
         destroyMenu(pMenu);
         return NULL;
     }
+    SDL_SetCursor(pMenu->pCursor);
 
     return pMenu;
 }

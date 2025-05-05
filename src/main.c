@@ -333,6 +333,7 @@ int initGameAfterMenu(Game *pGame) {
         cleanUpGame(pGame);
         return 0;
     }
+    SDL_SetCursor(pGame->pCursor);
     SDL_ShowCursor(SDL_DISABLE);    // Gör muspekaren osynlig tills vidare
 
     pGame->pBlock = createBlock(pGame->pRenderer, &pGame->screenRect);
