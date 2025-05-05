@@ -10,6 +10,7 @@ enum state {
 };
 
 SDL_Rect scaleAndCenterRect(const SDL_Rect srcRect, const SDL_Rect screenRect, float scaleFactor);
+SDL_Rect stretchRectToScreen(const SDL_Rect screenRect);
 void drawPadding(SDL_Renderer *pRenderer, const SDL_Rect screenRect);
 
 #endif

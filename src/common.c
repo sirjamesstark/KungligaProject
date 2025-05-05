@@ -15,6 +15,20 @@ SDL_Rect scaleAndCenterRect(const SDL_Rect srcRect, const SDL_Rect screenRect, f
     return dstRect; 
 }
 
+SDL_Rect stretchRectToScreen(const SDL_Rect screenRect) {
+    SDL_Rect dstRect;
+    
+    dstRect.w = screenRect.w;
+    dstRect.h = screenRect.h;
+    dstRect.x = screenRect.x;
+    dstRect.y = screenRect.y;
+    printf("Rect size (stretched version): w: %d, h: %d\n", dstRect.w, dstRect.h);
+    printf("Rect position: x: %d, y: %d\n", dstRect.x, dstRect.y);
+
+
+    return dstRect; 
+}
+
 void drawPadding(SDL_Renderer *pRenderer, const SDL_Rect screenRect) {
     SDL_Rect leftPadding = {
         .x = 0,

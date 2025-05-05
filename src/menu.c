@@ -86,9 +86,9 @@ Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, Buttons but
     pButton->is_hovered = false;
 
     SDL_Surface *pSurface = NULL;
-    if (button_type == START) pSurface = IMG_Load("start_spritesheet.png");
-    else if (button_type == EXIT) pSurface = IMG_Load("exit_spritesheet.png");
-    else if (button_type == SOUND) pSurface = IMG_Load("sound_spritesheet.png");
+    if (button_type == START) pSurface = IMG_Load("resources/start_spritesheet.png");
+    else if (button_type == EXIT) pSurface = IMG_Load("resources/exit_spritesheet.png");
+    else if (button_type == SOUND) pSurface = IMG_Load("resources/sound_spritesheet.png");
     else pSurface = NULL;
     if (!pSurface) {
         destroyButton(pButton);

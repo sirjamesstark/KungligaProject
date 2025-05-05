@@ -47,7 +47,7 @@ Theme *createTheme(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_t
     }
     SDL_SetCursor(pTheme->pCursor);
     SDL_ShowCursor(SDL_QUERY);
-    //if (theme_type == GAME) SDL_ShowCursor(SDL_DISABLE);  <-- om vi vill att musen ska vara osynlig under spelets gång
+    if (theme_type == GAME) SDL_ShowCursor(SDL_DISABLE);
 
     pTheme->pMusic = initMusic(theme_type);
     if (!pTheme->pMusic) {
@@ -100,13 +100,7 @@ Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, Sta
     SDL_QueryTexture(pBackground->pTexture, NULL, NULL, &pBackground->srcRect.w, &pBackground->srcRect.h);
     pBackground->srcRect.x = pBackground->srcRect.y = 0;
     printf("\nBackground size:\n");
-    pBackground->dstRect = scaleAndCenterRect(pBackground->srcRect, *pBackground->pScreenRect, BACKGROUND_SCALEFACTOR);
-
-    pBackground->dstRect.x = pBackground->pScreenRect->x;
-    pBackground->dstRect.y = pBackground->pScreenRect->y;
-    pBackground->dstRect.w = pBackground->pScreenRect->w;
-    pBackground->dstRect.h = pBackground->pScreenRect->h;
-    printf("Rect size (stretched version): w: %d, h: %d\n", pBackground->dstRect.w, pBackground->dstRect.h);
+    pBackground->dstRect = stretchRectToScreen(*pBackground->pScreenRect);
 
     return pBackground;
 }
