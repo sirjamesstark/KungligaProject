@@ -3,21 +3,31 @@
 
 #include "../include/common.h"
 
-#define BACKGROUND_SCALEFACTOR 1.0f
-
 typedef struct background Background;
-typedef struct cursor Cursor;
-typedef struct theme Theme;
+typedef struct button Button;
+typedef struct audio Audio;
 
-Theme *createTheme(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_type);
 Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_type);
-SDL_Cursor *initCursor(Theme *pTheme);
-Mix_Music *initMusic(State theme_type);
-void drawBackground(Theme *pTheme, int CamX, int CamY);
-void playMusic(Theme *pTheme);
-void playSound(Mix_Chunk *pSound, Theme *pTheme);
-void muteOrUnmute(Theme *pTheme);
+void drawBackground(Background *pBackground, int CamX, int CamY);
 void destroyBackground(Background *pBackground);
-void destroyTheme(Theme *pTheme);
+Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, ButtonType button_type);
+int setButtonPlacement(Button *pButton, ButtonType button_type);
+void drawButton(Button *pButton);
+void makeButtonHoverd(Button *pButton);
+void makeButtonNotHovered(Button *pButton);
+void toggleHoveredButton(Button *pButton);
+bool isButtonHovered(Button *pButton);
+bool isMouseOverButton(int x, int y, Button *pButton);
+void destroyButton(Button *pButton);
+Audio *createAudio(State theme_type);
+void playMusic(Audio *pAudio);
+void playButtonSound(Audio *pAudio);
+void playJumpSound(Audio *pAudio);
+void playDeathSound(Audio *pAudio);
+void toggleMuteAudio(Audio *pAudio);
+bool isMusicMuted(Audio *pAudio);
+void destroyAudio(Audio *pAudio);
+SDL_Cursor *initCursor();
+void destroyCursor(SDL_Cursor *pCursor);
 
 #endif

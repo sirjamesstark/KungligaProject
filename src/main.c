@@ -22,9 +22,9 @@ typedef struct
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     SDL_Rect screenRect;
-    Theme *pTheme;
-
-    Mix_Chunk *pJumpSound;
+    Background *pBackground;
+    Audio *pAudio;
+    SDL_Cursor *pCursor;
     Player *pPlayer[MAX_NROFPLAYERS];
     Block *pBlock;
     Camera *pCamera;
@@ -88,7 +88,6 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-
     // flytta ev in dessa initieringar i initGameAfterMenu
     SDL_Rect blockRect = getBlockRect(game.pBlock);
     for (int i = 0; i < MAX_NROFPLAYERS; i++)
@@ -103,7 +102,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    playMusic(game.pTheme);
+    playMusic(game.pAudio);
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
     bool onGround = true;
@@ -149,7 +148,7 @@ int main(int argc, char *argv[])
         int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]);
         updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
-        drawBackground(game.pTheme, CamX, CamY);
+        drawBackground(game.pBackground, CamX, CamY);
         buildTheMap(gameMap, game.pBlock, CamY);
 
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
@@ -282,12 +281,6 @@ int initGameBeforeMenu(Game *pGame)
 
     initScreenRect(pGame);
 
-    pGame->pJumpSound = Mix_LoadWAV("resources/jump_sound.wav");
-    if (!pGame->pJumpSound)
-    {
-        printf("Failed to load jump sound! SDL_mixer Error: %s\n", Mix_GetError());
-    }
-
     return 1;
 }
 
@@ -319,17 +312,28 @@ void initScreenRect(Game *pGame)
 }
 
 int initGameAfterMenu(Game *pGame) {
-    if (pGame->pTheme) {
-        destroyTheme(pGame->pTheme);
-        pGame->pTheme = NULL;
-    }
 
-    pGame->pTheme = createTheme(pGame->pRenderer, &pGame->screenRect, GAME);
-    if (!pGame->pTheme) {
+    pGame->pBackground = createBackground(pGame->pRenderer, &pGame->screenRect, GAME);
+    if (!pGame->pBackground) {
+        printf("Error in initGameAfterMenu: pGame->pBackground is NULL.\n");
         cleanUpGame(pGame);
-        printf("Error creating pTheme: %s\n", SDL_GetError());
         return 0;
     }
+
+    pGame->pAudio = createAudio(GAME);
+    if (!pGame->pAudio) {
+        printf("Error in initGameAfterMenu: pGame->pAudio is NULL.\n");
+        cleanUpGame(pGame);
+        return 0;
+    }
+
+    pGame->pCursor = initCursor();
+    if (!pGame->pCursor) {
+        printf("Error in initGameAfterMenu: pGame->pCursor is NULL.\n");
+        cleanUpGame(pGame);
+        return 0;
+    }
+    SDL_ShowCursor(SDL_DISABLE);    // Gör muspekaren osynlig tills vidare
 
     pGame->pBlock = createBlock(pGame->pRenderer, &pGame->screenRect);
     if (!pGame->pBlock) {
@@ -343,16 +347,22 @@ int initGameAfterMenu(Game *pGame) {
 
 void cleanUpGame(Game *pGame)
 {
-    if (pGame->pTheme)
+    if (pGame->pBackground)
     {
-        destroyTheme(pGame->pTheme);
-        pGame->pTheme = NULL;
+        destroyBackground(pGame->pBackground);
+        pGame->pBackground = NULL;
     }
 
-    if (pGame->pJumpSound)
+    if (pGame->pAudio)
     {
-        Mix_FreeChunk(pGame->pJumpSound);
-        pGame->pJumpSound = NULL;
+        destroyAudio(pGame->pAudio);
+        pGame->pAudio = NULL;
+    }
+
+    if (pGame->pCursor) 
+    {
+        destroyCursor(pGame->pCursor);
+        pGame->pCursor = NULL;
     }
 
     if (pGame->pRenderer)
@@ -403,10 +413,7 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
         case SDL_SCANCODE_UP:
         case SDL_SCANCODE_SPACE:
             (*pUp) = true;
-            if (pGame->pJumpSound)
-            {
-                Mix_PlayChannel(-1, pGame->pJumpSound, 0); // Play jump sound
-            }
+            playJumpSound(pGame->pAudio);
             break;
         case SDL_SCANCODE_A:
         case SDL_SCANCODE_LEFT:
