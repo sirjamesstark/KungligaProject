@@ -7,13 +7,14 @@ ifeq ($(OS), Windows_NT)
     INCLUDE = C:/msys64/mingw64/include/SDL2
     LIBS = C:/msys64/mingw64/lib
     CFLAGS = -g -I$(INCLUDE) -Dmain=SDL_main -c
-    LDFLAGS = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
+    LDFLAGS = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
 else
     UNAME_S := $(shell uname -s)
     INCLUDE = /opt/homebrew/include/SDL2
     LIBS = /opt/homebrew/lib
-    CFLAGS = -g -I$(INCLUDE) -c
-    LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
+    FFMPEG_INCLUDE = /opt/homebrew/include
+    CFLAGS = -g -I$(INCLUDE) -I$(FFMPEG_INCLUDE) -c
+    LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
 endif
 
 # Kompilator GCC
@@ -27,15 +28,16 @@ OBJDIR = ./obj
 # Lista över filer
 SRC = $(SRCDIR)/main.c $(SRCDIR)/menu.c $(SRCDIR)/platform.c \
        $(SRCDIR)/player.c $(SRCDIR)/theme.c $(SRCDIR)/camera.c \
-       $(SRCDIR)/common.c
+       $(SRCDIR)/common.c $(SRCDIR)/video_player.c
 
 OBJS = $(OBJDIR)/main.o $(OBJDIR)/menu.o $(OBJDIR)/platform.o \
         $(OBJDIR)/player.o  $(OBJDIR)/theme.o $(OBJDIR)/camera.o \
-        $(OBJDIR)/common.o
+        $(OBJDIR)/common.o $(OBJDIR)/video_player.o
 
 
 HEADERS =  $(INCDIR)/menu.h $(INCDIR)/platform.h $(INCDIR)/player.h \
-            $(INCDIR)/theme.h $(INCDIR)/camera.h $(INCDIR)/common.h
+            $(INCDIR)/theme.h $(INCDIR)/camera.h $(INCDIR)/common.h \
+            $(INCDIR)/video_player.h
 
 
 # Välj rätt kommando för att skapa kataloger och radera filer

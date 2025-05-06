@@ -12,6 +12,7 @@
 #include "../include/theme.h"
 #include "../include/camera.h"
 #include "../include/common.h"
+#include "../include/video_player.h"
 #include <SDL_net.h>
 
 #define TARGET_ASPECT_RATIO (16.0f / 9.0f)
@@ -69,6 +70,11 @@ int main(int argc, char *argv[])
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
+    
+    // Initialize and play the intro video
+    initVideoPlayer(game.pRenderer);
+    playVideo(game.pRenderer, "resources/video.mov");
+    cleanupVideoPlayer();
 
     if (!runMenu(game.pRenderer, &game.screenRect))
     {
