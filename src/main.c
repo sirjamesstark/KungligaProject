@@ -14,11 +14,9 @@
 #include "../include/common.h"
 #include <SDL_net.h>
 
-#define NUM_MENU 2
 #define TARGET_ASPECT_RATIO (16.0f / 9.0f)
 
-typedef struct
-{
+typedef struct {
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     SDL_Rect screenRect;
@@ -149,7 +147,7 @@ int main(int argc, char *argv[])
         int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]);
         updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
-        drawBackground(game.pBackground, CamX, CamY);
+        drawBackground(game.pBackground);
         buildTheMap(gameMap, game.pBlock, CamY,shiftLength);
 
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
@@ -429,6 +427,7 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
             (*pRight) = true;
             break;
         case SDL_SCANCODE_ESCAPE:
+            // Pop up ruta?? 
             (*pCloseWindow) = true;
             break;
         }

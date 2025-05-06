@@ -25,7 +25,6 @@ SDL_Rect stretchRectToScreen(const SDL_Rect screenRect) {
     printf("Rect size (stretched version): w: %d, h: %d\n", dstRect.w, dstRect.h);
     printf("Rect position: x: %d, y: %d\n", dstRect.x, dstRect.y);
 
-
     return dstRect; 
 }
 

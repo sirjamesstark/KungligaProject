@@ -81,10 +81,8 @@ Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, Sta
     return pBackground;
 }
 
-void drawBackground(Background *pBackground, int CamX, int CamY) {
+void drawBackground(Background *pBackground) {
     if (!pBackground) return;
-    //pBackground->rect.x = -CamX;
-    //pBackground->rect.y = -CamY;
     SDL_RenderCopy(pBackground->pRenderer, pBackground->pTexture, &pBackground->srcRect, &pBackground->dstRect);
 }
 
