@@ -8,7 +8,7 @@ typedef struct button Button;
 typedef struct audio Audio;
 
 Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_type);
-void drawBackground(Background *pBackground, int CamX, int CamY);
+void drawBackground(Background *pBackground);
 void destroyBackground(Background *pBackground);
 
 Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, ButtonType button_type);

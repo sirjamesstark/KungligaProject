@@ -114,7 +114,7 @@ bool runMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect) {
             }
         }
 
-        drawBackground(pMenu->pBackground, 0, 0);
+        drawBackground(pMenu->pBackground);
         playMusic(pMenu->pAudio);
         if (isMusicMuted(pMenu->pAudio)) makeButtonHoverd(pMenu->pButton[SOUND]); 
         for (int i = 0; i < NROFBUTTONS; i++) {
