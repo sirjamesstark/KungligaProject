@@ -108,6 +108,7 @@ int main(int argc, char *argv[])
     bool onGround = true;
     up = down = left = right = false;
     int upCounter = 0, chosenMap = 0, gameMap[BOX_ROW][BOX_COL] = {0};
+    float shiftLength = getShiftLength(game.pBlock);
 
     Uint32 lastTime = SDL_GetTicks(); // Tidpunkt för senaste uppdateringen
     Uint32 currentTime;
@@ -133,7 +134,7 @@ int main(int argc, char *argv[])
         setSpeed(up, down, left, right, &goUp, &goDown, &goLeft, &goRight, &upCounter, onGround, game.pPlayer[0]);
         setAnimation(game.pPlayer[1]);
         updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround, &goUp, &goDown,
-            &goLeft, &goRight, p, p2, &is_server, srvadd, &sd, game.screenRect.h);
+                        &goLeft, &goRight, p, p2, &is_server, srvadd, &sd, game.screenRect.h,shiftLength);
 
         int PlyY = game.screenRect.y;
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
@@ -149,7 +150,7 @@ int main(int argc, char *argv[])
         updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground, CamX, CamY);
-        buildTheMap(gameMap, game.pBlock, CamY);
+        buildTheMap(gameMap, game.pBlock, CamY,shiftLength);
 
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
@@ -344,7 +345,6 @@ int initGameAfterMenu(Game *pGame) {
     }
     return 1;
 }
-
 
 void cleanUpGame(Game *pGame)
 {

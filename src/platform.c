@@ -55,18 +55,26 @@ Block *createBlock(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
     return pBlock;
 }
 
-SDL_Rect getBlockRect(Block *pBlock) {
+SDL_Rect getBlockRect(Block *pBlock) 
+{
     return pBlock->dstRect;
 }
 
-void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY)
+float getShiftLength(Block *pBlock)
 {
-    float shift_col_0 = (float)(pBlock->pScreenRect->w - (pBlock->dstRect.w * BOX_COL)) / 2.0f; 
-    
-    for (int row = 0; row < BOX_ROW; row++) {
-        for (int col = 0; col < BOX_COL; col++) {
-            pBlock->dstRect.x = (int)((col * pBlock->dstRect.w) + shift_col_0 + pBlock->pScreenRect->x);
-            pBlock->dstRect.y = (int)((row * pBlock->dstRect.h) + pBlock->pScreenRect->y);
+    return (float)(pBlock->pScreenRect->w - (pBlock->dstRect.w * BOX_COL)) / 2.0f; 
+}
+
+void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY,float shiftLength)
+{
+    shiftLength = (float)(pBlock->pScreenRect->w - (pBlock->dstRect.w * BOX_COL)) / 2.0f; 
+
+    for (int row = BOX_ROW - 1; row > 0; row--) 
+    {
+        for (int col = 0; col < BOX_COL; col++) 
+        {
+            pBlock->dstRect.x = (int)((col * pBlock->dstRect.w) + shiftLength + pBlock->pScreenRect->x);
+            pBlock->dstRect.y = (int)(pBlock->pScreenRect->h - (BOX_ROW - row) * pBlock->dstRect.h);
             pBlock->dstRect.y -= CamY; 
             drawBlock(pBlock, gameMap[row][col]); 
             pBlock->dstRect.y += CamY;
