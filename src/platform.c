@@ -107,7 +107,7 @@ void drawBlock(Block *pBlock, int block_type, SDL_Rect *dstRect)
                 .y = 0,
                 .w = pBlock->srcRect.w,
                 .h = pBlock->srcRect.h};
-        SDL_RenderCopy(pBlock->pRenderer, pBlock->pTexture, &pBlock->srcRect, &pBlock->dstRect);
+        SDL_RenderCopy(pBlock->pRenderer, pBlock->pTexture, &srcRect, dstRect);
     }
 }
 
