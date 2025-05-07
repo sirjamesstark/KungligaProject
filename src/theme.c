@@ -8,7 +8,7 @@
 #define LAVA_FRAME_COUNT 4
 #define LAVA_SPEED 100
 
-typedef struct
+struct lava
 {
     int lavaHeight;
     SDL_Texture *texture;
@@ -16,9 +16,7 @@ typedef struct
     int frameHeight;
     int currentFrame;
     Uint32 lastFrameTime;
-} Lava;
-
-Lava lava;
+};
 
 struct background
 {
@@ -49,8 +47,21 @@ struct audio
     bool isMuted;
 };
 
-bool initLavaAnimation(SDL_Renderer *pRenderer, Background *pBackground)
+Lava *CreateLavaAnimation(SDL_Renderer *pRenderer, Background *pBackground)
 {
+    if (!pRenderer)
+    {
+        printf("Error in createBackground: pRenderer or pScreenRect is NULL.\n");
+        return NULL;
+    }
+
+    Lava *pLava = malloc(sizeof(struct lava));
+    if (!pLava)
+    {
+        printf("Error in createBackground: Failed to allocate memory for pBackground.\n");
+        return NULL;
+    }
+
     SDL_Surface *lavaSurface = IMG_Load("resources/lava_spritesheet.png");
     if (!lavaSurface)
     {
@@ -58,21 +69,26 @@ bool initLavaAnimation(SDL_Renderer *pRenderer, Background *pBackground)
         return false;
     }
 
-    lava.texture = SDL_CreateTextureFromSurface(pRenderer, lavaSurface);
-    if (!lava.texture)
+    pLava->texture = SDL_CreateTextureFromSurface(pRenderer, lavaSurface);
+    if (!pLava->texture)
     {
         printf("Lava texture creation failed!\n");
     }
-    lava.lavaHeight = lavaSurface->h;
-    lava.frameWidth = lavaSurface->w / LAVA_FRAME_COUNT;
-    lava.frameHeight = lavaSurface->h;
-    lava.frameHeight;
-    lava.frameWidth;
-    lava.currentFrame = 0;
-    lava.lastFrameTime = SDL_GetTicks();
+    pLava->lavaHeight = lavaSurface->h;
+    pLava->frameWidth = lavaSurface->w / LAVA_FRAME_COUNT;
+    pLava->frameHeight = lavaSurface->h;
+    pLava->frameHeight;
+    pLava->frameWidth;
+    pLava->currentFrame = 0;
+    pLava->lastFrameTime = SDL_GetTicks();
 
-    SDL_FreeSurface(lavaSurface);
-    return lava.texture != NULL;
+    if (!pLava->texture)
+    {
+        printf("Error in createLava: pLava->texture is NULL.\n");
+        destroyLava(pLava);
+        return NULL;
+    }
+    return pLava;
 }
 
 Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_type)
@@ -138,24 +154,24 @@ void drawBackground(Background *pBackground)
     SDL_RenderCopy(pBackground->pRenderer, pBackground->pTexture, &pBackground->srcRect, &pBackground->dstRect);
 }
 
-void drawLava(Background *pBackground, SDL_Rect BlockRect)
+void drawLava(Lava *pLava, Background *pBackground, SDL_Rect BlockRect)
 {
     Uint32 now = SDL_GetTicks();
-    if (now - lava.lastFrameTime > LAVA_SPEED)
+    if (now - pLava->lastFrameTime > LAVA_SPEED)
     {
-        lava.currentFrame = (lava.currentFrame + 1) % LAVA_FRAME_COUNT;
-        lava.lastFrameTime = now;
+        pLava->currentFrame = (pLava->currentFrame + 1) % LAVA_FRAME_COUNT;
+        pLava->lastFrameTime = now;
     }
 
     SDL_Rect srcRect = {
-        lava.frameWidth * lava.currentFrame,
+        pLava->frameWidth * pLava->currentFrame,
         0,
-        lava.frameWidth,
-        lava.frameHeight};
+        pLava->frameWidth,
+        pLava->frameHeight};
 
     float scale = 0.25f;
-    int scaledWidth = lava.frameWidth * scale;
-    int scaledHeight = lava.frameHeight * scale;
+    int scaledWidth = pLava->frameWidth * scale;
+    int scaledHeight = pLava->frameHeight * scale;
 
     int y = pBackground->pScreenRect->h - scaledHeight;
 
@@ -167,7 +183,7 @@ void drawLava(Background *pBackground, SDL_Rect BlockRect)
             scaledWidth,
             scaledHeight};
 
-        SDL_RenderCopy(pBackground->pRenderer, lava.texture, &srcRect, &dstRect);
+        SDL_RenderCopy(pBackground->pRenderer, pLava->texture, &srcRect, &dstRect);
     }
 }
 
@@ -180,12 +196,19 @@ void destroyBackground(Background *pBackground)
         SDL_DestroyTexture(pBackground->pTexture);
         pBackground->pTexture = NULL;
     }
-    if (lava.texture != NULL)
-    {
-        SDL_DestroyTexture(lava.texture);
-        lava.texture = NULL;
-    }
     free(pBackground);
+}
+
+void destroyLava(Lava *pLava)
+{
+    if (!pLava)
+        return;
+    if (pLava->texture != NULL)
+    {
+        SDL_DestroyTexture(pLava->texture);
+        pLava->texture = NULL;
+    }
+    free(pLava);
 }
 
 Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, ButtonType button_type)

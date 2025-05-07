@@ -3,15 +3,17 @@
 
 #include "../include/common.h"
 
+typedef struct lava Lava;
 typedef struct background Background;
 typedef struct button Button;
 typedef struct audio Audio;
 
 Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_type);
-bool initLavaAnimation(SDL_Renderer *pRenderer, Background *pBackground);
+Lava *CreateLavaAnimation(SDL_Renderer *pRenderer, Background *pBackground);
 void drawBackground(Background *pBackground);
-void drawLava(Background *pBackground, SDL_Rect BlockRect);
+void drawLava(Lava *pLava, Background *pBackground, SDL_Rect BlockRect);
 void destroyBackground(Background *pBackground);
+void destroyLava(Lava *pLava);
 
 Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, ButtonType button_type);
 int setButtonPlacement(Button *pButton, ButtonType button_type);

@@ -27,6 +27,7 @@ typedef struct
     Player *pPlayer[MAX_NROFPLAYERS];
     Block *pBlock;
     Camera *pCamera;
+    Lava *pLava;
 } Game;
 
 int initSDL();
@@ -101,8 +102,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    initLavaAnimation(game.pRenderer, game.pBackground);
-
     playMusic(game.pAudio);
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
@@ -152,7 +151,7 @@ int main(int argc, char *argv[])
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground);
         buildTheMap(gameMap, game.pBlock, CamY, &game.screenRect);
-        drawLava(game.pBackground, blockRect);
+        drawLava(game.pLava, game.pBackground, blockRect);
 
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
@@ -318,6 +317,7 @@ int initGameAfterMenu(Game *pGame)
 {
 
     pGame->pBackground = createBackground(pGame->pRenderer, &pGame->screenRect, GAME);
+    pGame->pLava = CreateLavaAnimation(pGame->pRenderer, pGame->pBackground);
     if (!pGame->pBackground)
     {
         printf("Error in initGameAfterMenu: pGame->pBackground is NULL.\n");
