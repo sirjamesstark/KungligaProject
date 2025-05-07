@@ -13,6 +13,7 @@
 #include "../include/camera.h"
 #include "../include/common.h"
 #include "../include/video_player.h"
+#include "../include/ffmpeg_checker.h"
 #include <SDL_net.h>
 
 #define TARGET_ASPECT_RATIO (16.0f / 9.0f)
@@ -71,34 +72,47 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     
-    // Initialize and play the intro video
-    printf("\n=== Starting Intro Sequence ===\n");
+    // FFmpeg kurulu mu kontrol et
+    bool ffmpeg_available = is_ffmpeg_installed();
     
-#ifdef USE_FFMPEG
-    printf("Using FFmpeg for video playback\n");
-    // Use FFmpeg video player when available
-    if (!initVideoPlayer(game.pRenderer)) {
-        fprintf(stderr, "Failed to initialize video player\n");
-    } else {
-        if (!playVideo(game.pRenderer, "resources/video.mov")) {
-            fprintf(stderr, "Failed to play video\n");
+    if (!ffmpeg_available) {
+        printf("\n=== FFmpeg Not Found ===\n");
+        printf("FFmpeg is required for video playback.\n");
+        
+        // Show FFmpeg installation instructions to the user
+        show_ffmpeg_installation_instructions();
+        
+        // Continue without FFmpeg - play audio only
+        printf("\n=== Playing Audio Only ===\n");
+        Mix_Chunk *introSound = Mix_LoadWAV("resources/KungligaProjectSound.wav");
+        if (introSound) {
+            Mix_PlayChannel(0, introSound, 0);
+            
+            // Siyah ekran göster
+            SDL_SetRenderDrawColor(game.pRenderer, 0, 0, 0, 255);
+            SDL_RenderClear(game.pRenderer);
+            SDL_RenderPresent(game.pRenderer);
+            
+            // Ses için bekle
+            SDL_Delay(3000);
+            Mix_FreeChunk(introSound);
         }
-        cleanupVideoPlayer();
-    }
-#else
-    printf("FFmpeg not available, using fallback mode\n");
-    // Use the simplified video player implementation
-    if (!initVideoPlayer(game.pRenderer)) {
-        fprintf(stderr, "Failed to initialize video player\n");
     } else {
-        if (!playVideo(game.pRenderer, "resources/video.mov")) {
-            fprintf(stderr, "Failed to play video\n");
+        // FFmpeg kurulu, video oynat
+        printf("\n=== Starting Intro Sequence ===\n");
+        printf("Using FFmpeg for video playback\n");
+        
+        if (!initVideoPlayer(game.pRenderer)) {
+            fprintf(stderr, "Failed to initialize video player\n");
+        } else {
+            if (!playVideo(game.pRenderer, "resources/video.mov")) {
+                fprintf(stderr, "Failed to play video\n");
+            }
+            cleanupVideoPlayer();
         }
-        cleanupVideoPlayer();
+        
+        printf("=== Intro Sequence Complete ===\n");
     }
-#endif
-
-    printf("=== Intro Sequence Complete ===\n");
 
 
     if (!runMenu(game.pRenderer, &game.screenRect))

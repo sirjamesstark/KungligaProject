@@ -2,6 +2,19 @@
 Top Secret
 TEST Detta är ett spel
 
+## Setup Instructions
+
+This project now includes video playback functionality using FFmpeg. Please follow the setup guide for your operating system:
+
+- [Windows Setup Guide](WINDOWS_SETUP.md)
+- [macOS Setup Guide](MACOS_SETUP.md)
+
+### Requirements
+
+- SDL2 libraries (SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, SDL2_net)
+- FFmpeg (for video playback)
+- GCC compiler
+
 Fixade rörelser genom att ändra Nicklas kod smo styrde åt sidor.
     Tog bort ner knappen och applicerade upCounter och downCounter när man hoppar
 

@@ -7,8 +7,12 @@ ifeq ($(OS), Windows_NT)
     INCLUDE = C:/msys64/mingw64/include/SDL2
     LIBS = C:/msys64/mingw64/lib
     
-    # Check if FFmpeg is available - Windows detection is tricky, so we'll just assume it's not available
-    # and let the user manually enable it if they install FFmpeg
+    # ===== WINDOWS FFMPEG KURULUMU =====
+    # FFmpeg'i Windows'ta kullanmak için:
+    # 1. MSYS2 kurun: https://www.msys2.org/
+    # 2. MSYS2 MinGW64 terminalinde şu komutu çalıştırın: pacman -S mingw-w64-x86_64-ffmpeg
+    # 3. Aşağıdaki değeri 1 olarak değiştirin
+    # ===================================
     FFMPEG_INSTALLED = 0
     
     ifeq ($(FFMPEG_INSTALLED), 1)
@@ -53,16 +57,16 @@ OBJDIR = ./obj
 # Lista över filer
 SRC = $(SRCDIR)/main.c $(SRCDIR)/menu.c $(SRCDIR)/platform.c \
        $(SRCDIR)/player.c $(SRCDIR)/theme.c $(SRCDIR)/camera.c \
-       $(SRCDIR)/common.c $(SRCDIR)/video_player.c
+       $(SRCDIR)/common.c $(SRCDIR)/video_player.c $(SRCDIR)/ffmpeg_checker.c
 
 OBJS = $(OBJDIR)/main.o $(OBJDIR)/menu.o $(OBJDIR)/platform.o \
         $(OBJDIR)/player.o  $(OBJDIR)/theme.o $(OBJDIR)/camera.o \
-        $(OBJDIR)/common.o $(OBJDIR)/video_player.o
+        $(OBJDIR)/common.o $(OBJDIR)/video_player.o $(OBJDIR)/ffmpeg_checker.o
 
 
 HEADERS =  $(INCDIR)/menu.h $(INCDIR)/platform.h $(INCDIR)/player.h \
             $(INCDIR)/theme.h $(INCDIR)/camera.h $(INCDIR)/common.h \
-            $(INCDIR)/video_player.h
+            $(INCDIR)/video_player.h $(INCDIR)/ffmpeg_checker.h
 
 
 # Välj rätt kommando för att skapa kataloger och radera filer
