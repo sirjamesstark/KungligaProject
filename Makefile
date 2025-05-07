@@ -4,50 +4,56 @@
 # CFLAGS & LDFLAGS säts för att bygga och länka SDL2 bibliotek till operativsystemet
 ifeq ($(OS), Windows_NT)
     UNAME_S = Windows
-    INCLUDE = C:/msys64/mingw64/include/SDL2
-    LIBS = C:/msys64/mingw64/lib
+    # SDL2 and FFmpeg paths for Windows
+    INCLUDE = C:/SDL2/include
+    LIBS = C:/SDL2/lib
     
-    # ===== WINDOWS FFMPEG KURULUMU =====
-    # FFmpeg'i Windows'ta kullanmak için:
-    # 1. MSYS2 kurun: https://www.msys2.org/
-    # 2. MSYS2 MinGW64 terminalinde şu komutu çalıştırın: pacman -S mingw-w64-x86_64-ffmpeg
-    # 3. Aşağıdaki değeri 1 olarak değiştirin
-    # ===================================
+    # FFmpeg control - Set to 1 if FFmpeg is installed on Windows, 0 otherwise
     FFMPEG_INSTALLED = 1
     
     ifeq ($(FFMPEG_INSTALLED), 1)
-        # FFmpeg is available
-        CFLAGS = -g -I$(INCLUDE) -IC:/msys64/mingw64/include -Dmain=SDL_main -DUSE_FFMPEG -DDEBUG -c
-        LDFLAGS = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
-    else
-        # FFmpeg is not available
-        CFLAGS = -g -I$(INCLUDE) -Dmain=SDL_main -DDEBUG -c
-        LDFLAGS = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
-        $(info FFmpeg not detected on Windows. Using fallback mode without video playback.)  
-    endif
-else
-    UNAME_S := $(shell uname -s)
-    INCLUDE = /opt/homebrew/include/SDL2
-    LIBS = /opt/homebrew/lib
-    FFMPEG_INCLUDE = /opt/homebrew/include
-    # Check if FFmpeg is available
-    FFMPEG_EXISTS := $(shell [ -f $(FFMPEG_INCLUDE)/libavcodec/avcodec.h ] && echo 1 || echo 0)
-    
-    ifeq ($(FFMPEG_EXISTS), 1)
-        # FFmpeg is available
-        CFLAGS = -g -I$(INCLUDE) -I$(FFMPEG_INCLUDE) -DUSE_FFMPEG -DDEBUG -c
+        CFLAGS = -g -I$(INCLUDE) -DUSE_FFMPEG -DDEBUG -c
         LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
-        $(info FFmpeg detected on macOS. Using full video playback.)  
+        $(info FFmpeg enabled for Windows. Using video playback.)
     else
-        # FFmpeg is not available
         CFLAGS = -g -I$(INCLUDE) -DDEBUG -c
         LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
-        $(info FFmpeg not detected on macOS. Using fallback mode without video playback.)  
+        $(info FFmpeg disabled for Windows. Using audio only.)
+    endif
+else
+    # macOS eller Linux
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S), Darwin)
+        # macOS
+        INCLUDE = /opt/homebrew/include/SDL2
+        LIBS = /opt/homebrew/lib
+        
+        # Check if FFmpeg is available
+        FFMPEG_AVAILABLE := $(shell brew list ffmpeg >/dev/null 2>&1 && echo 1 || echo 0)
+        
+        ifeq ($(FFMPEG_AVAILABLE), 1)
+            # FFmpeg is available
+            CFLAGS = -g -I$(INCLUDE) -I/opt/homebrew/include -DUSE_FFMPEG -DDEBUG -c
+            LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
+            $(info FFmpeg detected on macOS. Using video playback.)
+        else
+            # FFmpeg is not available
+            CFLAGS = -g -I$(INCLUDE) -DDEBUG -c
+            LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
+            $(info FFmpeg not detected on macOS. Using audio only.)  
+        endif
     endif
 endif
 
 # Kompilator GCC
-CC = gcc
+ifeq ($(OS), Windows_NT)
+    CC = gcc
+    # Windows'ta make komutu farklı olabilir
+    MAKE_COMMAND = mingw64-make
+else
+    CC = gcc
+    MAKE_COMMAND = make
+endif
 
 # Sökvägar relativt Makefilen
 SRCDIR = ./src

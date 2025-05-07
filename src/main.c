@@ -13,7 +13,6 @@
 #include "../include/camera.h"
 #include "../include/common.h"
 #include "../include/video_player.h"
-#include "../include/ffmpeg_checker.h"
 #include <SDL_net.h>
 
 #define TARGET_ASPECT_RATIO (16.0f / 9.0f)
@@ -72,47 +71,41 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     
-    // FFmpeg kurulu mu kontrol et
-    bool ffmpeg_available = is_ffmpeg_installed();
+    // Initialize and play the intro video
+    printf("\n=== Starting Intro Sequence ===\n");
     
-    if (!ffmpeg_available) {
-        printf("\n=== FFmpeg Not Found ===\n");
-        printf("FFmpeg is required for video playback.\n");
-        
-        // Show FFmpeg installation instructions to the user
-        show_ffmpeg_installation_instructions();
-        
-        // Continue without FFmpeg - play audio only
-        printf("\n=== Playing Audio Only ===\n");
-        Mix_Chunk *introSound = Mix_LoadWAV("resources/KungligaProjectSound.wav");
-        if (introSound) {
-            Mix_PlayChannel(0, introSound, 0);
-            
-            // Siyah ekran göster
-            SDL_SetRenderDrawColor(game.pRenderer, 0, 0, 0, 255);
-            SDL_RenderClear(game.pRenderer);
-            SDL_RenderPresent(game.pRenderer);
-            
-            // Ses için bekle
-            SDL_Delay(3000);
-            Mix_FreeChunk(introSound);
-        }
+#ifdef USE_FFMPEG
+    printf("Using FFmpeg for video playback\n");
+    // Use FFmpeg video player when available
+    if (!initVideoPlayer(game.pRenderer)) {
+        fprintf(stderr, "Failed to initialize video player\n");
     } else {
-        // FFmpeg kurulu, video oynat
-        printf("\n=== Starting Intro Sequence ===\n");
-        printf("Using FFmpeg for video playback\n");
-        
-        if (!initVideoPlayer(game.pRenderer)) {
-            fprintf(stderr, "Failed to initialize video player\n");
-        } else {
-            if (!playVideo(game.pRenderer, "resources/video.mov")) {
-                fprintf(stderr, "Failed to play video\n");
-            }
-            cleanupVideoPlayer();
+        if (!playVideo(game.pRenderer, "resources/video.mov")) {
+            fprintf(stderr, "Failed to play video\n");
         }
-        
-        printf("=== Intro Sequence Complete ===\n");
+        cleanupVideoPlayer();
     }
+#else
+    printf("FFmpeg not available, using audio only mode\n");
+    // Play only the audio file
+    Mix_Chunk *introSound = Mix_LoadWAV("resources/KungligaProjectSound.wav");
+    if (introSound) {
+        Mix_PlayChannel(0, introSound, 0);
+        
+        // Show black screen
+        SDL_SetRenderDrawColor(game.pRenderer, 0, 0, 0, 255);
+        SDL_RenderClear(game.pRenderer);
+        SDL_RenderPresent(game.pRenderer);
+        
+        // Wait for sound to play
+        SDL_Delay(3000);
+        Mix_FreeChunk(introSound);
+    } else {
+        fprintf(stderr, "Could not load sound file: %s\n", Mix_GetError());
+    }
+#endif
+
+    printf("=== Intro Sequence Complete ===\n");
 
 
     if (!runMenu(game.pRenderer, &game.screenRect))
