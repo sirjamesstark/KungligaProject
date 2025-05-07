@@ -136,8 +136,8 @@ SDL_Surface *initPlayerFrames(Player *pPlayer, int player_ID)
 void initStartPosition(Player *pPlayer, SDL_Rect blockRect)
 {
     pPlayer->oldX = pPlayer->x = blockRect.w * 5;
-    // pPlayer->oldY = pPlayer->y = BOX_SCREEN_Y * blockRect.h - blockRect.h * 2 - pPlayer->dstRect.h;
-    pPlayer->oldY = pPlayer->y = 0;
+    pPlayer->oldY = pPlayer->y = BOX_SCREEN_Y * blockRect.h - blockRect.h * 2 - pPlayer->dstRect.h;
+    // pPlayer->oldY = pPlayer->y = 0;
     /*
     pPlayer->dstRect.x = (float)(pPlayer->pScreenRect->x + blockRect.w / 2);  // Börjar i mitten av ett block i x-led
     pPlayer->dstRect.y = (float)(pPlayer->pScreenRect->y + pPlayer->pScreenRect->h - blockRect.h - pPlayer->frames.characterRect.h);
@@ -182,7 +182,7 @@ void setSpeed(bool up, bool down, bool left, bool right, bool *pGoUp, bool *pGoD
     else if (!onGround)
     {
         (*pGoDown) = 1;
-        pPlayer->vy = (speedY) * 5;
+        pPlayer->vy = (speedY) * 7;
     }
 
     if (left && !right)
@@ -422,9 +422,10 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, i
 {
     static int lastSentTime = 0;
     int now = SDL_GetTicks();
+    int yToSend = window_height - pPlayer[0]->y + pPlayer[0]->pScreenRect->y;
     if ((now - lastSentTime) > 50 && (pPlayer[0]->oldX != pPlayer[0]->x || pPlayer[0]->oldY != pPlayer[0]->y))
     {
-        sprintf((char *)p->data, "%f %f", pPlayer[0]->x / blockRect.w, (window_height - pPlayer[0]->y) / blockRect.h);
+        sprintf((char *)p->data, "%f %f", pPlayer[0]->x / blockRect.w, yToSend / blockRect.h);
         p->len = strlen((char *)p->data) + 1;
 
         if (!(*pIs_server))
@@ -446,14 +447,14 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, i
 
         sscanf((char *)p2->data, "%f %f", &a, &b);
         pPlayer[1]->targetX = a * blockRect.w;
-        pPlayer[1]->targetY = window_height - b * blockRect.h;
+        pPlayer[1]->targetY = window_height - (b - pPlayer[0]->pScreenRect->y) * blockRect.h;
         pPlayer[1]->active = true;
 
         setAnimation(pPlayer[1]);
 
         if (*pIs_server)
         {
-            sprintf((char *)p->data, "%f %f", pPlayer[0]->x / blockRect.w, (window_height - pPlayer[0]->y) / blockRect.h);
+            sprintf((char *)p->data, "%f %f", pPlayer[0]->x / blockRect.w, yToSend / blockRect.h);
             p->address = p2->address;
             p->len = strlen((char *)p->data) + 1;
             SDLNet_UDP_Send(*pSd, -1, p);
