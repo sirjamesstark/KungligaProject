@@ -72,9 +72,20 @@ int main(int argc, char *argv[])
     }
     
     // Initialize and play the intro video
+#ifdef USE_FFMPEG
+    // Use FFmpeg video player when available
     initVideoPlayer(game.pRenderer);
     playVideo(game.pRenderer, "resources/video.mov");
     cleanupVideoPlayer();
+#else
+    // FFmpeg not available, just play the sound without video
+    Mix_Chunk *introSound = Mix_LoadWAV("resources/KungligaProjectSound.wav");
+    if (introSound) {
+        Mix_PlayChannel(0, introSound, 0);
+        SDL_Delay(3000); // Wait for 3 seconds to let the sound play
+        Mix_FreeChunk(introSound);
+    }
+#endif
 
     if (!runMenu(game.pRenderer, &game.screenRect))
     {

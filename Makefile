@@ -6,15 +6,35 @@ ifeq ($(OS), Windows_NT)
     UNAME_S = Windows
     INCLUDE = C:/msys64/mingw64/include/SDL2
     LIBS = C:/msys64/mingw64/lib
-    CFLAGS = -g -I$(INCLUDE) -Dmain=SDL_main -c
-    LDFLAGS = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
+    # Check if FFmpeg is available
+    FFMPEG_EXISTS := $(shell if exist "C:\msys64\mingw64\include\libavcodec\avcodec.h" echo 1)
+    
+    ifeq ($(FFMPEG_EXISTS), 1)
+        # FFmpeg is available
+        CFLAGS = -g -I$(INCLUDE) -IC:/msys64/mingw64/include -Dmain=SDL_main -DUSE_FFMPEG -c
+        LDFLAGS = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
+    else
+        # FFmpeg is not available
+        CFLAGS = -g -I$(INCLUDE) -Dmain=SDL_main -c
+        LDFLAGS = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
+    endif
 else
     UNAME_S := $(shell uname -s)
     INCLUDE = /opt/homebrew/include/SDL2
     LIBS = /opt/homebrew/lib
     FFMPEG_INCLUDE = /opt/homebrew/include
-    CFLAGS = -g -I$(INCLUDE) -I$(FFMPEG_INCLUDE) -c
-    LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
+    # Check if FFmpeg is available
+    FFMPEG_EXISTS := $(shell [ -f $(FFMPEG_INCLUDE)/libavcodec/avcodec.h ] && echo 1 || echo 0)
+    
+    ifeq ($(FFMPEG_EXISTS), 1)
+        # FFmpeg is available
+        CFLAGS = -g -I$(INCLUDE) -I$(FFMPEG_INCLUDE) -DUSE_FFMPEG -c
+        LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
+    else
+        # FFmpeg is not available
+        CFLAGS = -g -I$(INCLUDE) -c
+        LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
+    endif
 endif
 
 # Kompilator GCC

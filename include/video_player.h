@@ -4,6 +4,8 @@
 #include <SDL.h>
 #include <stdbool.h>
 
+// Check if FFmpeg is available (defined by Makefile)
+#ifdef USE_FFMPEG
 // FFmpeg libraries
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -21,6 +23,7 @@
     fprintf(stderr, "%s: %s\n", msg, error_buf);\
     return false;\
 }
+#endif // USE_FFMPEG
 
 // Initialize the video player
 bool initVideoPlayer(SDL_Renderer *renderer);

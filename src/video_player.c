@@ -4,15 +4,12 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
-#include <libswresample/swresample.h>
-#include <libavutil/imgutils.h>
-#include <libavutil/opt.h>
 
 #include "../include/video_player.h"
 #include "../include/common.h"
+
+// Only include FFmpeg code if USE_FFMPEG is defined
+#ifdef USE_FFMPEG
 
 // FFmpeg video player state
 static AVFormatContext *pFormatCtx = NULL;
@@ -390,3 +387,51 @@ void cleanupVideoPlayer() {
     quit = false;
     video_clock = 0.0;
 }
+
+#else
+
+// Simplified versions of the video player functions when FFmpeg is not available
+
+bool initVideoPlayer(SDL_Renderer *renderer) {
+    // No initialization needed when FFmpeg is not available
+    return true;
+}
+
+bool playVideo(SDL_Renderer *renderer, const char *videoPath) {
+    // Just play the sound file without video
+    Mix_Chunk *pSoundTrack = Mix_LoadWAV("resources/KungligaProjectSound.wav");
+    if (!pSoundTrack) {
+        fprintf(stderr, "Could not load sound file: %s\n", Mix_GetError());
+        return false;
+    }
+    
+    // Play the sound on channel 0, loop 0 times (play once)
+    if (Mix_PlayChannel(0, pSoundTrack, 0) == -1) {
+        fprintf(stderr, "Could not play sound file: %s\n", Mix_GetError());
+        Mix_FreeChunk(pSoundTrack);
+        return false;
+    }
+    
+    printf("Sound playback started\n");
+    
+    // Display a black screen for a few seconds
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+    SDL_RenderPresent(renderer);
+    
+    // Wait for a few seconds
+    SDL_Delay(3000);
+    
+    // Clean up
+    Mix_HaltChannel(0);
+    Mix_FreeChunk(pSoundTrack);
+    printf("Sound resource freed\n");
+    
+    return true;
+}
+
+void cleanupVideoPlayer() {
+    // No cleanup needed when FFmpeg is not available
+}
+
+#endif // USE_FFMPEG
