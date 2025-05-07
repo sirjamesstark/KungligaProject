@@ -151,12 +151,13 @@ int main(int argc, char *argv[])
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground);
         buildTheMap(gameMap, game.pBlock, CamY, &game.screenRect);
-        drawLava(game.pLava, game.pBackground, blockRect);
 
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
             drawPlayer(game.pPlayer[i], CamX, CamY);
         }
+        
+        drawLava(game.pLava);
         drawPadding(game.pRenderer, game.screenRect); // fyller ut med svarta kanter
         SDL_RenderPresent(game.pRenderer);
         SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
@@ -317,10 +318,17 @@ int initGameAfterMenu(Game *pGame)
 {
 
     pGame->pBackground = createBackground(pGame->pRenderer, &pGame->screenRect, GAME);
-    pGame->pLava = CreateLavaAnimation(pGame->pRenderer, pGame->pBackground);
     if (!pGame->pBackground)
     {
         printf("Error in initGameAfterMenu: pGame->pBackground is NULL.\n");
+        cleanUpGame(pGame);
+        return 0;
+    }
+
+    pGame->pLava = createLava(pGame->pRenderer, &pGame->screenRect);
+    if (!pGame->pLava)
+    {
+        printf("Error in initGameAfterMenu: pGame->pLava is NULL.\n");
         cleanUpGame(pGame);
         return 0;
     }
@@ -359,6 +367,12 @@ void cleanUpGame(Game *pGame)
     {
         destroyBackground(pGame->pBackground);
         pGame->pBackground = NULL;
+    }
+
+    if (pGame->pLava)
+    {
+        destroyLava(pGame->pLava);
+        pGame->pLava = NULL;
     }
 
     if (pGame->pAudio)

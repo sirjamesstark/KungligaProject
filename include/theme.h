@@ -3,16 +3,20 @@
 
 #include "../include/common.h"
 
-typedef struct lava Lava;
+#define LAVA_SCALEFACTOR 0.45f
+
 typedef struct background Background;
+typedef struct lava Lava;
 typedef struct button Button;
 typedef struct audio Audio;
 
 Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_type);
-Lava *CreateLavaAnimation(SDL_Renderer *pRenderer, Background *pBackground);
 void drawBackground(Background *pBackground);
-void drawLava(Lava *pLava, Background *pBackground, SDL_Rect BlockRect);
 void destroyBackground(Background *pBackground);
+
+Lava *createLava(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect);
+void updateLavaFrame(Lava *pLava);
+void drawLava(Lava *pLava);
 void destroyLava(Lava *pLava);
 
 Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, ButtonType button_type);
