@@ -4,8 +4,9 @@
 # CFLAGS & LDFLAGS säts för att bygga och länka SDL2 bibliotek till operativsystemet
 ifeq ($(OS), Windows_NT)
     UNAME_S = Windows
-    INCLUDE = C:/msys64/mingw64/include/SDL2
-    LIBS = C:/msys64/mingw64/lib
+    # 32-bit MinGW yolları
+    INCLUDE = C:/msys64/mingw32/include/SDL2
+    LIBS = C:/msys64/mingw32/lib
     
     # ===== WINDOWS FFMPEG KURULUMU =====
     # FFmpeg'i Windows'ta kullanmak için:

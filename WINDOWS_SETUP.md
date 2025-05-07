@@ -20,11 +20,14 @@ Run the following commands in the MSYS2 MinGW64 terminal:
 # Update package database
 pacman -Syu
 
-# Install FFmpeg development libraries
-pacman -S mingw-w64-x86_64-ffmpeg
+# Install FFmpeg development libraries (32-bit)
+pacman -S mingw-w64-i686-ffmpeg
 
-# Install SDL2 libraries (if not already installed)
-pacman -S mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL2_image mingw-w64-x86_64-SDL2_mixer mingw-w64-x86_64-SDL2_ttf mingw-w64-x86_64-SDL2_net
+# Install SDL2 libraries (32-bit)
+pacman -S mingw-w64-i686-SDL2 mingw-w64-i686-SDL2_image mingw-w64-i686-SDL2_mixer mingw-w64-i686-SDL2_ttf mingw-w64-i686-SDL2_net
+
+# Install GCC and Make (32-bit)
+pacman -S mingw-w64-i686-gcc make
 ```
 
 ### 3. Modifying the Makefile
