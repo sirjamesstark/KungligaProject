@@ -16,7 +16,8 @@
 
 #define TARGET_ASPECT_RATIO (16.0f / 9.0f)
 
-typedef struct {
+typedef struct
+{
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     SDL_Rect screenRect;
@@ -100,6 +101,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    initLavaAnimation(game.pRenderer, game.pBackground);
+
     playMusic(game.pAudio);
     bool closeWindow = false;
     bool up, down, left, right, goUp, goDown, goLeft, goRight;
@@ -132,7 +135,7 @@ int main(int argc, char *argv[])
         setSpeed(up, down, left, right, &goUp, &goDown, &goLeft, &goRight, &upCounter, onGround, game.pPlayer[0]);
         setAnimation(game.pPlayer[1]);
         updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround, &goUp, &goDown,
-                        &goLeft, &goRight, p, p2, &is_server, srvadd, &sd, game.screenRect.h,shiftLength);
+                     &goLeft, &goRight, p, p2, &is_server, srvadd, &sd, game.screenRect.h, shiftLength);
 
         int PlyY = game.screenRect.y;
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
@@ -148,13 +151,14 @@ int main(int argc, char *argv[])
         updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground);
-        buildTheMap(gameMap, game.pBlock, CamY,shiftLength);
+        buildTheMap(gameMap, game.pBlock, CamY, &game.screenRect);
+        drawLava(game.pBackground, blockRect);
 
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
             drawPlayer(game.pPlayer[i], CamX, CamY);
         }
-        drawPadding(game.pRenderer, game.screenRect);   // fyller ut med svarta kanter
+        drawPadding(game.pRenderer, game.screenRect); // fyller ut med svarta kanter
         SDL_RenderPresent(game.pRenderer);
         SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
     }
@@ -310,33 +314,38 @@ void initScreenRect(Game *pGame)
     printf("screenRect: x=%d, y=%d, w=%d, h=%d\n", pGame->screenRect.x, pGame->screenRect.y, pGame->screenRect.w, pGame->screenRect.h);
 }
 
-int initGameAfterMenu(Game *pGame) {
+int initGameAfterMenu(Game *pGame)
+{
 
     pGame->pBackground = createBackground(pGame->pRenderer, &pGame->screenRect, GAME);
-    if (!pGame->pBackground) {
+    if (!pGame->pBackground)
+    {
         printf("Error in initGameAfterMenu: pGame->pBackground is NULL.\n");
         cleanUpGame(pGame);
         return 0;
     }
 
     pGame->pAudio = createAudio(GAME);
-    if (!pGame->pAudio) {
+    if (!pGame->pAudio)
+    {
         printf("Error in initGameAfterMenu: pGame->pAudio is NULL.\n");
         cleanUpGame(pGame);
         return 0;
     }
 
     pGame->pCursor = initCursor();
-    if (!pGame->pCursor) {
+    if (!pGame->pCursor)
+    {
         printf("Error in initGameAfterMenu: pGame->pCursor is NULL.\n");
         cleanUpGame(pGame);
         return 0;
     }
     SDL_SetCursor(pGame->pCursor);
-    SDL_ShowCursor(SDL_DISABLE);    // Gör muspekaren osynlig tills vidare
+    SDL_ShowCursor(SDL_DISABLE); // Gör muspekaren osynlig tills vidare
 
     pGame->pBlock = createBlock(pGame->pRenderer, &pGame->screenRect);
-    if (!pGame->pBlock) {
+    if (!pGame->pBlock)
+    {
         cleanUpGame(pGame);
         printf("Error creating pBlock: %s\n", SDL_GetError());
         return 0;
@@ -358,7 +367,7 @@ void cleanUpGame(Game *pGame)
         pGame->pAudio = NULL;
     }
 
-    if (pGame->pCursor) 
+    if (pGame->pCursor)
     {
         destroyCursor(pGame->pCursor);
         pGame->pCursor = NULL;
@@ -427,7 +436,7 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
             (*pRight) = true;
             break;
         case SDL_SCANCODE_ESCAPE:
-            // Pop up ruta?? 
+            // Pop up ruta??
             (*pCloseWindow) = true;
             break;
         }

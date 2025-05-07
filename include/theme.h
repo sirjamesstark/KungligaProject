@@ -8,7 +8,9 @@ typedef struct button Button;
 typedef struct audio Audio;
 
 Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_type);
+bool initLavaAnimation(SDL_Renderer *pRenderer, Background *pBackground);
 void drawBackground(Background *pBackground);
+void drawLava(Background *pBackground, SDL_Rect BlockRect);
 void destroyBackground(Background *pBackground);
 
 Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, ButtonType button_type);
