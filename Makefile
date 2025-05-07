@@ -6,17 +6,20 @@ ifeq ($(OS), Windows_NT)
     UNAME_S = Windows
     INCLUDE = C:/msys64/mingw64/include/SDL2
     LIBS = C:/msys64/mingw64/lib
-    # Check if FFmpeg is available
-    FFMPEG_EXISTS := $(shell if exist "C:\msys64\mingw64\include\libavcodec\avcodec.h" echo 1)
     
-    ifeq ($(FFMPEG_EXISTS), 1)
+    # Check if FFmpeg is available - Windows detection is tricky, so we'll just assume it's not available
+    # and let the user manually enable it if they install FFmpeg
+    FFMPEG_INSTALLED = 0
+    
+    ifeq ($(FFMPEG_INSTALLED), 1)
         # FFmpeg is available
-        CFLAGS = -g -I$(INCLUDE) -IC:/msys64/mingw64/include -Dmain=SDL_main -DUSE_FFMPEG -c
+        CFLAGS = -g -I$(INCLUDE) -IC:/msys64/mingw64/include -Dmain=SDL_main -DUSE_FFMPEG -DDEBUG -c
         LDFLAGS = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
     else
         # FFmpeg is not available
-        CFLAGS = -g -I$(INCLUDE) -Dmain=SDL_main -c
+        CFLAGS = -g -I$(INCLUDE) -Dmain=SDL_main -DDEBUG -c
         LDFLAGS = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
+        $(info FFmpeg not detected on Windows. Using fallback mode without video playback.)  
     endif
 else
     UNAME_S := $(shell uname -s)
@@ -28,12 +31,14 @@ else
     
     ifeq ($(FFMPEG_EXISTS), 1)
         # FFmpeg is available
-        CFLAGS = -g -I$(INCLUDE) -I$(FFMPEG_INCLUDE) -DUSE_FFMPEG -c
+        CFLAGS = -g -I$(INCLUDE) -I$(FFMPEG_INCLUDE) -DUSE_FFMPEG -DDEBUG -c
         LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
+        $(info FFmpeg detected on macOS. Using full video playback.)  
     else
         # FFmpeg is not available
-        CFLAGS = -g -I$(INCLUDE) -c
+        CFLAGS = -g -I$(INCLUDE) -DDEBUG -c
         LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
+        $(info FFmpeg not detected on macOS. Using fallback mode without video playback.)  
     endif
 endif
 

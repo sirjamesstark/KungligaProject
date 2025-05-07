@@ -72,20 +72,34 @@ int main(int argc, char *argv[])
     }
     
     // Initialize and play the intro video
+    printf("\n=== Starting Intro Sequence ===\n");
+    
 #ifdef USE_FFMPEG
+    printf("Using FFmpeg for video playback\n");
     // Use FFmpeg video player when available
-    initVideoPlayer(game.pRenderer);
-    playVideo(game.pRenderer, "resources/video.mov");
-    cleanupVideoPlayer();
+    if (!initVideoPlayer(game.pRenderer)) {
+        fprintf(stderr, "Failed to initialize video player\n");
+    } else {
+        if (!playVideo(game.pRenderer, "resources/video.mov")) {
+            fprintf(stderr, "Failed to play video\n");
+        }
+        cleanupVideoPlayer();
+    }
 #else
-    // FFmpeg not available, just play the sound without video
-    Mix_Chunk *introSound = Mix_LoadWAV("resources/KungligaProjectSound.wav");
-    if (introSound) {
-        Mix_PlayChannel(0, introSound, 0);
-        SDL_Delay(3000); // Wait for 3 seconds to let the sound play
-        Mix_FreeChunk(introSound);
+    printf("FFmpeg not available, using fallback mode\n");
+    // Use the simplified video player implementation
+    if (!initVideoPlayer(game.pRenderer)) {
+        fprintf(stderr, "Failed to initialize video player\n");
+    } else {
+        if (!playVideo(game.pRenderer, "resources/video.mov")) {
+            fprintf(stderr, "Failed to play video\n");
+        }
+        cleanupVideoPlayer();
     }
 #endif
+
+    printf("=== Intro Sequence Complete ===\n");
+
 
     if (!runMenu(game.pRenderer, &game.screenRect))
     {
