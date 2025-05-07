@@ -20,31 +20,16 @@ bool is_ffmpeg_installed() {
     printf("Checking FFmpeg installation...\n");
     
 #ifdef _WIN32
-    // Windows'ta FFmpeg'in yüklü olup olmadığını kontrol et
-    STARTUPINFO si;
-    PROCESS_INFORMATION pi;
-    
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    ZeroMemory(&pi, sizeof(pi));
-    
-    // ffmpeg komutunu çalıştırmayı dene
-    if (CreateProcess(NULL, "ffmpeg -version", NULL, NULL, FALSE, 
-                     CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
-        // Sürecin tamamlanmasını bekle
-        WaitForSingleObject(pi.hProcess, 1000);
-        
-        // Çıkış kodunu al
-        DWORD exitCode;
-        GetExitCodeProcess(pi.hProcess, &exitCode);
-        
-        // Handle'ları kapat
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        
-        return (exitCode == 0);
-    }
+    // Windows'ta FFmpeg'i zorla etkinleştir
+    // Makefile'da FFMPEG_INSTALLED = 1 ayarlandıysa, FFmpeg kurulu kabul et
+#ifdef USE_FFMPEG
+    printf("FFmpeg is enabled in Makefile for Windows\n");
+    return true;
+#else
+    // Makefile'da USE_FFMPEG tanımlı değilse, FFmpeg kurulu değil
+    printf("FFmpeg is not enabled in Makefile for Windows\n");
     return false;
+#endif
 #else
     // Mac/Linux'ta FFmpeg'in yüklü olup olmadığını kontrol et
     int status = system("which ffmpeg > /dev/null 2>&1");

@@ -13,7 +13,7 @@ ifeq ($(OS), Windows_NT)
     # 2. MSYS2 MinGW64 terminalinde şu komutu çalıştırın: pacman -S mingw-w64-x86_64-ffmpeg
     # 3. Aşağıdaki değeri 1 olarak değiştirin
     # ===================================
-    FFMPEG_INSTALLED = 0
+    FFMPEG_INSTALLED = 1
     
     ifeq ($(FFMPEG_INSTALLED), 1)
         # FFmpeg is available

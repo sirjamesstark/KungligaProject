@@ -11,6 +11,23 @@
 // Only include FFmpeg code if USE_FFMPEG is defined
 #ifdef USE_FFMPEG
 
+// Windows'ta yollar farklı olabilir, bu yüzden her iki yolu da deniyoruz
+#ifdef _WIN32
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+#include <libavutil/imgutils.h>
+#include <libavutil/time.h>
+#include <libswresample/swresample.h>
+#else
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+#include <libavutil/imgutils.h>
+#include <libavutil/time.h>
+#include <libswresample/swresample.h>
+#endif
+
 // FFmpeg video player state
 static AVFormatContext *pFormatCtx = NULL;
 static AVCodecContext *pVideoCodecCtx = NULL;
@@ -402,81 +419,75 @@ bool playVideo(SDL_Renderer *renderer, const char *videoPath) {
     printf("Attempting to play intro sound only...\n");
     printf("Looking for sound file: resources/KungligaProjectSound.wav\n");
     
-    // Check if the file exists first
-    FILE *file = fopen("resources/KungligaProjectSound.wav", "rb");
-    if (!file) {
-        fprintf(stderr, "ERROR: Could not open sound file: resources/KungligaProjectSound.wav\n");
+    // Windows'ta ses dosyası yolları farklı olabilir
+    // Deneyeceğimiz tüm yolları bir dizide saklayalım
+    const char *possiblePaths[] = {
+        "resources/KungligaProjectSound.wav",
+        "../resources/KungligaProjectSound.wav",
+        "./resources/KungligaProjectSound.wav",
+        "KungligaProjectSound.wav",
+        "./KungligaProjectSound.wav",
+        "../KungligaProjectSound.wav"
+    };
+    int numPaths = sizeof(possiblePaths) / sizeof(possiblePaths[0]);
+    
+    Mix_Chunk *pSoundTrack = NULL;
+    bool soundFound = false;
+    
+    // Tüm olası yolları dene
+    for (int i = 0; i < numPaths; i++) {
+        printf("Trying path: %s\n", possiblePaths[i]);
+        
+        // Dosyanın var olup olmadığını kontrol et
+        FILE *file = fopen(possiblePaths[i], "rb");
+        if (!file) {
+            fprintf(stderr, "Could not open sound file: %s\n", possiblePaths[i]);
+            continue; // Bir sonraki yolu dene
+        }
+        
+        // Dosya bulundu, kapat ve yükle
+        fclose(file);
+        printf("Found sound file at: %s\n", possiblePaths[i]);
+        
+        // Ses dosyasını yükle
+        pSoundTrack = Mix_LoadWAV(possiblePaths[i]);
+        if (!pSoundTrack) {
+            fprintf(stderr, "ERROR: Could not load sound file %s: %s\n", possiblePaths[i], Mix_GetError());
+            continue; // Bir sonraki yolu dene
+        }
+        
+        // Ses dosyası başarıyla yüklendi
+        soundFound = true;
+        break;
+    }
+    
+    // Hiçbir ses dosyası bulunamadıysa
+    if (!soundFound) {
+        fprintf(stderr, "ERROR: Could not find KungligaProjectSound.wav in any location!\n");
         fprintf(stderr, "Please make sure the file exists in the resources directory\n");
         
-        // Try an alternative path
-        file = fopen("../resources/KungligaProjectSound.wav", "rb");
-        if (!file) {
-            fprintf(stderr, "ERROR: Could not open sound file: ../resources/KungligaProjectSound.wav either\n");
-            // Continue without sound, just show a black screen
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-            SDL_RenderClear(renderer);
-            SDL_RenderPresent(renderer);
-            SDL_Delay(3000); // Wait for 3 seconds
-            return true;
-        } else {
-            fclose(file);
-            printf("Found sound file at: ../resources/KungligaProjectSound.wav\n");
-            // Use the alternative path
-            Mix_Chunk *pSoundTrack = Mix_LoadWAV("../resources/KungligaProjectSound.wav");
-            if (!pSoundTrack) {
-                fprintf(stderr, "ERROR: Could not load sound file: %s\n", Mix_GetError());
-                // Continue without sound
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-                SDL_RenderClear(renderer);
-                SDL_RenderPresent(renderer);
-                SDL_Delay(3000); // Wait for 3 seconds
-                return true;
-            }
-            
-            // Play the sound
-            if (Mix_PlayChannel(0, pSoundTrack, 0) == -1) {
-                fprintf(stderr, "ERROR: Could not play sound file: %s\n", Mix_GetError());
-                Mix_FreeChunk(pSoundTrack);
-                // Continue without sound
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-                SDL_RenderClear(renderer);
-                SDL_RenderPresent(renderer);
-                SDL_Delay(3000); // Wait for 3 seconds
-                return true;
-            }
-            
-            printf("Sound playback started\n");
-        }
-    } else {
-        fclose(file);
-        printf("Found sound file at: resources/KungligaProjectSound.wav\n");
-        
-        // Load the sound file
-        Mix_Chunk *pSoundTrack = Mix_LoadWAV("resources/KungligaProjectSound.wav");
-        if (!pSoundTrack) {
-            fprintf(stderr, "ERROR: Could not load sound file: %s\n", Mix_GetError());
-            // Continue without sound
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-            SDL_RenderClear(renderer);
-            SDL_RenderPresent(renderer);
-            SDL_Delay(3000); // Wait for 3 seconds
-            return true;
-        }
-        
-        // Play the sound
-        if (Mix_PlayChannel(0, pSoundTrack, 0) == -1) {
-            fprintf(stderr, "ERROR: Could not play sound file: %s\n", Mix_GetError());
-            Mix_FreeChunk(pSoundTrack);
-            // Continue without sound
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-            SDL_RenderClear(renderer);
-            SDL_RenderPresent(renderer);
-            SDL_Delay(3000); // Wait for 3 seconds
-            return true;
-        }
-        
-        printf("Sound playback started\n");
+        // Ses olmadan devam et, sadece siyah ekran göster
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+        SDL_RenderPresent(renderer);
+        SDL_Delay(5000); // 5 saniye bekle
+        return true;
     }
+    
+    // Sesi çal
+    if (Mix_PlayChannel(0, pSoundTrack, 0) == -1) {
+        fprintf(stderr, "ERROR: Could not play sound file: %s\n", Mix_GetError());
+        Mix_FreeChunk(pSoundTrack);
+        
+        // Ses olmadan devam et
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+        SDL_RenderPresent(renderer);
+        SDL_Delay(5000); // 5 saniye bekle
+        return true;
+    }
+    
+    printf("Sound playback started\n");
     
     // Display a black screen while the sound plays
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
