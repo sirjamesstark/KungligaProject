@@ -359,48 +359,19 @@ void syncCharacterRect(Player *pPlayer)
     pPlayer->frames.characterRect.y = pPlayer->dstRect.y + (pPlayer->dstRect.h - pPlayer->frames.characterRect.h);
 }
 
-void updatePlayerFrame(Player *pPlayer)
-{
+void updatePlayerFrame(Player *pPlayer) {
     Uint32 currentTime = SDL_GetTicks();
-    if (currentTime - pPlayer->frames.lastFrameTime < pPlayer->frames.frameDelay)
-        return;
+    if (currentTime - pPlayer->frames.lastFrameTime < pPlayer->frames.frameDelay) return;
     pPlayer->frames.lastFrameTime = currentTime;
 
-    if (pPlayer->frames.currentFrame_y == 0)
-    {
-        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_idle - 1)
-        {
-            pPlayer->frames.currentFrame_x += 1;
-        }
-        else
-            pPlayer->frames.currentFrame_x = 0;
+    if (pPlayer->frames.currentFrame_y == 0) {
+        pPlayer->frames.currentFrame_x = (pPlayer->frames.currentFrame_x + 1) % pPlayer->frames.nrOfFrames_idle;
     }
-    else if (pPlayer->frames.currentFrame_y == 1)
-    {
-        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_sprint - 1)
-        {
-            pPlayer->frames.currentFrame_x += 1;
-        }
-        else
-            pPlayer->frames.currentFrame_x = 0;
+    else if (pPlayer->frames.currentFrame_y == 1) {
+        pPlayer->frames.currentFrame_x = (pPlayer->frames.currentFrame_x + 1) % pPlayer->frames.nrOfFrames_sprint;
     }
-    else if (pPlayer->frames.currentFrame_y == 2)
-    {
-        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_jump - 1)
-        {
-            pPlayer->frames.currentFrame_x += 1;
-        }
-        else
-            pPlayer->frames.currentFrame_x = 0;
-    }
-    else if (pPlayer->frames.currentFrame_y == 2)
-    {
-        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_jump - 1)
-        {
-            pPlayer->frames.currentFrame_x += 1;
-        }
-        else
-            pPlayer->frames.currentFrame_x = 0;
+    else if (pPlayer->frames.currentFrame_y == 2) {
+        pPlayer->frames.currentFrame_x = (pPlayer->frames.currentFrame_x + 1) % pPlayer->frames.nrOfFrames_jump;
     }
 
     pPlayer->srcRect.x = pPlayer->frames.currentFrame_x * pPlayer->srcRect.w;

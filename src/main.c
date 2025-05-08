@@ -39,11 +39,9 @@ bool readMap(int (*map)[BOX_COL]);
 
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, bool *pUp, bool *pDown, bool *pLeft, bool *pRight);
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     printf("\n \n");
-    if (!initSDL())
-    {
+    if (!initSDL()) {
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
@@ -53,32 +51,28 @@ int main(int argc, char *argv[])
     UDPpacket *p, *p2;
     int is_server = 0;
 
-    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, argv))
-    {
+    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, argv)) {
         cleanUpNetwork(&sd, &p, &p2);
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
 
     Game game = {0};
-    if (!initGameBeforeMenu(&game))
-    {
+    if (!initGameBeforeMenu(&game)) {
         cleanUpGame(&game);
         cleanUpNetwork(&sd, &p, &p2);
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
 
-    if (!runMenu(game.pRenderer, &game.screenRect))
-    {
+    if (!runMenu(game.pRenderer, &game.screenRect)) {
         cleanUpGame(&game);
         cleanUpNetwork(&sd, &p, &p2);
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
 
-    if (!initGameAfterMenu(&game))
-    {
+    if (!initGameAfterMenu(&game)) {
         cleanUpGame(&game);
         cleanUpNetwork(&sd, &p, &p2);
         cleanUpSDL();
@@ -87,14 +81,12 @@ int main(int argc, char *argv[])
 
     // flytta ev in dessa initieringar i initGameAfterMenu
     SDL_Rect blockRect = getBlockRect(game.pBlock);
-    for (int i = 0; i < MAX_NROFPLAYERS; i++)
-    {
+    for (int i = 0; i < MAX_NROFPLAYERS; i++) {
         game.pPlayer[i] = createPlayer(i, game.pRenderer, &game.screenRect);
         initStartPosition(game.pPlayer[i], blockRect);
     }
-    game.pCamera = createCamera(&game.screenRect);
-    if (!game.pPlayer[0])
-    {
+
+    if (!game.pPlayer[0]) {
         cleanUpGame(&game);
         return 1;
     }
@@ -116,8 +108,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    while (!closeWindow)
-    {
+    while (!closeWindow) {
         // Beräkna tid sedan senaste frame
         currentTime = SDL_GetTicks();
         deltaTime = (currentTime - lastTime) / 1000.0f; // Omvandla till sekunder
@@ -152,15 +143,14 @@ int main(int argc, char *argv[])
         drawBackground(game.pBackground);
         buildTheMap(gameMap, game.pBlock, CamY);
 
-        for (int i = 0; i < MAX_NROFPLAYERS; i++)
-        {
+        for (int i = 0; i < MAX_NROFPLAYERS; i++) {
             drawPlayer(game.pPlayer[i], CamX, CamY);
         }
         
         drawLava(game.pLava);
-        drawPadding(game.pRenderer, game.screenRect); // fyller ut med svarta kanter
+        drawPadding(game.pRenderer, game.screenRect);
         SDL_RenderPresent(game.pRenderer);
-        SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
+        SDL_Delay(1);
     }
 
     cleanUpGame(&game);
@@ -317,6 +307,13 @@ int initGameAfterMenu(Game *pGame) {
         return 0;
     }
     toggleCursorVisibility(pGame->pCursor);
+
+    pGame->pCamera = createCamera(&pGame->screenRect);
+    if (!pGame->pCamera) {
+        printf("Error in initGameAfterMenu: pGame->pCamera is NULL.\n");
+        cleanUpGame(pGame);
+        return 0;
+    }
 
     pGame->pBlock = createBlock(pGame->pRenderer, &pGame->screenRect);
     if (!pGame->pBlock)
