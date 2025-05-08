@@ -22,7 +22,7 @@ typedef struct
     Background *pBackground;
     Lava *pLava;
     Audio *pAudio;
-    SDL_Cursor *pCursor;
+    Cursor *pCursor;
     Camera *pCamera;
     Block *pBlock;
     Player *pPlayer[MAX_NROFPLAYERS];
@@ -310,15 +310,13 @@ int initGameAfterMenu(Game *pGame) {
         return 0;
     }
 
-    pGame->pCursor = initCursor();
-    if (!pGame->pCursor)
-    {
+    pGame->pCursor = createCursor();
+    if (!pGame->pCursor) {
         printf("Error in initGameAfterMenu: pGame->pCursor is NULL.\n");
         cleanUpGame(pGame);
         return 0;
     }
-    SDL_SetCursor(pGame->pCursor);
-    SDL_ShowCursor(SDL_DISABLE);
+    toggleCursorVisibility(pGame->pCursor);
 
     pGame->pBlock = createBlock(pGame->pRenderer, &pGame->screenRect);
     if (!pGame->pBlock)

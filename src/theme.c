@@ -31,7 +31,13 @@ struct button {
     SDL_Rect srcRect;
     SDL_Rect dstRect;
     int nrOfFrames, currentFrame;
-    bool isHovered;
+    bool isHovered, isPushed;
+};
+
+struct cursor {
+    SDL_Cursor *pCursor;
+    int x, y;
+    bool isVisible;
 };
 
 struct audio {
@@ -39,6 +45,7 @@ struct audio {
     Mix_Chunk *pButtonSound;
     Mix_Chunk *pJumpSound;
     Mix_Chunk *pDeathSound;
+    Mix_Chunk *pWinningSound;
     bool isMuted;
 };
 
@@ -221,6 +228,7 @@ Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, ButtonType 
     pButton->nrOfFrames = 2;
     pButton->currentFrame = 0;
     pButton->isHovered = false;
+    pButton->isPushed = false;
 
     SDL_QueryTexture(pButton->pTexture, NULL, NULL, &pButton->srcRect.w, &pButton->srcRect.h);
     pButton->srcRect.w /= pButton->nrOfFrames;
@@ -235,68 +243,67 @@ Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, ButtonType 
     return pButton;
 }
 
-int setButtonPlacement(Button *pButton, ButtonType button_type)
-{
+int setButtonPlacement(Button *pButton, ButtonType button_type) {
     switch (button_type) {
-    case START:
-        pButton->dstRect.x = (int)((pButton->pScreenRect->x * 2 + pButton->pScreenRect->w - pButton->dstRect.w) / 2.0f + 0.5f);
-        pButton->dstRect.y = (int)((pButton->pScreenRect->y * 2 + pButton->pScreenRect->h) / 2.0f + 0.5f) * 0.4f;
-        break;
-    case EXIT:
-        pButton->dstRect.x = (int)((pButton->pScreenRect->x * 2 + pButton->pScreenRect->w - pButton->dstRect.w) / 2.0f + 0.5f);
-        pButton->dstRect.y = (int)((pButton->pScreenRect->y * 2 + pButton->pScreenRect->h) / 2.0f + 0.5f) * 1.1f;
-        break;
-    case SOUND:
-        pButton->dstRect.w *= 0.55f;
-        pButton->dstRect.h *= 0.55f;
-        printf("Exception: Button[%d] adjusted size: w: %d, h: %d\n", button_type, pButton->dstRect.w, pButton->dstRect.h);
-        pButton->dstRect.x = (int)(pButton->pScreenRect->x * 2 + pButton->pScreenRect->w - pButton->dstRect.w * 1.5f + 0.5f);
-        pButton->dstRect.y = (int)(pButton->pScreenRect->y + pButton->dstRect.h * 0.4f + 0.5f);
-        break;
-    default:
-        return 0;
+        case START:
+            pButton->dstRect.x = (int)((pButton->pScreenRect->x * 2 + pButton->pScreenRect->w - pButton->dstRect.w) / 2.0f + 0.5f);
+            pButton->dstRect.y = (int)((pButton->pScreenRect->y * 2 + pButton->pScreenRect->h) / 2.0f + 0.5f) * 0.4f;
+            break;
+        case EXIT:
+            pButton->dstRect.x = (int)((pButton->pScreenRect->x * 2 + pButton->pScreenRect->w - pButton->dstRect.w) / 2.0f + 0.5f);
+            pButton->dstRect.y = (int)((pButton->pScreenRect->y * 2 + pButton->pScreenRect->h) / 2.0f + 0.5f) * 1.1f;
+            break;
+        case SOUND:
+            pButton->dstRect.w *= 0.55f;
+            pButton->dstRect.h *= 0.55f;
+            printf("Exception: Button[%d] adjusted size: w: %d, h: %d\n", button_type, pButton->dstRect.w, pButton->dstRect.h);
+            pButton->dstRect.x = (int)(pButton->pScreenRect->x * 2 + pButton->pScreenRect->w - pButton->dstRect.w * 1.5f + 0.5f);
+            pButton->dstRect.y = (int)(pButton->pScreenRect->y + pButton->dstRect.h * 0.4f + 0.5f);
+            break;
+        default:
+            return 0;
     }
     return 1;
-}
-
-void drawButton(Button *pButton) {
-    if (!pButton) return;
-    pButton->srcRect.x = pButton->srcRect.w * pButton->currentFrame;
-    SDL_RenderCopy(pButton->pRenderer, pButton->pTexture, &pButton->srcRect, &pButton->dstRect);
 }
 
 void makeButtonHoverd(Button *pButton) {
     if (!pButton) return;
     pButton->isHovered = true;
-    pButton->currentFrame = 1;
 }
 
 void makeButtonNotHovered(Button *pButton) {
     if (!pButton) return;
     pButton->isHovered = false;
-    pButton->currentFrame = 0;
 }
 
 void toggleHoveredButton(Button *pButton) {
     if (!pButton) return;
-    if (pButton->currentFrame == 0) {
-        pButton->currentFrame = 1;
-        pButton->isHovered = true;
-    }
-    else {
-        pButton->currentFrame = 0;
-        pButton->isHovered = false;
-    }
+    pButton->isHovered = !pButton->isHovered;
 }
 
-bool isButtonHovered(Button *pButton) {
+bool isButtonPushed(Button *pButton) {
     if (!pButton) return false;
-    return pButton->isHovered;
+    if (pButton->isHovered) pButton->isPushed = true;
+    else pButton->isPushed = false;
+    return pButton->isPushed;
 }
 
-bool isMouseOverButton(int x, int y, Button *pButton) {
-    return (x >= pButton->dstRect.x && x <= pButton->dstRect.x + pButton->dstRect.w &&
-            y >= pButton->dstRect.y && y <= pButton->dstRect.y + pButton->dstRect.h);
+void checkMouseOverButton(Button *pButton, Cursor *pCursor) {
+    if (!pButton || !pCursor) return;
+    updateCursorPosition(pCursor);
+    if (pCursor->x >= pButton->dstRect.x && pCursor->x <= pButton->dstRect.x + pButton->dstRect.w &&
+        pCursor->y >= pButton->dstRect.y && pCursor->y <= pButton->dstRect.y + pButton->dstRect.h) {
+            pButton->isHovered = true;
+    }
+    else pButton->isHovered = false;
+}
+
+void drawButton(Button *pButton) {
+    if (!pButton) return;
+    if (pButton->isHovered) pButton->currentFrame = 1;
+    else pButton->currentFrame = 0;
+    pButton->srcRect.x = pButton->srcRect.w * pButton->currentFrame;
+    SDL_RenderCopy(pButton->pRenderer, pButton->pTexture, &pButton->srcRect, &pButton->dstRect);
 }
 
 void destroyButton(Button *pButton) {
@@ -306,6 +313,58 @@ void destroyButton(Button *pButton) {
         pButton->pTexture = NULL;
     }
     free(pButton);
+}
+
+Cursor *createCursor() {
+    Cursor *pCursor = malloc(sizeof(struct cursor));
+    if (!pCursor) {
+        printf("Error in createCursor: Failed to allocate memory for pCursor.\n");
+        return NULL;
+    }
+
+    SDL_Surface *pSurface = IMG_Load("resources/cursor.png");
+    if (!pSurface) {
+        printf("Error in createCursor: pSurface is NULL.\n");
+        pCursor->pCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+    }
+    else {
+        pCursor->pCursor = SDL_CreateColorCursor(pSurface, 0, 0);
+        SDL_FreeSurface(pSurface);
+    }
+
+    if (!pCursor->pCursor) {
+        printf("Error in createCursor: pCursor->pCursor is NULL.\n");
+        destroyCursor(pCursor);
+        return NULL;
+    }
+
+    SDL_SetCursor(pCursor->pCursor);
+    SDL_ShowCursor(SDL_ENABLE);
+    pCursor->isVisible = true;
+    SDL_GetMouseState(&pCursor->x, &pCursor->y);
+    
+    return pCursor;
+}
+
+void updateCursorPosition(Cursor *pCursor) {
+    if (!pCursor) return;
+    SDL_GetMouseState(&pCursor->x, &pCursor->y);
+}
+
+void toggleCursorVisibility(Cursor *pCursor) {
+    if (!pCursor) return;
+    pCursor->isVisible = !pCursor->isVisible;
+    if (pCursor->isVisible) SDL_ShowCursor(SDL_ENABLE);
+    else SDL_ShowCursor(SDL_DISABLE);
+}
+
+void destroyCursor(Cursor *pCursor) {
+    if (!pCursor) return;
+    if (pCursor->pCursor) {
+        SDL_FreeCursor(pCursor->pCursor);
+        pCursor->pCursor = NULL;
+    }
+    free (pCursor);
 }
 
 Audio *createAudio(State theme_type) {
@@ -330,7 +389,9 @@ Audio *createAudio(State theme_type) {
     pAudio->pButtonSound = Mix_LoadWAV("resources/button_selection_sound.wav");
     pAudio->pJumpSound = Mix_LoadWAV("resources/jump_sound.wav");
     pAudio->pDeathSound = Mix_LoadWAV("resources/jump_sound.wav"); // Ersätt detta ljud med dödsljudet sen
-    if (!pAudio->pMusic || !pAudio->pButtonSound || !pAudio->pJumpSound || !pAudio->pDeathSound) {
+    pAudio->pWinningSound = Mix_LoadWAV("resources/jump_sound.wav"); // Ersätt detta ljud med vinnarljudet sen
+
+    if (!pAudio->pMusic || !pAudio->pButtonSound || !pAudio->pJumpSound || !pAudio->pDeathSound || !pAudio->pWinningSound) {
         printf("Error in createAudio: Failed to load one or more audio files.\n");
         destroyAudio(pAudio);
         return NULL;
@@ -342,8 +403,7 @@ Audio *createAudio(State theme_type) {
 }
 
 void playMusic(Audio *pAudio) {
-    if (!pAudio || !pAudio->pMusic)
-        return;
+    if (!pAudio || !pAudio->pMusic) return;
 
     if (pAudio->isMuted) {
         Mix_VolumeMusic(0);
@@ -351,8 +411,7 @@ void playMusic(Audio *pAudio) {
     }
 
     if (!Mix_PlayingMusic()) {
-        if (Mix_PlayMusic(pAudio->pMusic, -1) == -1)
-        {
+        if (Mix_PlayMusic(pAudio->pMusic, -1) == -1) {
             printf("Failed to play music: %s\n", Mix_GetError());
         }
     }
@@ -376,6 +435,12 @@ void playDeathSound(Audio *pAudio) {
     if (!pAudio || !pAudio->pDeathSound) return;
     if (pAudio->isMuted) return;
     Mix_PlayChannel(-1, pAudio->pDeathSound, 0);
+}
+
+void playWinningSound(Audio *pAudio) {
+    if (!pAudio || !pAudio->pWinningSound) return;
+    if (pAudio->isMuted) return;
+    Mix_PlayChannel(-1, pAudio->pWinningSound, 0);
 }
 
 void toggleMuteAudio(Audio *pAudio) {
@@ -412,24 +477,10 @@ void destroyAudio(Audio *pAudio) {
         pAudio->pDeathSound = NULL;
     }
 
-    free(pAudio);
-}
-
-SDL_Cursor *initCursor() {
-    SDL_Cursor *pCursor = NULL;
-    SDL_Surface *pSurface = IMG_Load("resources/cursor.png");
-
-    if (!pSurface) {
-        printf("Error in initCursor: pSurface is NULL.\n");
-        return SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+    if (pAudio->pWinningSound) {
+        Mix_FreeChunk(pAudio->pWinningSound);
+        pAudio->pWinningSound = NULL;
     }
 
-    pCursor = SDL_CreateColorCursor(pSurface, 0, 0);
-    SDL_FreeSurface(pSurface);
-    return pCursor;
-}
-
-void destroyCursor(SDL_Cursor *pCursor) {
-    if (!pCursor) return;
-    SDL_FreeCursor(pCursor);
+    free(pAudio);
 }
