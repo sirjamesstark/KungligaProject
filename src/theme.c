@@ -3,7 +3,7 @@
 #include <SDL_mixer.h>
 #include <stdbool.h>
 #include "../include/theme.h"
-#include "../include/common.h"
+#include "../include/scaling.h"
 
 struct background {
     SDL_Renderer *pRenderer;
@@ -87,7 +87,7 @@ Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, Sta
     SDL_QueryTexture(pBackground->pTexture, NULL, NULL, &pBackground->srcRect.w, &pBackground->srcRect.h);
     pBackground->srcRect.x = pBackground->srcRect.y = 0;
     printf("\nBackground size:\n");
-    pBackground->dstRect = stretchRectToScreen(*pBackground->pScreenRect);
+    stretchRectToFitTarget(&pBackground->dstRect, *pBackground->pScreenRect);
 
     return pBackground;
 }
@@ -142,7 +142,7 @@ Lava *createLava(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect) {
     SDL_QueryTexture(pLava->pTexture, NULL, NULL, &pLava->srcRect.w, &pLava->srcRect.h);
     pLava->srcRect.w /= pLava->nrOfFrames;
     printf("\nLava size:\n");
-    pLava->dstRect = scaleAndCenterRect(pLava->srcRect, *pLava->pScreenRect, LAVA_SCALEFACTOR);
+    pLava->dstRect = scaleRect(pLava->srcRect, *pLava->pScreenRect, LAVA_SCALEFACTOR);
     pLava->dstRect.x = pLava->pScreenRect->x;
     pLava->dstRect.y = pLava->pScreenRect->y + pLava->pScreenRect->h - pLava->dstRect.h;
 
@@ -225,7 +225,7 @@ Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, ButtonType 
     SDL_QueryTexture(pButton->pTexture, NULL, NULL, &pButton->srcRect.w, &pButton->srcRect.h);
     pButton->srcRect.w /= pButton->nrOfFrames;
     printf("\nButton[%d] size:\n", button_type);
-    pButton->dstRect = scaleAndCenterRect(pButton->srcRect, *pButton->pScreenRect, BUTTON_SCALEFACTOR);
+    pButton->dstRect = scaleRect(pButton->srcRect, *pButton->pScreenRect, BUTTON_SCALEFACTOR);
 
     if (!setButtonPlacement(pButton, button_type)) {
         destroyButton(pButton);

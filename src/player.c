@@ -5,11 +5,10 @@
 #include <math.h>
 #include <stdbool.h>
 #include "../include/player.h"
-#include "../include/common.h"
+#include "../include/scaling.h"
 
 
-struct frames
-{
+struct frames {
     int nrOfFrames_idle, nrOfFrames_sprint, nrOfFrames_jump;
     int currentFrame_x, currentFrame_y;
     SDL_Rect characterRect;
@@ -18,8 +17,7 @@ struct frames
     Uint32 lastFrameTime;
 };
 
-struct player
-{
+struct player {
     float x, y, vx, vy, oldX, oldY, targetX, targetY;
     Frames frames;
     SDL_Renderer *pRenderer;
@@ -45,61 +43,53 @@ int getPlyY(Player *pPlayer)
     return pPlayer->dstRect.y;
 }
 
-Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
-{
-    if (!pRenderer || !pScreenRect)
-    {
-        printf("Error: Invalid parameters. pRenderer or pScreenRect is NULL.\n");
+Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pScreenRect) {
+    if (!pRenderer || !pScreenRect) {
+        printf("Error in createPlayer: pRenderer or pScreenRect is NULL.\n");
         return NULL;
     }
 
     Player *pPlayer = malloc(sizeof(struct player));
-    if (pPlayer == NULL)
-    {
-        printf("Error: Failed to allocate memory for player.\n");
+    if (!pPlayer) {
+        printf("Error in createPlayer: Failed to allocate memory for pPlayer.\n");
+        return NULL;
+    }
+
+    SDL_Surface *pSurface = initPlayerFrames(pPlayer, player_ID);
+    if (!pSurface) {
+        printf("Error in createPlayer: pSurface is NULL.\n");
+        destroyPlayer(pPlayer);
         return NULL;
     }
 
     pPlayer->pRenderer = pRenderer;
-    pPlayer->pScreenRect = pScreenRect;
-
-    SDL_Surface *pSurface = initPlayerFrames(pPlayer, player_ID);
-    if (!pSurface)
-    {
-        destroyPlayer(pPlayer);
-        printf("Error: Failed to initialize player frames.\n");
-        return NULL;
-    }
-
     pPlayer->pTexture = SDL_CreateTextureFromSurface(pRenderer, pSurface);
     SDL_FreeSurface(pSurface);
-    if (!pPlayer->pTexture)
-    {
+    pPlayer->pScreenRect = pScreenRect;
+
+    if (!pPlayer->pTexture) {
+        printf("Error in createPlayer: pPlayer->pTexture is NULL.\n");
         destroyPlayer(pPlayer);
-        printf("Error: Failed to create player texture.\n");
         return NULL;
     }
 
     SDL_QueryTexture(pPlayer->pTexture, NULL, NULL, &pPlayer->srcRect.w, &pPlayer->srcRect.h);
     pPlayer->srcRect.w = pPlayer->srcRect.h = pPlayer->srcRect.h / 3;
-    pPlayer->srcRect.x = (pPlayer->frames.currentFrame_x) * pPlayer->srcRect.w;
-    pPlayer->srcRect.y = (pPlayer->frames.currentFrame_y) * pPlayer->srcRect.h;
+    pPlayer->srcRect.x = pPlayer->srcRect.y = 0;
     printf("\nPlayer size:\n");
-    pPlayer->dstRect = scaleAndCenterRect(pPlayer->srcRect, *pPlayer->pScreenRect, PLAYER_SCALEFACTOR); 
-    pPlayer->frames.characterRect = scaleAndCenterRect(pPlayer->frames.characterRect, *pPlayer->pScreenRect, PLAYER_SCALEFACTOR); 
+    pPlayer->dstRect = scaleRect(pPlayer->srcRect, *pPlayer->pScreenRect, PLAYER_SCALEFACTOR); 
+    pPlayer->frames.characterRect = scaleRect(pPlayer->frames.characterRect, *pPlayer->pScreenRect, PLAYER_SCALEFACTOR); 
 
     return pPlayer;
 }
 
-SDL_Surface *initPlayerFrames(Player *pPlayer, int player_ID)
-{
+SDL_Surface *initPlayerFrames(Player *pPlayer, int player_ID) {
     pPlayer->frames.currentFrame_x = pPlayer->frames.currentFrame_y = 0;
     pPlayer->frames.is_mirrored = false;
-    pPlayer->frames.frameDelay = 200; // 100 ms = 10 frames per sekund
+    pPlayer->frames.frameDelay = 200;
     pPlayer->frames.lastFrameTime = SDL_GetTicks();
 
-    switch (player_ID)
-    {
+    switch (player_ID) {
     case 0:
         pPlayer->frames.nrOfFrames_idle = 5;
         pPlayer->frames.nrOfFrames_sprint = 8;
@@ -478,11 +468,9 @@ void drawPlayer(Player *pPlayer, int CamX, int CamY)
     }
 }
 
-void destroyPlayer(Player *pPlayer)
-{
+void destroyPlayer(Player *pPlayer) {
     if (!pPlayer) return;
-    if (pPlayer->pTexture)
-    {
+    if (pPlayer->pTexture) {
         SDL_DestroyTexture(pPlayer->pTexture);
         pPlayer->pTexture = NULL;
     }

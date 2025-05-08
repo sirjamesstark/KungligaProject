@@ -11,10 +11,8 @@
 #include "../include/player.h"
 #include "../include/theme.h"
 #include "../include/camera.h"
-#include "../include/common.h"
+#include "../include/scaling.h"
 #include <SDL_net.h>
-
-#define TARGET_ASPECT_RATIO (16.0f / 9.0f)
 
 typedef struct
 {
@@ -22,12 +20,12 @@ typedef struct
     SDL_Renderer *pRenderer;
     SDL_Rect screenRect;
     Background *pBackground;
+    Lava *pLava;
     Audio *pAudio;
     SDL_Cursor *pCursor;
-    Player *pPlayer[MAX_NROFPLAYERS];
-    Block *pBlock;
     Camera *pCamera;
-    Lava *pLava;
+    Block *pBlock;
+    Player *pPlayer[MAX_NROFPLAYERS];
 } Game;
 
 int initSDL();
@@ -35,10 +33,9 @@ void cleanUpSDL();
 int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char *argv[]);
 void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2);
 int initGameBeforeMenu(Game *pGame);
-void initScreenRect(Game *pGame);
 int initGameAfterMenu(Game *pGame);
 void cleanUpGame(Game *pGame);
-void readMap(int (*map)[BOX_COL]);
+bool readMap(int (*map)[BOX_COL]);
 
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, bool *pUp, bool *pDown, bool *pLeft, bool *pRight);
 
@@ -104,17 +101,20 @@ int main(int argc, char *argv[])
 
     playMusic(game.pAudio);
     bool closeWindow = false;
-    bool up, down, left, right, goUp, goDown, goLeft, goRight;
+    bool up, down, left, right, goUp, goDown, goLeft, goRight = false;
     bool onGround = true;
-    up = down = left = right = false;
-    int upCounter = 0, chosenMap = 0, gameMap[BOX_ROW][BOX_COL] = {0};
+    int upCounter = 0;
     float shiftLength = getShiftLength(game.pBlock);
 
     Uint32 lastTime = SDL_GetTicks(); // Tidpunkt för senaste uppdateringen
     Uint32 currentTime;
     float deltaTime;
 
-    readMap(gameMap);
+    int gameMap[BOX_ROW][BOX_COL] = {0};
+    if (!readMap(gameMap)) {
+        cleanUpGame(&game);
+        return 1;
+    }
 
     while (!closeWindow)
     {
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
         updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground);
-        buildTheMap(gameMap, game.pBlock, CamY, &game.screenRect);
+        buildTheMap(gameMap, game.pBlock, CamY);
 
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
@@ -269,54 +269,23 @@ void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2)
 int initGameBeforeMenu(Game *pGame)
 {
     pGame->pWindow = SDL_CreateWindow("KungligaProject", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
-    if (!pGame->pWindow)
-    {
-        printf("Error creating window: %s\n", SDL_GetError());
+    if (!pGame->pWindow) {
+        printf("Error in initGameBeforeMenu: pGame->pWindow is NULL.\n");
         return 0;
     }
 
     pGame->pRenderer = SDL_CreateRenderer(pGame->pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!pGame->pRenderer)
-    {
-        printf("Error creating renderer: %s\n", SDL_GetError());
+    if (!pGame->pRenderer) {
+        printf("Error in initGameBeforeMenu: pGame->pRenderer is NULL.\n");
         return 0;
     }
 
-    initScreenRect(pGame);
+    pGame->screenRect = getScreenRect(pGame->pWindow);
 
     return 1;
 }
 
-void initScreenRect(Game *pGame)
-{
-    int window_width, window_height;
-
-    SDL_GetWindowSize(pGame->pWindow, &window_width, &window_height);
-    float currentAspect = (float)window_width / window_height;
-    int targetWidth = window_width;
-    int targetHeight = window_height;
-
-    if (currentAspect > TARGET_ASPECT_RATIO)
-    {
-        targetWidth = (int)(window_height * TARGET_ASPECT_RATIO + 0.5f);
-    }
-    else if (currentAspect < TARGET_ASPECT_RATIO)
-    {
-        targetHeight = (int)(window_width / TARGET_ASPECT_RATIO + 0.5f);
-    }
-
-    pGame->screenRect.w = (int)(targetWidth + 0.5f);
-    pGame->screenRect.h = (int)(targetHeight + 0.5f);
-    pGame->screenRect.x = (int)((window_width - targetWidth) / 2 + 0.5f);
-    pGame->screenRect.y = (int)((window_height - targetHeight) / 2 + 0.5f);
-
-    printf("Original window size: w: %d, h: %d \n", window_width, window_height);
-    printf("screenRect: x=%d, y=%d, w=%d, h=%d\n", pGame->screenRect.x, pGame->screenRect.y, pGame->screenRect.w, pGame->screenRect.h);
-}
-
-int initGameAfterMenu(Game *pGame)
-{
-
+int initGameAfterMenu(Game *pGame) {
     pGame->pBackground = createBackground(pGame->pRenderer, &pGame->screenRect, GAME);
     if (!pGame->pBackground)
     {
@@ -349,7 +318,7 @@ int initGameAfterMenu(Game *pGame)
         return 0;
     }
     SDL_SetCursor(pGame->pCursor);
-    SDL_ShowCursor(SDL_DISABLE); // Gör muspekaren osynlig tills vidare
+    SDL_ShowCursor(SDL_DISABLE);
 
     pGame->pBlock = createBlock(pGame->pRenderer, &pGame->screenRect);
     if (!pGame->pBlock)
@@ -361,63 +330,52 @@ int initGameAfterMenu(Game *pGame)
     return 1;
 }
 
-void cleanUpGame(Game *pGame)
-{
-    if (pGame->pBackground)
-    {
+void cleanUpGame(Game *pGame) {
+    if (pGame->pBackground) {
         destroyBackground(pGame->pBackground);
         pGame->pBackground = NULL;
     }
 
-    if (pGame->pLava)
-    {
+    if (pGame->pLava) {
         destroyLava(pGame->pLava);
         pGame->pLava = NULL;
     }
 
-    if (pGame->pAudio)
-    {
+    if (pGame->pAudio) {
         destroyAudio(pGame->pAudio);
         pGame->pAudio = NULL;
     }
 
-    if (pGame->pCursor)
-    {
+    if (pGame->pCursor) {
         destroyCursor(pGame->pCursor);
         pGame->pCursor = NULL;
     }
 
-    if (pGame->pRenderer)
-    {
-        SDL_DestroyRenderer(pGame->pRenderer);
-        pGame->pRenderer = NULL;
+    if (pGame->pCamera) {
+        destroyCamera(pGame->pCamera);
+        pGame->pCamera = NULL;
     }
 
-    if (pGame->pWindow)
-    {
-        SDL_DestroyWindow(pGame->pWindow);
-        pGame->pWindow = NULL;
+    if (pGame->pBlock) {
+        destroyBlock(pGame->pBlock);
+        pGame->pBlock = NULL;
     }
 
-    // Raderna under behöver vi gå igenom mer noggrant sen
-    for (int i = 0; i < MAX_NROFPLAYERS; i++)
-    {
-        if (pGame->pPlayer[i] != NULL)
-        {
+    for (int i = 0; i < MAX_NROFPLAYERS; i++) {
+        if (pGame->pPlayer[i]) {
             destroyPlayer(pGame->pPlayer[i]);
             pGame->pPlayer[i] = NULL;
         }
     }
 
-    if (pGame->pBlock != NULL)
-    {
-        destroyBlock(pGame->pBlock);
-        pGame->pBlock = NULL;
+    if (pGame->pRenderer) {
+        SDL_DestroyRenderer(pGame->pRenderer);
+        pGame->pRenderer = NULL;
     }
-    if (pGame->pCamera != NULL)
-    {
-        destroyCamera(pGame->pCamera);
-        pGame->pCamera = NULL;
+
+    if (pGame->pWindow) {
+        SDL_DestroyWindow(pGame->pWindow);
+        pGame->pWindow = NULL;
     }
 }
 
@@ -481,24 +439,44 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
     }
 }
 
-void readMap(int (*map)[BOX_COL])
-{
+bool readMap(int (*map)[BOX_COL]) {
     FILE *fp;
     char tmp[BOX_COL + 1];
-
+    int row_count = 0;
     fp = fopen("map.txt", "r");
+    printf("\n");
 
-    if (fp != NULL)
-    {
-        for (int i = 0; i < BOX_ROW; i++)
-        {
-            fscanf(fp, "%s", tmp);
-            for (int j = 0; j < BOX_COL; j++)
-            {
+    if (fp) {
+        for (int i = 0; i < BOX_ROW; i++) {
+            if (fscanf(fp, "%s", tmp) != 1) {
+                printf("Error in readMap: Failed to read a line in map file.\n");
+                fclose(fp);
+                return false;
+            }
+
+            if (strlen(tmp) != BOX_COL) {
+                printf("Error in readMap: Line %d does not have the correct number of columns.\n", i + 1);
+                fclose(fp);
+                return false;
+            }
+
+            for (int j = 0; j < BOX_COL; j++) {
                 map[i][j] = tmp[j] - 48;
             }
+            row_count++;
         }
+
+        if (row_count != BOX_ROW) {
+            printf("Error in readMap: Expected %d rows, but read %d rows.\n", BOX_ROW, row_count);
+            fclose(fp);
+            return false;
+        }
+        printf("Successfully read %d rows from the map file.\n", row_count);
+        fclose(fp);
+        return true;
     }
-    else
-        printf("no map file\n");
+    else {
+        printf("Error in readMap: No map was found\n");
+        return false;
+    }
 }

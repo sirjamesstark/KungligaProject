@@ -1,7 +1,7 @@
 #ifndef player_h
 #define player_h
 
-#include "../include/common.h"
+#include "../include/scaling.h"
 #include <SDL_net.h>
 
 #define BOX_ROW 140

@@ -2,7 +2,7 @@
 #include <SDL_image.h>
 #include <stdlib.h>
 #include "../include/platform.h"
-#include "../include/common.h"
+#include "../include/scaling.h"
 
 struct block
 {
@@ -53,7 +53,7 @@ Block *createBlock(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
     SDL_QueryTexture(pBlock->pTexture, NULL, NULL, &(pBlock->srcRect.w), &(pBlock->srcRect.h));
     pBlock->srcRect.w /= 3;
     printf("\nBlock size:\n");
-    pBlock->dstRect = scaleAndCenterRect(pBlock->srcRect, *pBlock->pScreenRect, BLOCK_SCALEFACTOR);
+    pBlock->dstRect = scaleRect(pBlock->srcRect, *pBlock->pScreenRect, BLOCK_SCALEFACTOR);
 
     return pBlock;
 }
@@ -68,58 +68,44 @@ float getShiftLength(Block *pBlock)
     return (float)(pBlock->pScreenRect->w - (pBlock->dstRect.w * BOX_COL)) / 2.0f;
 }
 
-void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY, SDL_Rect *screenRect)
-{
-    float shift_col_0 = (float)(screenRect->w - (pBlock->dstRect.w * BOX_COL)) / 2.0f;
+void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY) {
+    float shift_cols = (float)(pBlock->pScreenRect->w - (pBlock->dstRect.w * BOX_COL)) / 2.0f;
+    int startX_leftBlock = pBlock->pScreenRect->x + (int)(shift_cols + 0.5f);
+    int startY_bottomBlock = pBlock->pScreenRect->y + pBlock->pScreenRect->h - pBlock->dstRect.h;
 
     for (int row = BOX_ROW - 1; row >= 0; row--)
     {
-        int blockScreenY = screenRect->h - (BOX_ROW - row) * pBlock->dstRect.h;
+        int blockScreenY = startY_bottomBlock - (BOX_ROW - 1 - row) * pBlock->dstRect.h;
         int blockYRelativeToCam = blockScreenY - CamY;
 
         // Hoppa över block utanför bus skärm #viktigt
-        if (blockYRelativeToCam + pBlock->dstRect.h < 0 || blockYRelativeToCam > screenRect->h)
+        if (blockYRelativeToCam + pBlock->dstRect.h < 0 || blockYRelativeToCam > pBlock->pScreenRect->h)
             continue;
 
-        for (int col = 0; col <= BOX_COL; col++)
+        for (int col = 0; col < BOX_COL; col++)
         {
-            if (gameMap[row][col] != 0)
-            {
-
-                pBlock->dstRect.x = (int)(col * pBlock->dstRect.w + shift_col_0 + screenRect->x);
-                pBlock->dstRect.y = blockYRelativeToCam + screenRect->y;
-                pBlock->dstRect.w = pBlock->dstRect.w;
-                pBlock->dstRect.h = pBlock->dstRect.h;
-
-                drawBlock(pBlock, gameMap[row][col], &pBlock->dstRect);
+            if (gameMap[row][col]) {
+                pBlock->dstRect.x = startX_leftBlock + pBlock->dstRect.w * col;
+                pBlock->dstRect.y = pBlock->pScreenRect->y + blockYRelativeToCam;
+                drawBlock(pBlock, gameMap[row][col]);
             }
         }
     }
 }
 
-void drawBlock(Block *pBlock, int block_type, SDL_Rect *dstRect)
-{
-    if (block_type >= 1 && block_type <= 3)
-    {
-        SDL_Rect srcRect =
-            {
-                .x = (block_type - 1) * pBlock->srcRect.w, // Välj rätt block i spritesheet
-                .y = 0,
-                .w = pBlock->srcRect.w,
-                .h = pBlock->srcRect.h};
-        SDL_RenderCopy(pBlock->pRenderer, pBlock->pTexture, &srcRect, dstRect);
+void drawBlock(Block *pBlock, int block_type) {
+    if (block_type >= 1 && block_type <= 3) {
+        pBlock->srcRect.x = pBlock->srcRect.w * (block_type - 1);
+        SDL_RenderCopy(pBlock->pRenderer, pBlock->pTexture, &pBlock->srcRect, &pBlock->dstRect);
     }
 }
 
 void destroyBlock(Block *pBlock)
 {
-    if (pBlock == NULL)
-        return;
-    if (pBlock->pTexture != NULL)
-    {
+    if (!pBlock) return;
+    if (pBlock->pTexture) {
         SDL_DestroyTexture(pBlock->pTexture);
         pBlock->pTexture = NULL;
     }
     free(pBlock);
-    pBlock = NULL;
 }

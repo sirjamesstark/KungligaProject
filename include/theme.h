@@ -1,7 +1,7 @@
 #ifndef theme_h
 #define theme_h
 
-#include "../include/common.h"
+#include "../include/scaling.h"
 
 #define LAVA_SCALEFACTOR 0.45f
 

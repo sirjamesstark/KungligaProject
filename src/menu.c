@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "../include/menu.h"
 #include "../include/theme.h"
-#include "../include/common.h"
+#include "../include/scaling.h"
 
 struct menu {
     Background *pBackground;

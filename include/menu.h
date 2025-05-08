@@ -2,7 +2,7 @@
 #define MENU_H
 
 #include "../include/theme.h"
-#include "../include/common.h"
+#include "../include/scaling.h"
 
 typedef struct menu Menu;
 
