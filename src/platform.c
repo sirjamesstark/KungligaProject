@@ -68,7 +68,8 @@ float getShiftLength(Block *pBlock)
     return (float)(pBlock->pScreenRect->w - (pBlock->dstRect.w * BOX_COL)) / 2.0f;
 }
 
-void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY) {
+void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY)
+{
     float shift_cols = (float)(pBlock->pScreenRect->w - (pBlock->dstRect.w * BOX_COL)) / 2.0f;
     int startX_leftBlock = pBlock->pScreenRect->x + (int)(shift_cols + 0.5f);
     int startY_bottomBlock = pBlock->pScreenRect->y + pBlock->pScreenRect->h - pBlock->dstRect.h;
@@ -84,7 +85,8 @@ void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY) {
 
         for (int col = 0; col < BOX_COL; col++)
         {
-            if (gameMap[row][col]) {
+            if (gameMap[row][col])
+            {
                 pBlock->dstRect.x = startX_leftBlock + pBlock->dstRect.w * col;
                 pBlock->dstRect.y = pBlock->pScreenRect->y + blockYRelativeToCam;
                 drawBlock(pBlock, gameMap[row][col]);
@@ -93,8 +95,10 @@ void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY) {
     }
 }
 
-void drawBlock(Block *pBlock, int block_type) {
-    if (block_type >= 1 && block_type <= 3) {
+void drawBlock(Block *pBlock, int block_type)
+{
+    if (block_type >= 1 && block_type <= 3)
+    {
         pBlock->srcRect.x = pBlock->srcRect.w * (block_type - 1);
         SDL_RenderCopy(pBlock->pRenderer, pBlock->pTexture, &pBlock->srcRect, &pBlock->dstRect);
     }
@@ -102,8 +106,10 @@ void drawBlock(Block *pBlock, int block_type) {
 
 void destroyBlock(Block *pBlock)
 {
-    if (!pBlock) return;
-    if (pBlock->pTexture) {
+    if (!pBlock)
+        return;
+    if (pBlock->pTexture)
+    {
         SDL_DestroyTexture(pBlock->pTexture);
         pBlock->pTexture = NULL;
     }
