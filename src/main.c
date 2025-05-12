@@ -88,17 +88,67 @@ int main(int argc, char *argv[])
 
     // flytta ev in dessa initieringar i initGameAfterMenu
     SDL_Rect blockRect = getBlockRect(game.pBlock);
-    for (int i = 0; i < MAX_NROFPLAYERS; i++)
+
+    // for (int i = 0; i < MAX_NROFPLAYERS; i++)
+    // {
+    //     game.pPlayer[i] = NULL; // Ensure all slots start as NULL
+    // }
+    // for(int i = 0; i<MAX_NROFPLAYERS; i++)
+    // {
+    //     game.pPlayer[i] = createPlayer(i, game.pRenderer, &game.screenRect, p, is_server, srvadd, &sd, p2);
+    //     //NULL; // Ensure all slots start as NULL
+    // }
+
+    // Game *pPlayer[MAX_NROFPLAYERS];
+    int playerNumber = 0;
+    if (is_server)
     {
-        game.pPlayer[i] = createPlayer(i, game.pRenderer, &game.screenRect);
-        initStartPosition(game.pPlayer[i], blockRect);
+        game.pPlayer[0] = createPlayer(0, game.pRenderer, &game.screenRect, p, is_server, srvadd, &sd, p2);
+        if (!game.pPlayer[0])
+        {
+            printf("Failed to create server's player!\n");
+            exit(EXIT_FAILURE);
+        }
+        initStartPosition(game.pPlayer[0], blockRect);
+        printf("Server has successfully joined!\n");
+        //    is_server = 0;
+    }
+    else
+    {
+        printf("Client has sent request...\n");
+        playerNumber = createClient(&sd, &srvadd, p, p2);
+        printf("assigned client number: %d\n", playerNumber);
+        if (playerNumber <= 0)
+        {
+            printf("Client failed to connect.\n");
+            exit(EXIT_FAILURE);
+        }
+        printf("Client %d is joining session...\n", playerNumber);
+        for (int i = 0; i <= playerNumber; i++)
+        {
+            game.pPlayer[i] = createPlayer(i, game.pRenderer, &game.screenRect, p, is_server, srvadd, &sd, p2);
+            
+            initStartPosition(game.pPlayer[i], blockRect);
+        }
+        
+
     }
 
-    if (!game.pPlayer[0])
-    {
-        cleanUpGame(&game);
-        return 1;
-    }
+    game.pCamera = createCamera(&game.screenRect);
+
+    // if (!game.pPlayer[0])
+    // {
+
+    //     cleanUpGame(&game);
+
+    //     return 1;
+    // }
+
+    // if (!game.pPlayer[0])
+    // {
+    //     cleanUpGame(&game);
+    //     return 1;
+    // } ///////////////////////GGGGGGGGGGGGGGGGGGGGGGGGGG
 
     playMusic(game.pAudio);
     bool closeWindow = false;
@@ -124,36 +174,54 @@ int main(int argc, char *argv[])
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
+
             if (event.type == SDL_QUIT)
                 closeWindow = true;
             else
                 handleInput(&game, &event, &closeWindow, &movecheck);
         }
 
-        movecheck.pGoDown = movecheck.pGoLeft = movecheck.pGoRight = movecheck.pGoUp = 0;
-        setSpeed(game.pPlayer[0], &movecheck);
-        setAnimation(game.pPlayer[1]);
+movecheck.pGoDown = movecheck.pGoLeft = movecheck.pGoRight = movecheck.pGoUp = 0;
+        for (int i = 0; i < MAX_NROFPLAYERS; i++)
+        {
+            if (game.pPlayer[i] && isPlayerActive(game.pPlayer[i]))
+            {
+
+                setSpeed(game.pPlayer[i], &movecheck);
+                setAnimation(game.pPlayer[i]);
+            }
+        }
+
+        // setSpeed(up, down, left, right, &goUp, &goDown, &goLeft, &goRight, &upCounter, onGround, game.pPlayer[0]);
+        // setAnimation(game.pPlayer[0]);
         updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, p, p2, &is_server, srvadd, &sd, game.screenRect.h, shiftLength, &movecheck);
+                                 networkUDP(game.pPlayer, p, p2, is_server, srvadd, &sd, blockRect, game.screenRect.h);
 
         int PlyY = game.screenRect.y;
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
-            int PlyYtemp = getPlyY(game.pPlayer[i]);
-            if (PlyY > PlyYtemp)
+            if (game.pPlayer[i] && isPlayerActive(game.pPlayer[i]))
             {
-                PlyY = PlyYtemp;
+                int PlyYtemp = getPlyY(game.pPlayer[i]);
+                if (PlyY > PlyYtemp)
+                {
+                    PlyY = PlyYtemp;
+                }
             }
         }
 
-        int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]);
-        updateCamera(game.pCamera, PlyX, PlyY);
-        SDL_RenderClear(game.pRenderer);
-        drawBackground(game.pBackground);
-        buildTheMap(gameMap, game.pBlock, CamY, &game.screenRect);
-
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
-            drawPlayer(game.pPlayer[i], CamX, CamY);
+            if (game.pPlayer[i] != NULL)
+            {
+                int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[i]);
+
+                updateCamera(game.pCamera, PlyX, PlyY);
+                SDL_RenderClear(game.pRenderer);
+                drawBackground(game.pBackground);
+                buildTheMap(gameMap, game.pBlock, CamY, &game.screenRect);
+                drawPlayer(game.pPlayer[i], CamX, CamY);
+            }
         }
 
         drawLava(game.pLava);

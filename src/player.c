@@ -26,7 +26,10 @@ struct player
     SDL_Rect *pScreenRect;
     SDL_Rect srcRect; // srcRect.w och srcRect.h lagrar den verkliga storleken av en frame i spritesheetet, srcRect.x och srcRect.y anger vilken frame i spritesheetet som väljs
     SDL_Rect dstRect; // dstRect.w och dstRect.h är en nerskalad variant av srcRect.w och srcRect.h, srcRect.x och srcRect.y anger var i fönstret som den aktuella framen i srcRect.x och srcRect.y ska ritas upp
+
     bool active;
+    int network_id;
+    IPaddress address;
 };
 
 SDL_Rect *getPlayerRect(Player *pPly)
@@ -44,7 +47,12 @@ int getPlyY(Player *pPlayer)
     return pPlayer->dstRect.y;
 }
 
-Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
+int getPlayerID(Player *pPlayer)
+{
+    return pPlayer->network_id;
+}
+
+Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, UDPpacket *p, int is_server, IPaddress srvadd, UDPsocket *pSd, UDPpacket *p2)
 {
     if (!pRenderer || !pScreenRect)
     {
@@ -85,8 +93,42 @@ Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pScreenRe
     printf("\nPlayer size:\n");
     pPlayer->dstRect = scaleRect(pPlayer->srcRect, *pPlayer->pScreenRect, PLAYER_SCALEFACTOR);
     pPlayer->frames.characterRect = scaleRect(pPlayer->frames.characterRect, *pPlayer->pScreenRect, PLAYER_SCALEFACTOR);
-
+    pPlayer->active = true;
+    pPlayer->network_id = player_ID; // Correct: Assign ID to the newly created player
     return pPlayer;
+}
+
+int createClient(UDPsocket *pSd, IPaddress *srvadd, UDPpacket *p, UDPpacket *p2)
+{
+    SDL_Rect blockRect;
+    static int assignedPlayerId;
+
+    sprintf((char *)p->data, "JOIN");
+    printf("Client is trying to join the session!\n");
+    p->address = *srvadd;
+    p->len = strlen((char *)p->data) + 1;
+    SDLNet_UDP_Send(*pSd, -1, p);
+
+    printf("%s\n", p->data);
+
+    Uint32 start = SDL_GetTicks();
+    while (SDL_GetTicks() - start < 3000)
+    {
+        if (SDLNet_UDP_Recv(*pSd, p2))
+        {
+            if (sscanf((char *)p2->data, "WELCOME %d", &assignedPlayerId) == 1)
+            {
+                printf("Assigned player ID: %d\n", assignedPlayerId);
+                /// ksk behöver skapa spelare 0?
+                return assignedPlayerId;
+            }
+            else
+            {
+                printf("ERROR! You could not join!");
+                return -1;
+            }
+        }
+    }
 }
 
 SDL_Surface *initPlayerFrames(Player *pPlayer, int player_ID)
@@ -244,7 +286,13 @@ void setAnimation(Player *pPlayer)
 void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap[BOX_ROW][BOX_COL], SDL_Rect blockRect, UDPpacket *p,
                   UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd, int window_height, float shiftX, Movecheck *movecheck)
 {
+
+    // for (int i = 0; i < MAX_NROFPLAYERS; i++)
+    // {
+    //     if (pPlayer[i] && isPlayerActive(pPlayer[i]))
+    //     {
     float shiftY = pPlayer[0]->pScreenRect->h - blockRect.h * (BOX_SCREEN_Y), checkY;
+
     Offsets offset = {0};
     // offset.top = (window_height / TOP_OFFSETSCALER) - shiftY;
     // offset.bot = window_height / BOT_OFFSETSCALER - shiftY;
@@ -259,6 +307,7 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
     offset.right = pPlayer[0]->pScreenRect->w / RIGHT_OFFSETSCALER - shiftX;
 
     pPlayer[0]->active = true;
+
     pPlayer[0]->x += pPlayer[0]->vx * 5 * deltaTime;
     // pPlayer[0]->y += pPlayer[0]->vy * deltaTime;
     checkY = pPlayer[0]->y += pPlayer[0]->vy * deltaTime;
@@ -267,10 +316,13 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
         checkY += blockRect.h * BOX_SCREEN_Y;
     }
 
-    networkUDP(pPlayer, p, p2, pIs_server, srvadd, pSd, shiftY, blockRect, window_height);
     float lerpSpeed = 0.2f; // Testa mellan 0.1 och 0.2
-    pPlayer[1]->x += (pPlayer[1]->targetX - pPlayer[1]->x) * lerpSpeed;
-    pPlayer[1]->y += (pPlayer[1]->targetY - pPlayer[1]->y) * lerpSpeed;
+
+    if (pPlayer[1] != NULL)
+    {
+        pPlayer[1]->x += (pPlayer[1]->targetX - pPlayer[1]->x) * lerpSpeed;
+        pPlayer[1]->y += (pPlayer[1]->targetY - pPlayer[1]->y) * lerpSpeed;
+    }
 
     // Check Collision
     if ((movecheck->pGoLeft) != 0)
@@ -325,12 +377,18 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
     {
         (movecheck->onGround) = false;
     }
+
     pPlayer[0]->dstRect.x = pPlayer[0]->x;
     pPlayer[0]->dstRect.y = pPlayer[0]->y;
     syncCharacterRect(pPlayer[0]);
-    pPlayer[1]->dstRect.x = pPlayer[1]->x;
-    pPlayer[1]->dstRect.y = pPlayer[1]->y;
-    syncCharacterRect(pPlayer[1]);
+    // printf("%f %f\n", pPlayer[0]->x, pPlayer[0]->y);
+    if (pPlayer[1] != NULL)
+    {
+        pPlayer[1]->dstRect.x = pPlayer[1]->x;
+        pPlayer[1]->dstRect.y = pPlayer[1]->y;
+        syncCharacterRect(pPlayer[1]);
+    }
+
     // if (pPlayer[0]->x < 0)
     // {
     //     pPlayer[0]->x = 0; // gör så att man inte kan falla ned i vänster hörnet
@@ -357,6 +415,8 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap
     pPlayer[0]->dstRect.x = pPlayer[0]->frames.characterRect.x - (pPlayer[0]->dstRect.w - pPlayer[0]->frames.characterRect.w) / 2;
     pPlayer[0]->dstRect.y = pPlayer[0]->frames.characterRect.y - (pPlayer[0]->dstRect.h - pPlayer[0]->frames.characterRect.h);
     */
+    //     }
+    // }
 }
 
 void syncCharacterRect(Player *pPlayer)
@@ -389,65 +449,144 @@ void updatePlayerFrame(Player *pPlayer)
     pPlayer->srcRect.y = pPlayer->frames.currentFrame_y * pPlayer->srcRect.h;
 }
 
-void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int *pIs_server, IPaddress srvadd,
-                UDPsocket *pSd, float space, SDL_Rect blockRect, int window_height)
+void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int is_server, IPaddress srvadd,
+                UDPsocket *pSd, SDL_Rect blockRect, int window_height)
 {
-    static int lastSentTime = 0;
+    // static int lastSentTime = 0;
+    int lastSentTime = 0;
     int now = SDL_GetTicks();
-    if ((now - lastSentTime) > 50 && (pPlayer[0]->oldX != pPlayer[0]->x || pPlayer[0]->oldY != pPlayer[0]->y))
-    {
-        sprintf((char *)p->data, "%f %f", pPlayer[0]->x / blockRect.w, (window_height - pPlayer[0]->y) / blockRect.h);
-        p->len = strlen((char *)p->data) + 1;
+    float a, b;
+    int whoSent;
+    static int nrOfPlayers = 1;
+    // int nrOfPlayers = 1;
 
-        if (!(*pIs_server))
+    if (!(is_server))
+    {
+        for (int i = 1; i < MAX_NROFPLAYERS; i++)
         {
-            p->address.host = srvadd.host;
-            p->address.port = srvadd.port;
+            while (SDLNet_UDP_Recv(*pSd, p2) && pPlayer[i] != NULL)
+            {
+                sscanf((char *)p2->data, "%f %f %d", &a, &b, &whoSent);
+                if (whoSent == pPlayer[i]->network_id)
+                {
+                    return;
+                }
+                // a = a / blockRect.w;
+                // b = (window_height - b) / blockRect.h;
+                printf("this is what i, %d, received: %f %f, from: %d\n", pPlayer[i]->network_id, a, b, whoSent);
+                if (pPlayer[whoSent] == NULL)
+                {
+                    pPlayer[whoSent] = createPlayer(whoSent, pPlayer[i]->pRenderer, pPlayer[i]->pScreenRect, p, is_server, srvadd, pSd, p2);
+                    initStartPosition(pPlayer[whoSent], blockRect);
+                }
+                pPlayer[whoSent]->x = a;
+                pPlayer[whoSent]->y = b;
+            }
+            if (pPlayer[i] != NULL && (now - lastSentTime) > 50)
+            {
+
+                sprintf(p->data, "%f %f %d", pPlayer[i]->x / blockRect.w, (window_height - pPlayer[i]->y) / blockRect.h, pPlayer[i]->network_id);
+                printf("this is what i, %d, am sending: %f %f\n", pPlayer[i]->network_id, pPlayer[i]->x, pPlayer[i]->y);
+
+                p->len = strlen((char *)p->data) + 1;
+
+                p->address = srvadd;
+                SDLNet_UDP_Send(*pSd, -1, p);
+                lastSentTime = now;
+            }
         }
-
-        SDLNet_UDP_Send(*pSd, -1, p);
-        pPlayer[0]->oldX = pPlayer[0]->x;
-        pPlayer[0]->oldY = pPlayer[0]->y;
-        lastSentTime = now;
     }
-    if (SDLNet_UDP_Recv(*pSd, p2))
+    if (is_server)
     {
-        float a, b;
-        pPlayer[1]->oldX = pPlayer[1]->x;
-        pPlayer[1]->oldY = pPlayer[1]->y;
-
-        sscanf((char *)p2->data, "%f %f", &a, &b);
-        pPlayer[1]->targetX = a * blockRect.w;
-        pPlayer[1]->targetY = window_height - b * blockRect.h;
-        pPlayer[1]->active = true;
-
-        setAnimation(pPlayer[1]);
-
-        if (*pIs_server)
+        if (SDLNet_UDP_Recv(*pSd, p2))
         {
-            sprintf((char *)p->data, "%f %f", pPlayer[0]->x / blockRect.w, (window_height - pPlayer[0]->y) / blockRect.h);
-            p->address = p2->address;
+            if (strcmp((char *)p2->data, "JOIN") == 0)
+            {
+                printf("Join request received, client is trying to join!\n");
+                if (nrOfPlayers >= MAX_NROFPLAYERS)
+                {
+                    printf("Server full!\n");
+                    return;
+                }
+                printf("pid %d\n", nrOfPlayers);
+                pPlayer[nrOfPlayers] = createPlayer(nrOfPlayers, pPlayer[0]->pRenderer, pPlayer[0]->pScreenRect, p, is_server, srvadd, pSd, p2);
+                initStartPosition(pPlayer[nrOfPlayers], blockRect);
+                pPlayer[nrOfPlayers]->network_id = nrOfPlayers;
+
+                sprintf((char *)p->data, "WELCOME %d", nrOfPlayers);
+                p->len = strlen((char *)p->data) + 1;
+
+                pPlayer[nrOfPlayers]->address = p2->address;
+
+                p->address = p2->address;
+                SDLNet_UDP_Send(*pSd, -1, p);
+                printf("Server has accepted client's request!\n");
+                printf("Client %d connected\n", nrOfPlayers);
+                pPlayer[nrOfPlayers]->active = true;
+                nrOfPlayers++;
+                return;
+            }
+            sscanf((char *)p2->data, "%f %f %d", &a, &b, &whoSent);
+            if (whoSent == pPlayer[0]->network_id)
+            {
+                return;
+            }
+            a = a * blockRect.w;
+            b = window_height - b * blockRect.h;
+            printf("this is what i, %d, received: %f %f, from: %d\n", pPlayer[0]->network_id, a, b, whoSent);
+            pPlayer[whoSent]->x = a;
+            pPlayer[whoSent]->y = b;
+            sprintf((char *)p->data, "%f %f %d", a, b, whoSent);
             p->len = strlen((char *)p->data) + 1;
-            SDLNet_UDP_Send(*pSd, -1, p);
+            for (int i = 1; i < MAX_NROFPLAYERS; i++)
+            {
+                if (pPlayer[i] != NULL && pPlayer[i]->active)
+                {
+                    p->address = pPlayer[i]->address;
+                    SDLNet_UDP_Send(*pSd, -1, p);
+                }
+            }
+        }
+        if ((now - lastSentTime) > 50)
+        {
+
+            // sprintf(p->data, "%f %f %d", pPlayer[0]->x / blockRect.w, (window_height - pPlayer[0]->y) / blockRect.h, pPlayer[0]->network_id);
+            sprintf(p->data, "%f %f %d", pPlayer[0]->x, pPlayer[0]->y, pPlayer[0]->network_id);
+            // printf("this is what i, %d, am sending: %f %f\n", pPlayer[0]->network_id, pPlayer[0]->x, pPlayer[0]->y);
+
+            p->len = strlen((char *)p->data) + 1;
+            for (int i = 1; i < (nrOfPlayers); i++)
+            {
+                p->address = pPlayer[i]->address;
+                SDLNet_UDP_Send(*pSd, -1, p);
+            }
         }
     }
 }
 
 void drawPlayer(Player *pPlayer, int CamX, int CamY)
 {
-    updatePlayerFrame(pPlayer);
-
-    pPlayer->dstRect.x = (pPlayer->x - CamX);
-    pPlayer->dstRect.y = (pPlayer->y - CamY + pPlayer->pScreenRect->y * 2);
-
-    if (pPlayer->frames.is_mirrored == true)
+    if (pPlayer->active)
     {
-        SDL_RenderCopyEx(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect, 0, NULL, SDL_FLIP_HORIZONTAL);
+        updatePlayerFrame(pPlayer);
+
+        pPlayer->dstRect.x = (pPlayer->x - CamX);
+        pPlayer->dstRect.y = (pPlayer->y - CamY + pPlayer->pScreenRect->y * 2);
+
+        if (pPlayer->frames.is_mirrored == true)
+        {
+            SDL_RenderCopyEx(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect, 0, NULL, SDL_FLIP_HORIZONTAL);
+        }
+        else
+        {
+            SDL_RenderCopy(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect);
+        }
     }
-    else
-    {
-        SDL_RenderCopy(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect);
-    }
+}
+
+bool isPlayerActive(const Player *p)
+{
+    return p->active;
 }
 
 void destroyPlayer(Player *pPlayer)
