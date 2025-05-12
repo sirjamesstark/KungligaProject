@@ -113,10 +113,16 @@ Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, ButtonType 
             pSurface = IMG_Load("resources/start_spritesheet.png");
             break;
         case EXIT:
-            pSurface = IMG_Load("resources/exit_spritesheet.png");
+            pSurface = IMG_Load("resources/exit_spritesheet.png"); // ändra bild
             break;
         case SOUND:
             pSurface = IMG_Load("resources/sound_spritesheet.png");
+            break;
+        case JOIN:
+            pSurface = IMG_Load("resources/Fiery_Join_in_Flames.png");
+            break;
+        case BACK:
+            pSurface = IMG_Load("resources/Wooden_Arrow_with_Golden_Outline.png"); // ändra bild
             break;
         default:
             pSurface = NULL;
@@ -155,11 +161,11 @@ int setButtonPlacement(Button *pButton, ButtonType button_type) {
     switch (button_type) {
         case START:
             pButton->dstRect.x = (int)((pButton->pScreenRect->x * 2 + pButton->pScreenRect->w - pButton->dstRect.w) / 2.0f + 0.5f);
-            pButton->dstRect.y = (int)((pButton->pScreenRect->y * 2 + pButton->pScreenRect->h) / 2.0f + 0.5f) * 0.4f;
+            pButton->dstRect.y = (int)((pButton->pScreenRect->y * 2 + pButton->pScreenRect->h) / 2.0f + 0.5f) * 0.3f;
             break;
         case EXIT:
             pButton->dstRect.x = (int)((pButton->pScreenRect->x * 2 + pButton->pScreenRect->w - pButton->dstRect.w) / 2.0f + 0.5f);
-            pButton->dstRect.y = (int)((pButton->pScreenRect->y * 2 + pButton->pScreenRect->h) / 2.0f + 0.5f) * 1.1f;
+            pButton->dstRect.y = (int)((pButton->pScreenRect->y * 2 + pButton->pScreenRect->h) / 2.0f + 0.5f) * 0.8f;
             break;
         case SOUND:
             pButton->dstRect.w *= 0.55f;
@@ -167,6 +173,14 @@ int setButtonPlacement(Button *pButton, ButtonType button_type) {
             printf("Exception: Button[%d] adjusted size: w: %d, h: %d\n", button_type, pButton->dstRect.w, pButton->dstRect.h);
             pButton->dstRect.x = (int)(pButton->pScreenRect->x * 2 + pButton->pScreenRect->w - pButton->dstRect.w * 1.5f + 0.5f);
             pButton->dstRect.y = (int)(pButton->pScreenRect->y + pButton->dstRect.h * 0.4f + 0.5f);
+            break;
+        case JOIN:
+            pButton->dstRect.x = (int)((pButton->pScreenRect->x * 2 + pButton->pScreenRect->w - pButton->dstRect.w) / 2.0f + 0.5f);
+            pButton->dstRect.y = (int)((pButton->pScreenRect->y * 2 + pButton->pScreenRect->h) / 2.0f + 0.5f) * 1.3f;
+            break;
+        case BACK:
+            pButton->dstRect.x = (int)((pButton->pScreenRect->x * 2 + pButton->pScreenRect->w - pButton->dstRect.w) / 2.0f + 0.5f);
+            pButton->dstRect.y = (int)((pButton->pScreenRect->y * 2 + pButton->pScreenRect->h) / 2.0f + 0.5f) * 1.3f;
             break;
         default:
             return 0;

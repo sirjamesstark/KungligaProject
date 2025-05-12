@@ -3,7 +3,7 @@
 #include <SDL.h>
 
 #define BUTTON_SCALEFACTOR 0.35f
-#define NROFBUTTONS 3
+#define NROFBUTTONSMENU 4
 
 enum state {
     MENU =  0,
@@ -12,9 +12,11 @@ enum state {
 typedef enum state State;
 
 enum buttontype {
-    START   = 0,
-    EXIT    = 1,
-    SOUND   = 2
+    START    = 0,
+    EXIT     = 1,
+    SOUND    = 2,
+    JOIN     = 3,
+    BACK     = 4
 };
 typedef enum buttontype ButtonType;
 

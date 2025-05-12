@@ -5,6 +5,7 @@
 #include <SDL_image.h>
 #include <SDL_timer.h>
 #include <SDL_mixer.h>
+#include <string.h>
 
 #include "../include/menu.h"
 #include "../include/platform.h"
@@ -15,6 +16,7 @@
 #include <SDL_net.h>
 
 #define TARGET_ASPECT_RATIO (16.0f / 9.0f)
+#define IP_LEN 15
 
 typedef struct {
     SDL_Window *pWindow;
@@ -30,7 +32,7 @@ typedef struct {
 
 int initSDL();
 void cleanUpSDL();
-int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char *argv[]);
+int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char IPinput[]);
 void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2);
 int initGameBeforeMenu(Game *pGame);
 void initScreenRect(Game *pGame);
@@ -53,13 +55,7 @@ int main(int argc, char *argv[])
     IPaddress srvadd;
     UDPpacket *p, *p2;
     int is_server = 0;
-
-    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, argv))
-    {
-        cleanUpNetwork(&sd, &p, &p2);
-        cleanUpSDL();
-        exit(EXIT_FAILURE);
-    }
+    char IPinput[IP_LEN];
 
     Game game = {0};
     if (!initGameBeforeMenu(&game))
@@ -70,9 +66,16 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (!runMenu(game.pRenderer, &game.screenRect))
+    if (!runMenu(game.pRenderer, &game.screenRect, IPinput))
     {
         cleanUpGame(&game);
+        cleanUpNetwork(&sd, &p, &p2);
+        cleanUpSDL();
+        exit(EXIT_FAILURE);
+    }
+
+    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, IPinput))
+    {
         cleanUpNetwork(&sd, &p, &p2);
         cleanUpSDL();
         exit(EXIT_FAILURE);
@@ -192,11 +195,13 @@ void cleanUpSDL()
     SDL_Quit();
 }
 
-int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char *argv[])
+int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char IPinput[])
 {
+    
+    const char *srvIPadd = IPinput;
     *is_server = 0;
 
-    if (argc > 1 && strcmp(argv[1], "server") == 0)
+    if (IPinput == NULL)
     {
         *is_server = 1;
     }
@@ -221,11 +226,11 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2,
     {
         if (argc < 3)
         {
-            fprintf(stderr, "Usage: %s client <server_ip>\n", argv[0]);
+            fprintf(stderr, "Usage: %s client <server_ip>\n", IPinput[0]);
             return 0;
         }
 
-        if (SDLNet_ResolveHost(srvadd, argv[2], 2000) == -1)
+        if (SDLNet_ResolveHost(srvadd, IPinput, 2000) == -1)
         {
             fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
             return 0;
