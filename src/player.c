@@ -438,7 +438,7 @@ void drawPlayer(Player *pPlayer, int CamX, int CamY)
     updatePlayerFrame(pPlayer);
 
     pPlayer->dstRect.x = (pPlayer->x - CamX);
-    pPlayer->dstRect.y = (pPlayer->y - CamY);
+    pPlayer->dstRect.y = (pPlayer->y - CamY + pPlayer->pScreenRect->y * 2);
 
     if (pPlayer->frames.is_mirrored == true)
     {
