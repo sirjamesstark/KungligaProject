@@ -4,14 +4,14 @@
 #include <stdbool.h>
 #include "../include/menu.h"
 #include "../include/theme.h"
-#include "../include/common.h"
+#include "../include/scaling.h"
 #include "../include/lobby.h"
 
 struct menu {
     Background *pBackground;
-    Button *pButton[NROFBUTTONSMENU];
+    Button *pButton[NROFBUTTONS_MENU];
     Audio *pAudio;
-    SDL_Cursor *pCursor;
+    Cursor *pCursor;
 };
 
 Menu *createMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect) {
@@ -33,7 +33,7 @@ Menu *createMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect) {
         return NULL;
     }
 
-    for (int i = 0; i < NROFBUTTONSMENU; i++) {
+    for (int i = 0; i < NROFBUTTONS_MENU; i++) {
         pMenu->pButton[i] = createButton(pRenderer, pScreenRect, i);
         if (!pMenu->pButton[i]) {
             printf("Error in createMenu: pMenu->pButton[%d] is NULL.\n", i);
@@ -49,13 +49,12 @@ Menu *createMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect) {
         return NULL;
     }
 
-    pMenu->pCursor = initCursor();
+    pMenu->pCursor = createCursor();
     if (!pMenu->pCursor) {
         printf("Error in createMenu: pMenu->pCursor is NULL.\n");
         destroyMenu(pMenu);
         return NULL;
     }
-    SDL_SetCursor(pMenu->pCursor);
 
     return pMenu;
 }
@@ -68,7 +67,7 @@ void destroyMenu(Menu *pMenu) {
         pMenu->pBackground = NULL;
     }
 
-    for (int i = 0; i < NROFBUTTONSMENU; i++) {
+    for (int i = 0; i < NROFBUTTONS_MENU; i++) {
         if (pMenu->pButton[i]) {
             destroyButton(pMenu->pButton[i]);
             pMenu->pButton[i] = NULL;
@@ -116,13 +115,12 @@ bool runMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, char IPinput[15]) {
                     break;
             }
         }
-
         drawBackground(pMenu->pBackground);
         playMusic(pMenu->pAudio);
 
         if (runLobby){
             printf("runLobby true\n");
-            for (int i = 0; i < NROFBUTTONSMENU; i++) {
+            for (int i = 0; i < NROFBUTTONS_MENU; i++) {
                 if (pMenu->pButton[i]) {
                     destroyButton(pMenu->pButton[i]);
                     pMenu->pButton[i] = NULL;
@@ -136,7 +134,7 @@ bool runMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, char IPinput[15]) {
             runLobby = false;
 
             if (menuRunning){
-                for (int i = 0; i < NROFBUTTONSMENU; i++) {
+                for (int i = 0; i < NROFBUTTONS_MENU; i++) {
                     pMenu->pButton[i] = createButton(pRenderer, pScreenRect, i);
                     if (!pMenu->pButton[i]) {
                         printf("Error in createMenu: pMenu->pButton[%d] is NULL.\n", i);
@@ -148,7 +146,7 @@ bool runMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, char IPinput[15]) {
         }
 
         if (isMusicMuted(pMenu->pAudio)) makeButtonHoverd(pMenu->pButton[SOUND]); 
-        for (int i = 0; i < NROFBUTTONSMENU; i++) {
+        for (int i = 0; i < NROFBUTTONS_MENU; i++) {
             drawButton(pMenu->pButton[i]);
         }
         drawPadding(pRenderer, *pScreenRect);
@@ -173,7 +171,7 @@ void handleKey(SDL_Event *pEvent, Menu *pMenu, bool *pMenuRunning, bool *pStartG
             break;
         case SDL_SCANCODE_SPACE:
         case SDL_SCANCODE_RETURN:
-            handleEnterOrMouseClick(pMenu, pMenuRunning, pStartGame, pRunLobby);
+            handlePushedButton(pMenu, pMenuRunning, pStartGame);
             break;
         case SDL_SCANCODE_ESCAPE:
             *pMenuRunning = false;
@@ -185,7 +183,7 @@ void handleKey(SDL_Event *pEvent, Menu *pMenu, bool *pMenuRunning, bool *pStartG
             break;
     }
 
-    for (int i = 0; i < NROFBUTTONSMENU; i++)
+    for (int i = 0; i < NROFBUTTONS_MENU; i++)
     {
         if (i == buttonSelected) toggleHoveredButton(pMenu->pButton[i]);
         else makeButtonNotHovered(pMenu->pButton[i]);
@@ -199,8 +197,8 @@ void handleMouse(SDL_Event *pEvent, Menu *pMenu, bool *pMenuRunning, bool *pStar
 
     switch (pEvent->type) {
         case SDL_MOUSEMOTION:
-            for (int i = 0; i < NROFBUTTONSMENU; i++) {
-                if (isMouseOverButton(x, y, pMenu->pButton[i])) {
+            for (int i = 0; i < NROFBUTTONS; i++) {
+                if (getButton_isHovered(pMenu->pButton[i])) {
                     makeButtonHoverd(pMenu->pButton[i]);
                 }
                 else {
@@ -210,7 +208,7 @@ void handleMouse(SDL_Event *pEvent, Menu *pMenu, bool *pMenuRunning, bool *pStar
             break;
         case SDL_MOUSEBUTTONDOWN:
             if (pEvent->button.button == SDL_BUTTON_LEFT) {
-                handleEnterOrMouseClick(pMenu, pMenuRunning, pStartGame, pRunLobby);
+                handlePushedButton(pMenu, pMenuRunning, pStartGame);
             }
             break;
     }
@@ -222,15 +220,15 @@ void handleEnterOrMouseClick(Menu *pMenu, bool *pMenuRunning, bool *pStartGame, 
         *pMenuRunning = false;
         *pStartGame = true;
     }
-    else if (isButtonHovered(pMenu->pButton[EXIT])) {
+    else if (isButtonPushed(pMenu->pButton[EXIT])) {
         playButtonSound(pMenu->pAudio);
         *pMenuRunning = false;
         *pStartGame = false;
     }
-    else if (isButtonHovered(pMenu->pButton[SOUND])) {
+    else if (isButtonPushed(pMenu->pButton[SOUND])) {
         playButtonSound(pMenu->pAudio);
-        toggleHoveredButton(pMenu->pButton[SOUND]);
         toggleMuteAudio(pMenu->pAudio);
+        toggleHoveredButton(pMenu->pButton[SOUND]);
         *pMenuRunning = true;
         *pStartGame = false;
     }
