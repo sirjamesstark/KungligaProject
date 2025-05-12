@@ -36,12 +36,14 @@ int initGameBeforeMenu(Game *pGame);
 int initGameAfterMenu(Game *pGame);
 void cleanUpGame(Game *pGame);
 bool readMap(int (*map)[BOX_COL]);
+Movecheck setMoveCheck();
+void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, Movecheck *movecheck);
 
-void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, bool *pUp, bool *pDown, bool *pLeft, bool *pRight);
-
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     printf("\n \n");
-    if (!initSDL()) {
+    if (!initSDL())
+    {
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
@@ -51,51 +53,55 @@ int main(int argc, char *argv[]) {
     UDPpacket *p, *p2;
     int is_server = 0;
 
-    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, argv)) {
+    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, argv))
+    {
         cleanUpNetwork(&sd, &p, &p2);
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
 
     Game game = {0};
-    if (!initGameBeforeMenu(&game)) {
+    if (!initGameBeforeMenu(&game))
+    {
         cleanUpGame(&game);
         cleanUpNetwork(&sd, &p, &p2);
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
 
-    if (!runMenu(game.pRenderer, &game.screenRect)) {
+    if (!runMenu(game.pRenderer, &game.screenRect))
+    {
         cleanUpGame(&game);
         cleanUpNetwork(&sd, &p, &p2);
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
 
-    if (!initGameAfterMenu(&game)) {
+    if (!initGameAfterMenu(&game))
+    {
         cleanUpGame(&game);
         cleanUpNetwork(&sd, &p, &p2);
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
+    Movecheck movecheck = setMoveCheck();
 
     // flytta ev in dessa initieringar i initGameAfterMenu
     SDL_Rect blockRect = getBlockRect(game.pBlock);
-    for (int i = 0; i < MAX_NROFPLAYERS; i++) {
+    for (int i = 0; i < MAX_NROFPLAYERS; i++)
+    {
         game.pPlayer[i] = createPlayer(i, game.pRenderer, &game.screenRect);
         initStartPosition(game.pPlayer[i], blockRect);
     }
 
-    if (!game.pPlayer[0]) {
+    if (!game.pPlayer[0])
+    {
         cleanUpGame(&game);
         return 1;
     }
 
     playMusic(game.pAudio);
     bool closeWindow = false;
-    bool up, down, left, right, goUp, goDown, goLeft, goRight = false;
-    bool onGround = true;
-    int upCounter = 0;
     float shiftLength = getShiftLength(game.pBlock);
 
     Uint32 lastTime = SDL_GetTicks(); // Tidpunkt för senaste uppdateringen
@@ -103,12 +109,14 @@ int main(int argc, char *argv[]) {
     float deltaTime;
 
     int gameMap[BOX_ROW][BOX_COL] = {0};
-    if (!readMap(gameMap)) {
+    if (!readMap(gameMap))
+    {
         cleanUpGame(&game);
         return 1;
     }
 
-    while (!closeWindow) {
+    while (!closeWindow)
+    {
         // Beräkna tid sedan senaste frame
         currentTime = SDL_GetTicks();
         deltaTime = (currentTime - lastTime) / 1000.0f; // Omvandla till sekunder
@@ -119,13 +127,13 @@ int main(int argc, char *argv[]) {
             if (event.type == SDL_QUIT)
                 closeWindow = true;
             else
-                handleInput(&game, &event, &closeWindow, &up, &down, &left, &right);
+                handleInput(&game, &event, &closeWindow, &movecheck);
         }
-        goDown = goLeft = goRight = goUp = 0;
-        setSpeed(up, down, left, right, &goUp, &goDown, &goLeft, &goRight, &upCounter, onGround, game.pPlayer[0]);
+
+        movecheck.pGoDown = movecheck.pGoLeft = movecheck.pGoRight = movecheck.pGoUp = 0;
+        setSpeed(game.pPlayer[0], &movecheck);
         setAnimation(game.pPlayer[1]);
-        updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, &upCounter, &onGround, &goUp, &goDown,
-                     &goLeft, &goRight, p, p2, &is_server, srvadd, &sd, game.screenRect.h, shiftLength);
+        updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, p, p2, &is_server, srvadd, &sd, game.screenRect.h, shiftLength, &movecheck);
 
         int PlyY = game.screenRect.y;
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
@@ -141,12 +149,13 @@ int main(int argc, char *argv[]) {
         updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground);
-        buildTheMap(gameMap, game.pBlock, CamY);
+        buildTheMap(gameMap, game.pBlock, CamY, &game.screenRect);
 
-        for (int i = 0; i < MAX_NROFPLAYERS; i++) {
+        for (int i = 0; i < MAX_NROFPLAYERS; i++)
+        {
             drawPlayer(game.pPlayer[i], CamX, CamY);
         }
-        
+
         drawLava(game.pLava);
         drawPadding(game.pRenderer, game.screenRect);
         SDL_RenderPresent(game.pRenderer);
@@ -259,13 +268,15 @@ void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2)
 int initGameBeforeMenu(Game *pGame)
 {
     pGame->pWindow = SDL_CreateWindow("KungligaProject", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
-    if (!pGame->pWindow) {
+    if (!pGame->pWindow)
+    {
         printf("Error in initGameBeforeMenu: pGame->pWindow is NULL.\n");
         return 0;
     }
 
     pGame->pRenderer = SDL_CreateRenderer(pGame->pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!pGame->pRenderer) {
+    if (!pGame->pRenderer)
+    {
         printf("Error in initGameBeforeMenu: pGame->pRenderer is NULL.\n");
         return 0;
     }
@@ -275,7 +286,8 @@ int initGameBeforeMenu(Game *pGame)
     return 1;
 }
 
-int initGameAfterMenu(Game *pGame) {
+int initGameAfterMenu(Game *pGame)
+{
     pGame->pBackground = createBackground(pGame->pRenderer, &pGame->screenRect, GAME);
     if (!pGame->pBackground)
     {
@@ -301,7 +313,8 @@ int initGameAfterMenu(Game *pGame) {
     }
 
     pGame->pCursor = createCursor();
-    if (!pGame->pCursor) {
+    if (!pGame->pCursor)
+    {
         printf("Error in initGameAfterMenu: pGame->pCursor is NULL.\n");
         cleanUpGame(pGame);
         return 0;
@@ -309,7 +322,8 @@ int initGameAfterMenu(Game *pGame) {
     toggleCursorVisibility(pGame->pCursor);
 
     pGame->pCamera = createCamera(&pGame->screenRect);
-    if (!pGame->pCamera) {
+    if (!pGame->pCamera)
+    {
         printf("Error in initGameAfterMenu: pGame->pCamera is NULL.\n");
         cleanUpGame(pGame);
         return 0;
@@ -325,57 +339,84 @@ int initGameAfterMenu(Game *pGame) {
     return 1;
 }
 
-void cleanUpGame(Game *pGame) {
-    if (pGame->pBackground) {
+void cleanUpGame(Game *pGame)
+{
+    if (pGame->pBackground)
+    {
         destroyBackground(pGame->pBackground);
         pGame->pBackground = NULL;
     }
 
-    if (pGame->pLava) {
+    if (pGame->pLava)
+    {
         destroyLava(pGame->pLava);
         pGame->pLava = NULL;
     }
 
-    if (pGame->pAudio) {
+    if (pGame->pAudio)
+    {
         destroyAudio(pGame->pAudio);
         pGame->pAudio = NULL;
     }
 
-    if (pGame->pCursor) {
+    if (pGame->pCursor)
+    {
         destroyCursor(pGame->pCursor);
         pGame->pCursor = NULL;
     }
 
-    if (pGame->pCamera) {
+    if (pGame->pCamera)
+    {
         destroyCamera(pGame->pCamera);
         pGame->pCamera = NULL;
     }
 
-    if (pGame->pBlock) {
+    if (pGame->pBlock)
+    {
         destroyBlock(pGame->pBlock);
         pGame->pBlock = NULL;
     }
 
-    for (int i = 0; i < MAX_NROFPLAYERS; i++) {
-        if (pGame->pPlayer[i]) {
+    for (int i = 0; i < MAX_NROFPLAYERS; i++)
+    {
+        if (pGame->pPlayer[i])
+        {
             destroyPlayer(pGame->pPlayer[i]);
             pGame->pPlayer[i] = NULL;
         }
     }
 
-    if (pGame->pRenderer) {
+    if (pGame->pRenderer)
+    {
         SDL_DestroyRenderer(pGame->pRenderer);
         pGame->pRenderer = NULL;
     }
 
-    if (pGame->pWindow) {
+    if (pGame->pWindow)
+    {
         SDL_DestroyWindow(pGame->pWindow);
         pGame->pWindow = NULL;
     }
 }
 
-void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
-                 bool *pUp, bool *pDown, bool *pLeft, bool *pRight)
+Movecheck setMoveCheck()
+{
+    Movecheck movecheck = {0};
+    movecheck.up = false;
+    movecheck.down = false;
+    movecheck.left = false;
+    movecheck.right = false;
+    movecheck.pGoUp = false;
+    movecheck.pGoDown = false;
+    movecheck.pGoLeft = false;
+    movecheck.pGoRight = false;
+    movecheck.pUpCounter = 0;
+    movecheck.onGround = true;
+
+    return movecheck;
+}
+
+void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, Movecheck *movecheck)
 {
     if (pEvent->type == SDL_KEYDOWN)
     {
@@ -387,20 +428,20 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
         case SDL_SCANCODE_W:
         case SDL_SCANCODE_UP:
         case SDL_SCANCODE_SPACE:
-            (*pUp) = true;
+            (movecheck->up) = true;
             playJumpSound(pGame->pAudio);
             break;
         case SDL_SCANCODE_A:
         case SDL_SCANCODE_LEFT:
-            (*pLeft) = true;
+            (movecheck->left) = true;
             break;
         case SDL_SCANCODE_S:
         case SDL_SCANCODE_DOWN:
-            (*pDown) = true;
+            (movecheck->down) = true;
             break;
         case SDL_SCANCODE_D:
         case SDL_SCANCODE_RIGHT:
-            (*pRight) = true;
+            (movecheck->right) = true;
             break;
         case SDL_SCANCODE_ESCAPE:
             // Pop up ruta??
@@ -416,52 +457,59 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow,
             break;
         case SDL_SCANCODE_W:
         case SDL_SCANCODE_UP:
-            (*pUp) = false;
+            (movecheck->up) = false;
             break;
         case SDL_SCANCODE_A:
         case SDL_SCANCODE_LEFT:
-            (*pLeft) = false;
+            (movecheck->left) = false;
             break;
         case SDL_SCANCODE_S:
         case SDL_SCANCODE_DOWN:
-            (*pDown) = false;
+            (movecheck->down) = false;
             break;
         case SDL_SCANCODE_D:
         case SDL_SCANCODE_RIGHT:
-            (*pRight) = false;
+            (movecheck->right) = false;
             break;
         }
     }
 }
 
-bool readMap(int (*map)[BOX_COL]) {
+bool readMap(int (*map)[BOX_COL])
+{
     FILE *fp;
     char tmp[BOX_COL + 1];
     int row_count = 0;
     fp = fopen("map.txt", "r");
     printf("\n");
 
-    if (fp) {
-        for (int i = 0; i < BOX_ROW; i++) {
-            if (fscanf(fp, "%s", tmp) != 1) {
+    if (fp)
+    {
+        for (int i = 0; i < BOX_ROW; i++)
+        {
+            if (fscanf(fp, "%s", tmp) != 1)
+            {
                 printf("Error in readMap: Failed to read a line in map file.\n");
                 fclose(fp);
                 return false;
             }
 
-            if (strlen(tmp) != BOX_COL) {
+            if (strlen(tmp) != BOX_COL)
+            {
                 printf("Error in readMap: Line %d does not have the correct number of columns.\n", i + 1);
                 fclose(fp);
                 return false;
             }
 
-            for (int j = 0; j < BOX_COL; j++) {
+            for (int j = 0; j < BOX_COL; j++)
+            {
                 map[i][j] = tmp[j] - 48;
             }
             row_count++;
         }
 
-        if (row_count != BOX_ROW) {
+        if (row_count != BOX_ROW)
+        {
             printf("Error in readMap: Expected %d rows, but read %d rows.\n", BOX_ROW, row_count);
             fclose(fp);
             return false;
@@ -470,7 +518,8 @@ bool readMap(int (*map)[BOX_COL]) {
         fclose(fp);
         return true;
     }
-    else {
+    else
+    {
         printf("Error in readMap: No map was found\n");
         return false;
     }
