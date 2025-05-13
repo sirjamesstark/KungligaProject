@@ -12,8 +12,8 @@ typedef struct block Block;
 
 float getShiftLength(Block *pBlock);
 Block *createBlock(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect);
-void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY);
-void drawBlock(Block *pBlock, int block_type);
+void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY, SDL_Rect *screenRect);
+void drawBlock(Block *pBlock, int block_type, SDL_Rect *dstRect);
 void destroyBlock(Block *pBlock);
 SDL_Rect getBlockRect(Block *pBlock);
 

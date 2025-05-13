@@ -7,27 +7,33 @@
 #include "../include/scaling.h"
 #include "../include/lobby.h"
 
-struct menu {
+struct menu
+{
     Background *pBackground;
+
     Button *pButton[NROFBUTTONS_MENU];
     Audio *pAudio;
     Cursor *pCursor;
 };
 
-Menu *createMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect) {
-    if (!pRenderer || !pScreenRect) {
+Menu *createMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
+{
+    if (!pRenderer || !pScreenRect)
+    {
         printf("Error in createMenu: pRenderer or pScreenRect is NULL.\n");
         return NULL;
     }
 
     Menu *pMenu = malloc(sizeof(struct menu));
-    if (!pMenu) {
+    if (!pMenu)
+    {
         printf("Error in createMenu: Failed to allocate memory for pMenu.\n");
         return NULL;
     }
 
     pMenu->pBackground = createBackground(pRenderer, pScreenRect, MENU);
-    if (!pMenu->pBackground) {
+    if (!pMenu->pBackground)
+    {
         printf("Error in createMenu: pMenu->pBackground is NULL.\n");
         destroyMenu(pMenu);
         return NULL;
@@ -35,22 +41,25 @@ Menu *createMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect) {
 
     for (int i = 0; i < NROFBUTTONS_MENU; i++) {
         pMenu->pButton[i] = createButton(pRenderer, pScreenRect, i);
-        if (!pMenu->pButton[i]) {
+        if (!pMenu->pButton[i])
+        {
             printf("Error in createMenu: pMenu->pButton[%d] is NULL.\n", i);
             destroyMenu(pMenu);
             return NULL;
         }
-    } 
+    }
 
     pMenu->pAudio = createAudio(MENU);
-    if (!pMenu->pAudio) {
+    if (!pMenu->pAudio)
+    {
         printf("Error in createMenu: pMenu->pAudio is NULL.\n");
         destroyMenu(pMenu);
         return NULL;
     }
 
     pMenu->pCursor = createCursor();
-    if (!pMenu->pCursor) {
+    if (!pMenu->pCursor)
+    {
         printf("Error in createMenu: pMenu->pCursor is NULL.\n");
         destroyMenu(pMenu);
         return NULL;
@@ -59,10 +68,13 @@ Menu *createMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect) {
     return pMenu;
 }
 
-void destroyMenu(Menu *pMenu) {
-    if (!pMenu) return;
+void destroyMenu(Menu *pMenu)
+{
+    if (!pMenu)
+        return;
 
-    if (pMenu->pBackground) {
+    if (pMenu->pBackground)
+    {
         destroyBackground(pMenu->pBackground);
         pMenu->pBackground = NULL;
     }
@@ -74,12 +86,14 @@ void destroyMenu(Menu *pMenu) {
         }
     }
 
-    if (pMenu->pAudio) {
+    if (pMenu->pAudio)
+    {
         destroyAudio(pMenu->pAudio);
         pMenu->pAudio = NULL;
     }
 
-    if (pMenu->pCursor) {
+    if (pMenu->pCursor)
+    {
         destroyCursor(pMenu->pCursor);
         pMenu->pCursor = NULL;
     }
@@ -89,7 +103,8 @@ void destroyMenu(Menu *pMenu) {
 
 bool runMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, char IPinput[15]) {
     Menu *pMenu = createMenu(pRenderer, pScreenRect);
-    if (!pMenu) return false;
+    if (!pMenu)
+        return false;
 
     bool menuRunning = true;
     bool startGame   = false;
@@ -216,12 +231,14 @@ void handlePushedButton(Menu *pMenu, bool *pMenuRunning, bool *pStartGame, bool 
         *pMenuRunning = false;
         *pStartGame = true;
     }
-    else if (isButtonPushed(pMenu->pButton[EXIT])) {
+    else if (isButtonPushed(pMenu->pButton[EXIT]))
+    {
         playButtonSound(pMenu->pAudio);
         *pMenuRunning = false;
         *pStartGame = false;
     }
-    else if (isButtonPushed(pMenu->pButton[SOUND])) {
+    else if (isButtonPushed(pMenu->pButton[SOUND]))
+    {
         playButtonSound(pMenu->pAudio);
         toggleMuteAudio(pMenu->pAudio);
         toggleHoveredButton(pMenu->pButton[SOUND]);
