@@ -49,6 +49,49 @@ struct audio {
     bool isMuted;
 };
 
+Lava *CreateLavaAnimation(SDL_Renderer *pRenderer, Background *pBackground)
+{
+    if (!pRenderer)
+    {
+        printf("Error in createBackground: pRenderer or pScreenRect is NULL.\n");
+        return NULL;
+    }
+
+    Lava *pLava = malloc(sizeof(struct lava));
+    if (!pLava)
+    {
+        printf("Error in createBackground: Failed to allocate memory for pBackground.\n");
+        return NULL;
+    }
+
+    SDL_Surface *lavaSurface = IMG_Load("resources/lava_spritesheet.png");
+    if (!lavaSurface)
+    {
+        printf("Failed to load lava spritesheet: %s\n", SDL_GetError());
+        return false;
+    }
+
+    pLava->texture = SDL_CreateTextureFromSurface(pRenderer, lavaSurface);
+    if (!pLava->texture)
+    {
+        printf("Lava texture creation failed!\n");
+    }
+    pLava->lavaHeight = lavaSurface->h;
+    pLava->frameWidth = lavaSurface->w / LAVA_FRAME_COUNT;
+    pLava->frameHeight = lavaSurface->h;
+    // These values are already set above, no need to access them here
+    pLava->currentFrame = 0;
+    pLava->lastFrameTime = SDL_GetTicks();
+
+    if (!pLava->texture)
+    {
+        printf("Error in createLava: pLava->texture is NULL.\n");
+        destroyLava(pLava);
+        return NULL;
+    }
+    return pLava;
+}
+
 Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_type) {
     if (!pRenderer || !pScreenRect) {
         printf("Error in createBackground: pRenderer or pScreenRect is NULL.\n");
@@ -102,6 +145,39 @@ Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, Sta
 void drawBackground(Background *pBackground) {
     if (!pBackground) return;
     SDL_RenderCopy(pBackground->pRenderer, pBackground->pTexture, &pBackground->srcRect, &pBackground->dstRect);
+}
+
+void drawLava(Lava *pLava, Background *pBackground, SDL_Rect BlockRect)
+{
+    Uint32 now = SDL_GetTicks();
+    if (now - pLava->lastFrameTime > LAVA_SPEED)
+    {
+        pLava->currentFrame = (pLava->currentFrame + 1) % LAVA_FRAME_COUNT;
+        pLava->lastFrameTime = now;
+    }
+
+    SDL_Rect srcRect = {
+        pLava->frameWidth * pLava->currentFrame,
+        pBackground->pScreenRect->y,
+        pLava->frameWidth,
+        pLava->frameHeight};
+
+    float scale = 0.25f;
+    int scaledWidth = pLava->frameWidth * scale;
+    int scaledHeight = pLava->frameHeight * scale;
+
+    int y = pBackground->pScreenRect->h - scaledHeight;
+
+    for (int x = pBackground->pScreenRect->y; x < pBackground->pScreenRect->w; x += scaledWidth)
+    {
+        SDL_Rect dstRect = {
+            x,
+            y,
+            scaledWidth,
+            scaledHeight};
+
+        SDL_RenderCopy(pBackground->pRenderer, pLava->texture, &srcRect, &dstRect);
+    }
 }
 
 void destroyBackground(Background *pBackground) {

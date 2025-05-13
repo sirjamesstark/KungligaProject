@@ -71,14 +71,10 @@ OBJS = $(OBJDIR)/main.o $(OBJDIR)/menu.o $(OBJDIR)/platform.o \
         $(OBJDIR)/common.o $(OBJDIR)/video_player.o $(OBJDIR)/ffmpeg_checker.o \
         $(OBJDIR)/scaling.o
 
-
 HEADERS =  $(INCDIR)/menu.h $(INCDIR)/platform.h $(INCDIR)/player.h \
             $(INCDIR)/theme.h $(INCDIR)/camera.h $(INCDIR)/common.h \
             $(INCDIR)/video_player.h $(INCDIR)/ffmpeg_checker.h \
             $(INCDIR)/scaling.h
-
-
-# Välj rätt kommando för att skapa kataloger och radera filer
 
 ifeq ($(UNAME_S), Windows)
     MKDIR = if not exist $(subst /,\,$(OBJDIR)) mkdir $(subst /,\,$(OBJDIR))
