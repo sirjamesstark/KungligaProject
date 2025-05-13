@@ -2,7 +2,7 @@
 #include <SDL_image.h>
 #include <stdlib.h>
 #include "../include/platform.h"
-#include "../include/common.h"
+#include "../include/scaling.h"
 
 struct block
 {
@@ -53,7 +53,7 @@ Block *createBlock(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
     SDL_QueryTexture(pBlock->pTexture, NULL, NULL, &(pBlock->srcRect.w), &(pBlock->srcRect.h));
     pBlock->srcRect.w /= 3;
     printf("\nBlock size:\n");
-    pBlock->dstRect = scaleAndCenterRect(pBlock->srcRect, *pBlock->pScreenRect, BLOCK_SCALEFACTOR);
+    pBlock->dstRect = scaleRect(pBlock->srcRect, *pBlock->pScreenRect, BLOCK_SCALEFACTOR);
 
     return pBlock;
 }
@@ -74,7 +74,7 @@ void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY, SDL_Rec
 
     for (int row = BOX_ROW - 1; row >= 0; row--)
     {
-        int blockScreenY = screenRect->h - (BOX_ROW - row) * pBlock->dstRect.h;
+        int blockScreenY = (screenRect->h + screenRect->y) - (BOX_ROW - row) * pBlock->dstRect.h;
         int blockYRelativeToCam = blockScreenY - CamY;
 
         // Hoppa över block utanför bus skärm #viktigt
@@ -113,13 +113,12 @@ void drawBlock(Block *pBlock, int block_type, SDL_Rect *dstRect)
 
 void destroyBlock(Block *pBlock)
 {
-    if (pBlock == NULL)
+    if (!pBlock)
         return;
-    if (pBlock->pTexture != NULL)
+    if (pBlock->pTexture)
     {
         SDL_DestroyTexture(pBlock->pTexture);
         pBlock->pTexture = NULL;
     }
     free(pBlock);
-    pBlock = NULL;
 }

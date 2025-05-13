@@ -63,16 +63,19 @@ OBJDIR = ./obj
 # Lista över filer
 SRC = $(SRCDIR)/main.c $(SRCDIR)/menu.c $(SRCDIR)/platform.c \
        $(SRCDIR)/player.c $(SRCDIR)/theme.c $(SRCDIR)/camera.c \
-       $(SRCDIR)/common.c $(SRCDIR)/video_player.c $(SRCDIR)/ffmpeg_checker.c
+       $(SRCDIR)/common.c $(SRCDIR)/video_player.c $(SRCDIR)/ffmpeg_checker.c \
+       $(SRCDIR)/scaling.c
 
 OBJS = $(OBJDIR)/main.o $(OBJDIR)/menu.o $(OBJDIR)/platform.o \
         $(OBJDIR)/player.o  $(OBJDIR)/theme.o $(OBJDIR)/camera.o \
-        $(OBJDIR)/common.o $(OBJDIR)/video_player.o $(OBJDIR)/ffmpeg_checker.o
+        $(OBJDIR)/common.o $(OBJDIR)/video_player.o $(OBJDIR)/ffmpeg_checker.o \
+        $(OBJDIR)/scaling.o
 
 
 HEADERS =  $(INCDIR)/menu.h $(INCDIR)/platform.h $(INCDIR)/player.h \
             $(INCDIR)/theme.h $(INCDIR)/camera.h $(INCDIR)/common.h \
-            $(INCDIR)/video_player.h $(INCDIR)/ffmpeg_checker.h
+            $(INCDIR)/video_player.h $(INCDIR)/ffmpeg_checker.h \
+            $(INCDIR)/scaling.h
 
 
 # Välj rätt kommando för att skapa kataloger och radera filer
