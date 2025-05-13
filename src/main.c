@@ -178,10 +178,10 @@ int main(int argc, char *argv[])
 
             printf("Player Bus won");
 
-            cleanUpGame(&game);
-            cleanUpNetwork(&sd, &p, &p2);
-            cleanUpSDL();
-            exit(EXIT_FAILURE);
+            // cleanUpGame(&game);
+            // cleanUpNetwork(&sd, &p, &p2);
+            // cleanUpSDL();
+            // exit(EXIT_FAILURE);
         }
 
         SDL_Delay(1);
