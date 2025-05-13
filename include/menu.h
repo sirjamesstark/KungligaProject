@@ -4,7 +4,7 @@
 #include "../include/theme.h"
 #include "../include/scaling.h"
 
-#define NROFBUTTONS_MENU 3
+#define NROFBUTTONS_MENU 4
 #define OFFSET_MENU 0
 
 typedef struct menu Menu;
@@ -14,6 +14,5 @@ void destroyMenu(Menu *pMenu);
 bool runMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, char IPinput[15]);
 void handleKey(SDL_Event *pEvent, Menu *pMenu, bool *pMenuRunning, bool *pStartGame, bool *pRunLobby);
 void handleMouse(SDL_Event *pEvent, Menu *pMenu, bool *pMenuRunning, bool *pStartGame, bool *pRunLobby);
-void handlePushedButton(Menu *pMenu, bool *pMenuRunning, bool *pStartGame);
-
+void handlePushedButton(Menu *pMenu, bool *pMenuRunning, bool *pStartGame, bool *pRunLobby);
 #endif

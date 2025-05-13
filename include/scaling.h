@@ -4,7 +4,6 @@
 
 #define TARGET_ASPECT_RATIO (16.0f / 9.0f)
 #define BUTTON_SCALEFACTOR 0.35f
-#define NROFBUTTONS 3
 
 enum state {
     MENU =  0,

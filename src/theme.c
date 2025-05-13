@@ -204,16 +204,16 @@ Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, ButtonType 
         pSurface = IMG_Load("resources/start_spritesheet.png");
         break;
     case EXIT:
-        pSurface = IMG_Load("resources/exit_spritesheet.png"); // ändra bild
+        pSurface = IMG_Load("resources/exit_spritesheet.png");
         break;
     case SOUND:
         pSurface = IMG_Load("resources/sound_spritesheet.png");
         break;
     case JOIN:
-        pSurface = IMG_Load("resources/Fiery_Join_in_Flames.png");
+        pSurface = IMG_Load("resources/Fiery_Join_in_Flames_spritesheet.png");
         break;
     case BACK:
-        pSurface = IMG_Load("resources/Wooden_Arrow_with_Golden_Outline.png"); // ändra bild
+        pSurface = IMG_Load("resources/exit_spritesheet.png"); 
         break;
     default:
         pSurface = NULL;

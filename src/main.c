@@ -196,15 +196,15 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2,
 {
     
     const char *srvIPadd = IPinput;
+
+    printf("%s\n%s\n",srvIPadd,IPinput);
     *is_server = 0;
 
-    if (IPinput == NULL)
-    {
+    if (strlen(srvIPadd)){
         *is_server = 1;
     }
 
-    if (SDLNet_Init() < 0)
-    {
+    if (SDLNet_Init() < 0){
         fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
         return 0;
     }
@@ -213,29 +213,24 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2,
     *p = NULL;
     *p2 = NULL;
 
-    if (!(*sd = SDLNet_UDP_Open(*is_server ? 2000 : 0)))
-    {
+    if (!(*sd = SDLNet_UDP_Open(*is_server ? 2000 : 0))){
         fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
         return 0;
     }
 
-    if (!(*is_server))
-    {
-        if (argc < 3)
-        {
-            fprintf(stderr, "Usage: %s client <server_ip>\n", IPinput[0]);
+    if (!(*is_server)){
+        if (argc < 3){
+            fprintf(stderr, "Usage: %s client <server_ip>\n", srvIPadd);
             return 0;
         }
 
-        if (SDLNet_ResolveHost(srvadd, IPinput, 2000) == -1)
-        {
+        if (SDLNet_ResolveHost(srvadd, srvIPadd, 2000) == -1){
             fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
             return 0;
         }
     }
 
-    if (!((*p = SDLNet_AllocPacket(512)) && (*p2 = SDLNet_AllocPacket(512))))
-    {
+    if (!((*p = SDLNet_AllocPacket(512)) && (*p2 = SDLNet_AllocPacket(512)))){
         fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
         return 0;
     }

@@ -6,14 +6,14 @@
 #include <stdbool.h>
 #include "../include/menu.h"
 #include "../include/theme.h"
-#include "../include/common.h"
 #include "../include/lobby.h"
 #define NROFBUTTONSLOBBY 2
 #define MAX_TEXT_LENGTH 15
 
 TTF_Font *initTTF();
 
-int runningLobby(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect,bool *pMenuRunning, bool *pStartGame, Audio *pAudio, Background *pBackground,char pIPinput[]) {
+int runningLobby(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect,bool *pMenuRunning, bool *pStartGame,
+                 Audio *pAudio, Background *pBackground,char pIPinput[],Cursor *pCursor) {
     Button *pLobbyButtons[NROFBUTTONSLOBBY];
     SDL_Rect textBox;
     bool lobbyRunning = true;
@@ -61,7 +61,7 @@ int runningLobby(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect,bool *pMenuRunni
                     break;
                 case SDL_MOUSEMOTION:
                 case SDL_MOUSEBUTTONDOWN:
-                    handleMouseInLobby(&event, pLobbyButtons, pMenuRunning, pStartGame, pAudio, &lobbyRunning);
+                    handleMouseInLobby(&event, pLobbyButtons, pMenuRunning, pStartGame, pAudio, &lobbyRunning, pCursor);
                     break;
                 default:
                     break;
@@ -88,19 +88,14 @@ int runningLobby(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect,bool *pMenuRunni
     return 0;
 }
 
-void handleMouseInLobby(SDL_Event *pEvent, Button *pButtons[], bool *pMenuRunning, bool *pStartGame, Audio *pAudio, bool *pLobbyRunning) {
+void handleMouseInLobby(SDL_Event *pEvent, Button *pButtons[], bool *pMenuRunning, bool *pStartGame, Audio *pAudio, bool *pLobbyRunning,Cursor *pCursor) {
     int x = pEvent->motion.x;
     int y = pEvent->motion.y;
 
     switch (pEvent->type) {
         case SDL_MOUSEMOTION:
             for (int i = 0; i < NROFBUTTONSLOBBY; i++) {
-                if (isMouseOverButton(x, y, pButtons[i])) {
-                    makeButtonHoverd(pButtons[i]);
-                }
-                else {
-                    makeButtonNotHovered(pButtons[i]);
-                }
+                setButton_isHovered(pButtons[i],pCursor);
             }
             break;
         case SDL_MOUSEBUTTONDOWN:
@@ -112,13 +107,13 @@ void handleMouseInLobby(SDL_Event *pEvent, Button *pButtons[], bool *pMenuRunnin
 }
 
 void handleMouseClickInLobby(Button *pButtons[], bool *pMenuRunning, bool *pStartGame, Audio *pAudio, bool *pLobbyRunning) {
-    if (isButtonHovered(pButtons[0])) { // start
+    if (isButtonPushed(pButtons[0])) { // start
         playButtonSound(pAudio);
         *pMenuRunning = false;
         *pStartGame = true;
         *pLobbyRunning = false;
     }
-    else if (isButtonHovered(pButtons[1])) { // back
+    else if (isButtonPushed(pButtons[1])) { // back
         playButtonSound(pAudio);
         *pMenuRunning = true;
         *pStartGame = false;
@@ -151,7 +146,9 @@ SDL_Rect createInputBox(char inputText[],TTF_Font *pFont, SDL_Renderer *pRendere
 void drawInputBox(SDL_Renderer* pRenderer, TTF_Font *pFont, char* inputText, SDL_Rect* box) {
     SDL_SetRenderDrawColor(pRenderer, 0, 0, 0, 255); //Box colur
     SDL_RenderFillRect(pRenderer, box);
-    
+
+    if (!inputText[0]) return;
+
     SDL_Color textColor = { 255, 255, 255, 255 }; // WHITE
     SDL_Surface* textSurface = TTF_RenderText_Blended(pFont, inputText, textColor);
     if(!textSurface){
@@ -161,9 +158,8 @@ void drawInputBox(SDL_Renderer* pRenderer, TTF_Font *pFont, char* inputText, SDL
     SDL_Texture* textTexture = SDL_CreateTextureFromSurface(pRenderer, textSurface);
     if (!textTexture) {
         SDL_Log("Failed to make text texture: %s", TTF_GetError());
-        return;
+        return;//
     }
-    
     SDL_Rect textRect = { box->x + 5, box->y + 5, textSurface->w, textSurface->h };
     SDL_RenderCopy(pRenderer, textTexture, NULL, &textRect);
     
