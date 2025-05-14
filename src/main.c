@@ -11,7 +11,6 @@
 #include "../include/player.h"
 #include "../include/theme.h"
 #include "../include/camera.h"
-#include "../include/common.h"
 #include "../include/video_player.h"
 #include "../include/scaling.h"
 #include <SDL_net.h>
@@ -22,7 +21,7 @@ typedef struct
     SDL_Renderer *pRenderer;
     SDL_Rect screenRect;
     Background *pBackground;
-    Lava *pLava;
+    Lava *pLava;         // Will be NULL during menu phase
     Audio *pAudio;
     Cursor *pCursor;
     Camera *pCamera;
@@ -107,6 +106,8 @@ int main(int argc, char *argv[])
 
     printf("=== Intro Sequence Complete ===\n");
 
+    // Set game state to 0 (menu)
+    setGameState(0);
 
     if (!runMenu(game.pRenderer, &game.screenRect))
     {
@@ -123,6 +124,9 @@ int main(int argc, char *argv[])
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
+    
+    // Set game state to 1 (game) after menu and initialization
+    setGameState(1);
     Movecheck movecheck = setMoveCheck();
 
     // flytta ev in dessa initieringar i initGameAfterMenu
@@ -306,6 +310,17 @@ void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2)
 
 int initGameBeforeMenu(Game *pGame)
 {
+    // Initialize all pointers to NULL to prevent any accidental use
+    pGame->pBackground = NULL;
+    pGame->pLava = NULL;
+    pGame->pAudio = NULL;
+    pGame->pCursor = NULL;
+    pGame->pCamera = NULL;
+    pGame->pBlock = NULL;
+    for (int i = 0; i < MAX_NROFPLAYERS; i++) {
+        pGame->pPlayer[i] = NULL;
+    }
+    
     pGame->pWindow = SDL_CreateWindow("KungligaProject", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
     if (!pGame->pWindow)
     {
@@ -558,13 +573,8 @@ bool readMap(int (*map)[BOX_COL])
         return true;
     }
     else
-<<<<<<< HEAD
-        printf("no map file\n");
-}
-=======
     {
         printf("Error in readMap: No map was found\n");
         return false;
     }
 }
->>>>>>> origin/main

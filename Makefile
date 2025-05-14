@@ -50,6 +50,8 @@ ifeq ($(OS), Windows_NT)
     CC = gcc
     # Windows'ta make komutu farklı olabilir
     MAKE_COMMAND = mingw64-make
+    # Windows için resource compiler
+    RC = windres
 else
     CC = gcc
     MAKE_COMMAND = make
@@ -63,18 +65,15 @@ OBJDIR = ./obj
 # Lista över filer
 SRC = $(SRCDIR)/main.c $(SRCDIR)/menu.c $(SRCDIR)/platform.c \
        $(SRCDIR)/player.c $(SRCDIR)/theme.c $(SRCDIR)/camera.c \
-       $(SRCDIR)/common.c $(SRCDIR)/video_player.c $(SRCDIR)/ffmpeg_checker.c \
-       $(SRCDIR)/scaling.c
+       $(SRCDIR)/video_player.c $(SRCDIR)/scaling.c
 
 OBJS = $(OBJDIR)/main.o $(OBJDIR)/menu.o $(OBJDIR)/platform.o \
         $(OBJDIR)/player.o  $(OBJDIR)/theme.o $(OBJDIR)/camera.o \
-        $(OBJDIR)/common.o $(OBJDIR)/video_player.o $(OBJDIR)/ffmpeg_checker.o \
-        $(OBJDIR)/scaling.o
+        $(OBJDIR)/video_player.o $(OBJDIR)/scaling.o
 
 HEADERS =  $(INCDIR)/menu.h $(INCDIR)/platform.h $(INCDIR)/player.h \
-            $(INCDIR)/theme.h $(INCDIR)/camera.h $(INCDIR)/common.h \
-            $(INCDIR)/video_player.h $(INCDIR)/ffmpeg_checker.h \
-            $(INCDIR)/scaling.h
+            $(INCDIR)/theme.h $(INCDIR)/camera.h \
+            $(INCDIR)/video_player.h $(INCDIR)/scaling.h
 
 ifeq ($(UNAME_S), Windows)
     MKDIR = if not exist $(subst /,\,$(OBJDIR)) mkdir $(subst /,\,$(OBJDIR))
@@ -86,9 +85,20 @@ else
     RMDIR = rm -rf
 endif
 
+# Windows için resource dosyasını derle
+ifeq ($(OS), Windows_NT)
+$(OBJDIR)/KungligaProject.res: resources/KungligaProject.rc | $(OBJDIR)
+	$(RC) -i $< -o $@
+endif
+
 # Skapar en exekverbar fil utifrån .o-filerna
+ifeq ($(OS), Windows_NT)
+KungligaProject: $(OBJS) $(OBJDIR)/KungligaProject.res
+	$(CC) $(OBJS) $(OBJDIR)/KungligaProject.res -o KungligaProject $(LDFLAGS)
+else
 KungligaProject: $(OBJS)
 	$(CC) $(OBJS) -o KungligaProject $(LDFLAGS)
+endif
 
 # Kompilerar källfiler till objektfiler
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
@@ -98,6 +108,18 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 $(OBJDIR):
 	@echo Running: $(MKDIR)
 	@$(MKDIR)
+
+# macOS için .app paketi oluşturma
+ifeq ($(UNAME_S), Darwin)
+app: KungligaProject
+	@echo "Creating macOS application bundle"
+	@mkdir -p KungligaProject.app/Contents/MacOS
+	@mkdir -p KungligaProject.app/Contents/Resources
+	@cp KungligaProject KungligaProject.app/Contents/MacOS/
+	@cp -R resources/* KungligaProject.app/Contents/Resources/
+	@echo "Application bundle created: KungligaProject.app"
+	@echo "Note: Place KungligaProject.icns in KungligaProject.app/Contents/Resources/ for custom icon"
+endif
 
 # Städar upp genererade filer och tar bort obj-mappen
 clean:
@@ -109,4 +131,5 @@ else
 	$(RM) KungligaProject
 	$(RM) $(OBJS)
 	$(RMDIR) $(OBJDIR)
+	$(RM) -rf KungligaProject.app
 endif

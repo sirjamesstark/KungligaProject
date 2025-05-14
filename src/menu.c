@@ -143,6 +143,17 @@ bool runMenu(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
             drawButton(pMenu->pButton[i]);
         }
         drawPadding(pRenderer, *pScreenRect);
+        
+        // Draw a solid black bar at the bottom of the screen to cover any artifacts
+        // Fine-tuned position as requested
+        SDL_Rect bottomBar = {
+            .x = 0,
+            .y = pScreenRect->h + 46,   // Moved 0.1cm (4 pixels) upward from previous position
+            .w = pScreenRect->w * 2,    // Make it wider than the screen to ensure coverage
+            .h = 50                     // Height is 50 pixels (half of original)
+        };
+        SDL_SetRenderDrawColor(pRenderer, 0, 0, 0, 255); // Solid black
+        SDL_RenderFillRect(pRenderer, &bottomBar);
         SDL_RenderPresent(pRenderer);
         SDL_Delay(1);
     }
