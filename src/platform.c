@@ -63,7 +63,12 @@ SDL_Rect getBlockRect(Block *pBlock)
     return pBlock->dstRect;
 }
 
-float getShiftLength(Block *pBlock)
+float getShiftY(Block *pBlock)
+{
+    return (float)(pBlock->pScreenRect->h - pBlock->dstRect.h * (BOX_SCREEN_Y));
+}
+
+float getShiftX(Block *pBlock)
 {
     return (float)(pBlock->pScreenRect->w - (pBlock->dstRect.w * BOX_COL)) / 2.0f;
 }
