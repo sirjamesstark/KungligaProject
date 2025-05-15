@@ -75,9 +75,24 @@ int main(int argc, char *argv[])
     if (!initVideoPlayer(game.pRenderer)) {
         fprintf(stderr, "Failed to initialize video player\n");
     } else {
-        if (!playVideo(game.pRenderer, "resources/video.mov")) {
-            fprintf(stderr, "Failed to play video\n");
+        // Try different video formats based on platform
+        #ifdef _WIN32
+        // On Windows, try MP4 first (more compatible)
+        if (!playVideo(game.pRenderer, "resources/video.mp4")) {
+            // If MP4 fails, try MOV as fallback
+            if (!playVideo(game.pRenderer, "resources/video.mov")) {
+                fprintf(stderr, "Failed to play video in any format\n");
+            }
         }
+        #else
+        // On macOS/Linux, try MOV first
+        if (!playVideo(game.pRenderer, "resources/video.mov")) {
+            // If MOV fails, try MP4 as fallback
+            if (!playVideo(game.pRenderer, "resources/video.mp4")) {
+                fprintf(stderr, "Failed to play video in any format\n");
+            }
+        }
+        #endif
         cleanupVideoPlayer();
     }
 #else
@@ -271,7 +286,7 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2,
     printf("%s\n%s\n",srvIPadd,IPinput);
     *is_server = 0;
 
-    if (strlen(srvIPadd)){
+    if (!strlen(srvIPadd)){
         *is_server = 1;
     }
 
@@ -292,10 +307,10 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2,
     }
 
     if (!(*is_server)){
-        if (argc < 3){
+        /*if (argc < 3){
             fprintf(stderr, "Usage: %s client <server_ip>\n", srvIPadd);
             return 0;
-        }
+        }*/
 
         if (SDLNet_ResolveHost(srvadd, srvIPadd, 60000) == -1){
             fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());

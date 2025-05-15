@@ -1,18 +1,27 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
+#include <string.h>
+#ifdef _WIN32
+#include <io.h>
+#define access _access
+#define F_OK 0
+#else
+#include <unistd.h>
+#endif
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 
 #include "../include/video_player.h"
-#include "../include/common.h"
+#include "../include/scaling.h"
 
 // Only include FFmpeg code if USE_FFMPEG is defined
 #ifdef USE_FFMPEG
 
 // Paths may be different on Windows, so we try both paths
 #ifdef _WIN32
+// Windows FFmpeg includes
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
@@ -20,6 +29,7 @@
 #include <libavutil/time.h>
 #include <libswresample/swresample.h>
 #else
+// macOS/Linux FFmpeg includes
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
@@ -94,8 +104,44 @@ bool initVideoPlayer(SDL_Renderer *renderer) {
 }
 
 bool playVideo(SDL_Renderer *renderer, const char *videoPath) {
+    // Normalize path separators for cross-platform compatibility
+    char normalizedPath[256];
+    char soundPath[256];
+    
+    // Handle paths differently on Windows vs macOS/Linux
+    #ifdef _WIN32
+    // Convert forward slashes to backslashes for Windows
+    strncpy(normalizedPath, videoPath, sizeof(normalizedPath) - 1);
+    normalizedPath[sizeof(normalizedPath) - 1] = '\0';
+    for (char *p = normalizedPath; *p; ++p) {
+        if (*p == '/') *p = '\\';
+    }
+    
+    // Try both resources\video.mov and resources\video.mp4 on Windows
+    if (access(normalizedPath, F_OK) != 0) {
+        // If .mov file doesn't exist, try .mp4
+        char *dot = strrchr(normalizedPath, '.');
+        if (dot && strcmp(dot, ".mov") == 0) {
+            strcpy(dot, ".mp4");
+            printf("Trying alternate video format: %s\n", normalizedPath);
+        }
+    }
+    
+    // Sound path for Windows
+    strcpy(soundPath, "resources\\KungligaProjectSound.wav");
+    #else
+    // Use original path on macOS/Linux
+    strncpy(normalizedPath, videoPath, sizeof(normalizedPath) - 1);
+    normalizedPath[sizeof(normalizedPath) - 1] = '\0';
+    
+    // Sound path for macOS/Linux
+    strcpy(soundPath, "resources/KungligaProjectSound.wav");
+    #endif
+    
+    printf("Using video path: %s\n", normalizedPath);
+    
     // Load the separate sound file
-    pSoundTrack = Mix_LoadWAV("resources/KungligaProjectSound.wav");
+    pSoundTrack = Mix_LoadWAV(soundPath);
     if (!pSoundTrack) {
         fprintf(stderr, "Could not load sound file: %s\n", Mix_GetError());
         // Continue without sound
@@ -113,9 +159,9 @@ bool playVideo(SDL_Renderer *renderer, const char *videoPath) {
     }
     
     // Open the video file
-    ret = avformat_open_input(&pFormatCtx, videoPath, NULL, NULL);
+    ret = avformat_open_input(&pFormatCtx, normalizedPath, NULL, NULL);
     if (ret < 0) {
-        fprintf(stderr, "Could not open video file\n");
+        fprintf(stderr, "Could not open video file: %s\n", normalizedPath);
         return false;
     }
     

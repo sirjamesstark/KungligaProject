@@ -8,12 +8,16 @@ ifeq ($(OS), Windows_NT)
     INCLUDE = C:/SDL2/include
     LIBS = C:/SDL2/lib
     
+    # FFmpeg paths for Windows
+    FFMPEG_INCLUDE = C:/FFmpeg/include
+    FFMPEG_LIBS = C:/FFmpeg/lib
+    
     # FFmpeg control - Set to 1 if FFmpeg is installed on Windows, 0 otherwise
     FFMPEG_INSTALLED = 1
     
     ifeq ($(FFMPEG_INSTALLED), 1)
-        CFLAGS = -g -I$(INCLUDE) -DUSE_FFMPEG -DDEBUG -c
-        LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
+        CFLAGS = -g -I$(INCLUDE) -I$(FFMPEG_INCLUDE) -DUSE_FFMPEG -DDEBUG -c
+        LDFLAGS = -L$(LIBS) -L$(FFMPEG_LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
         $(info FFmpeg enabled for Windows. Using video playback.)
     else
         CFLAGS = -g -I$(INCLUDE) -DDEBUG -c
