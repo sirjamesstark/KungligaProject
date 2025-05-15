@@ -4,7 +4,6 @@
 
 #define TARGET_ASPECT_RATIO (16.0f / 9.0f)
 #define BUTTON_SCALEFACTOR 0.35f
-#define NROFBUTTONS 3
 
 enum state {
     MENU =  0,
@@ -15,7 +14,9 @@ typedef enum state State;
 enum buttontype {
     START   = 0,
     EXIT    = 1,
-    SOUND   = 2
+    SOUND   = 2,
+    JOIN    = 3,
+    BACK    = 4
 };
 typedef enum buttontype ButtonType;
 

@@ -48,8 +48,11 @@ SDL_Surface *initPlayerFrames(Player *pPlayer, int player_ID);
 void initStartPosition(Player *pPlayer, SDL_Rect blockRect);
 
 SDL_Rect *getPlayerRect(Player *pPly);
+int getPlayerActive(Player *pPlayer);
+int getAlive(Player *pPlayer);
+void SetAlivefalse(Player *pPlayer);
 int getPlyX(Player *pPlayer);
-int getPlyY(Player *pPlayer);
+float getPlyY(Player *pPlayer);
 // void updatePlayer(Player *pPlayer, SDL_Rect blockRect);
 
 void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap[BOX_ROW][BOX_COL], SDL_Rect blockRect, UDPpacket *p,

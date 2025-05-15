@@ -65,15 +65,17 @@ OBJDIR = ./obj
 # Lista över filer
 SRC = $(SRCDIR)/main.c $(SRCDIR)/menu.c $(SRCDIR)/platform.c \
        $(SRCDIR)/player.c $(SRCDIR)/theme.c $(SRCDIR)/camera.c \
-       $(SRCDIR)/video_player.c $(SRCDIR)/scaling.c
+       $(SRCDIR)/video_player.c $(SRCDIR)/scaling.c $(SRCDIR)/lobby.c
 
 OBJS = $(OBJDIR)/main.o $(OBJDIR)/menu.o $(OBJDIR)/platform.o \
         $(OBJDIR)/player.o  $(OBJDIR)/theme.o $(OBJDIR)/camera.o \
-        $(OBJDIR)/video_player.o $(OBJDIR)/scaling.o
+        $(OBJDIR)/video_player.o $(OBJDIR)/scaling.o $(OBJDIR)/lobby.o
 
 HEADERS =  $(INCDIR)/menu.h $(INCDIR)/platform.h $(INCDIR)/player.h \
             $(INCDIR)/theme.h $(INCDIR)/camera.h \
-            $(INCDIR)/video_player.h $(INCDIR)/scaling.h
+            $(INCDIR)/video_player.h $(INCDIR)/scaling.h $(INCDIR)/lobby.h
+
+# Välj rätt kommando för att skapa kataloger och radera filer
 
 ifeq ($(UNAME_S), Windows)
     MKDIR = if not exist $(subst /,\,$(OBJDIR)) mkdir $(subst /,\,$(OBJDIR))
