@@ -114,6 +114,7 @@ int main(int argc, char *argv[])
     {
         sprintf((char *)sendPacket->data, "JOIN");
         sendPacket->len = strlen((char *)sendPacket->data) + 1;
+        setIpAddress(game.pPlayer[0], srvadd);
         sendPacket->address = srvadd;
         SDLNet_UDP_Send(sd, -1, sendPacket);
 

@@ -428,7 +428,7 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPack
 {
     static int lastSentTime = 0;
     int now = SDL_GetTicks();
-    if ((now - lastSentTime) > 50 && (pPlayer[0]->oldX != pPlayer[0]->x || pPlayer[0]->oldY != pPlayer[0]->y))
+    if ((now - lastSentTime) > 50 && (pPlayer[my_id]->oldX != pPlayer[my_id]->x || pPlayer[my_id]->oldY != pPlayer[my_id]->y))
     {
         snprintf((char *)sendPacket->data, 512, "%d %f %f", my_id, pPlayer[my_id]->x / pPlayer[my_id]->pScreenRect->w,
                  (pPlayer[my_id]->pScreenRect->h - pPlayer[my_id]->y) / pPlayer[my_id]->pScreenRect->h);
@@ -466,6 +466,7 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPack
                     pPlayer[newID]->clientAddress = receivePacket->address;
 
                     sprintf((char *)sendPacket->data, "WELCOME %d", newID);
+                    sendPacket->len = strlen((char *)sendPacket->data) + 1;
                     sendPacket->address = receivePacket->address;
                     SDLNet_UDP_Send(sd, -1, sendPacket);
 
@@ -475,14 +476,13 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPack
                     {
                         if (pPlayer[i]->active)
                         {
-                            snprintf((char *)sendPacket->data, 512, "%d %f %f", i, pPlayer[my_id]->x / pPlayer[my_id]->pScreenRect->w,
-                                     (pPlayer[my_id]->pScreenRect->h - pPlayer[my_id]->y) / pPlayer[my_id]->pScreenRect->h);
+                            snprintf((char *)sendPacket->data, 512, "%d %f %f", i, pPlayer[i]->x / pPlayer[i]->pScreenRect->w,
+                                     (pPlayer[i]->pScreenRect->h - pPlayer[i]->y) / pPlayer[i]->pScreenRect->h);
                             sendPacket->len = strlen((char *)sendPacket->data) + 1;
                             sendPacket->address = pPlayer[newID]->clientAddress;
                             SDLNet_UDP_Send(sd, -1, sendPacket);
                         }
                     }
-
                     (*pNrOfPlayers)++;
                 }
                 else
@@ -493,7 +493,8 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPack
             else
             {
                 // Positionsuppdatering: "123 456"
-                int id, client_x, client_y;
+                int id;
+                float client_x, client_y;
                 if (sscanf((char *)receivePacket->data, "%d %f %f", &id, &client_x, &client_y) == 3)
                 {
                     if (id >= 0 && id < MAX_NROFPLAYERS && pPlayer[id]->active)
@@ -503,12 +504,11 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPack
                         pPlayer[id]->targetX = client_x * pPlayer[id]->pScreenRect->w;
                         pPlayer[id]->targetY = pPlayer[id]->pScreenRect->h - client_y * pPlayer[id]->pScreenRect->h;
                     }
-                    for (int i = 0; i < (*pNrOfPlayers); i++)
+                    for (int i = 1; i < (*pNrOfPlayers); i++)
                     {
                         if (pPlayer[i]->active && i != id) // Don't send back to sender
                         {
-                            snprintf((char *)sendPacket->data, 512, "%d %f %f", i, pPlayer[my_id]->x / pPlayer[my_id]->pScreenRect->w,
-                                     (pPlayer[i]->pScreenRect->h - pPlayer[i]->y) / pPlayer[my_id]->pScreenRect->h);
+                            snprintf((char *)sendPacket->data, 512, "%d %f %f", id, client_x, client_y);
                             sendPacket->len = strlen((char *)sendPacket->data) + 1;
                             sendPacket->address = pPlayer[i]->clientAddress;
                             SDLNet_UDP_Send(sd, -1, sendPacket);
@@ -520,13 +520,14 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPack
         else
         {
             // Klient: mottar data i formatet "id x y"
-            int id, x, y;
+            int id;
+            float x, y;
             if (sscanf((char *)receivePacket->data, "%d %f %f", &id, &x, &y) == 3)
             {
                 if (id >= 0 && id < MAX_NROFPLAYERS && id != my_id)
                 {
-                    pPlayer[id]->oldX = pPlayer[id]->x;
-                    pPlayer[id]->oldY = pPlayer[id]->y;
+                    // pPlayer[id]->oldX = pPlayer[id]->x;
+                    // pPlayer[id]->oldY = pPlayer[id]->y;
                     pPlayer[id]->targetX = x * pPlayer[id]->pScreenRect->w;
                     pPlayer[id]->targetY = pPlayer[id]->pScreenRect->h - y * pPlayer[id]->pScreenRect->h;
                     pPlayer[id]->active = true;
