@@ -210,7 +210,7 @@ Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, ButtonType 
         pSurface = IMG_Load("resources/sound_spritesheet.png");
         break;
     case JOIN:
-        pSurface = IMG_Load("resources/Fiery_Join_in_Flames_spritesheet.png");
+        pSurface = IMG_Load("resources/Join_in_Flames_spritesheet_good.png");
         break;
     case BACK:
         pSurface = IMG_Load("resources/exit_spritesheet.png"); 

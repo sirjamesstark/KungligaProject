@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
         if (PlayerAlive == 1)
         {
 
-            printf("Player Bus won");
+            // printf("Player Bus won");
 
             // cleanUpGame(&game);
             // cleanUpNetwork(&sd, &p, &p2);
