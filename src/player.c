@@ -27,7 +27,23 @@ struct player
     SDL_Rect srcRect; // srcRect.w och srcRect.h lagrar den verkliga storleken av en frame i spritesheetet, srcRect.x och srcRect.y anger vilken frame i spritesheetet som väljs
     SDL_Rect dstRect; // dstRect.w och dstRect.h är en nerskalad variant av srcRect.w och srcRect.h, srcRect.x och srcRect.y anger var i fönstret som den aktuella framen i srcRect.x och srcRect.y ska ritas upp
     bool active;
+    bool alive;
 };
+
+int getPlayerActive(Player *pPlayer)
+{
+    return pPlayer->active;
+}
+
+int getAlive(Player *pPlayer)
+{
+    return pPlayer->alive;
+}
+
+void SetAlivefalse(Player *pPlayer)
+{
+    pPlayer->alive = false;
+}
 
 SDL_Rect *getPlayerRect(Player *pPly)
 {
@@ -39,9 +55,9 @@ int getPlyX(Player *pPlayer)
     return pPlayer->dstRect.x;
 }
 
-int getPlyY(Player *pPlayer)
+float getPlyY(Player *pPlayer)
 {
-    return pPlayer->dstRect.y;
+    return pPlayer->y;
 }
 
 Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
@@ -78,6 +94,7 @@ Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pScreenRe
         destroyPlayer(pPlayer);
         return NULL;
     }
+    pPlayer->alive = true;
 
     SDL_QueryTexture(pPlayer->pTexture, NULL, NULL, &pPlayer->srcRect.w, &pPlayer->srcRect.h);
     pPlayer->srcRect.w = pPlayer->srcRect.h = pPlayer->srcRect.h / 3;
@@ -85,7 +102,7 @@ Player *createPlayer(int player_ID, SDL_Renderer *pRenderer, SDL_Rect *pScreenRe
     printf("\nPlayer size:\n");
     pPlayer->dstRect = scaleRect(pPlayer->srcRect, *pPlayer->pScreenRect, PLAYER_SCALEFACTOR);
     pPlayer->frames.characterRect = scaleRect(pPlayer->frames.characterRect, *pPlayer->pScreenRect, PLAYER_SCALEFACTOR);
-
+    printf("Player %d alive = %d\n", player_ID, pPlayer->alive);
     return pPlayer;
 }
 
@@ -435,18 +452,21 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, i
 
 void drawPlayer(Player *pPlayer, int CamX, int CamY)
 {
-    updatePlayerFrame(pPlayer);
-
-    pPlayer->dstRect.x = (pPlayer->x - CamX);
-    pPlayer->dstRect.y = (pPlayer->y - CamY + pPlayer->pScreenRect->y * 2);
-
-    if (pPlayer->frames.is_mirrored == true)
+    if (pPlayer->active)
     {
-        SDL_RenderCopyEx(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect, 0, NULL, SDL_FLIP_HORIZONTAL);
-    }
-    else
-    {
-        SDL_RenderCopy(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect);
+        updatePlayerFrame(pPlayer);
+
+        pPlayer->dstRect.x = (pPlayer->x - CamX);
+        pPlayer->dstRect.y = (pPlayer->y - CamY + pPlayer->pScreenRect->y * 2);
+
+        if (pPlayer->frames.is_mirrored == true)
+        {
+            SDL_RenderCopyEx(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect, 0, NULL, SDL_FLIP_HORIZONTAL);
+        }
+        else
+        {
+            SDL_RenderCopy(pPlayer->pRenderer, pPlayer->pTexture, &pPlayer->srcRect, &pPlayer->dstRect);
+        }
     }
 }
 

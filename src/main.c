@@ -37,7 +37,6 @@ int initGameBeforeMenu(Game *pGame);
 int initGameAfterMenu(Game *pGame);
 void cleanUpGame(Game *pGame);
 bool readMap(int (*map)[BOX_COL]);
-Movecheck setMoveCheck();
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, Movecheck *movecheck);
 
 int main(int argc, char *argv[])
@@ -53,6 +52,7 @@ int main(int argc, char *argv[])
     IPaddress srvadd;
     UDPpacket *p, *p2;
     int is_server = 0;
+    int PlayerAlive = MAX_NROFPLAYERS;
 
     char IPinput[15];
 
@@ -86,7 +86,8 @@ int main(int argc, char *argv[])
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
-    Movecheck movecheck = setMoveCheck();
+    Movecheck movecheck = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+    SDL_Rect ScreenSize = getScreenRect(game.pWindow);
 
     // flytta ev in dessa initieringar i initGameAfterMenu
     SDL_Rect blockRect = getBlockRect(game.pBlock);
@@ -124,6 +125,7 @@ int main(int argc, char *argv[])
         deltaTime = (currentTime - lastTime) / 1000.0f; // Omvandla till sekunder
         lastTime = currentTime;
         SDL_Event event;
+
         while (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
@@ -137,10 +139,10 @@ int main(int argc, char *argv[])
         setAnimation(game.pPlayer[1]);
         updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, p, p2, &is_server, srvadd, &sd, game.screenRect.h, shiftLength, &movecheck);
 
-        int PlyY = game.screenRect.y;
+        float PlyY = game.screenRect.y;
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
-            int PlyYtemp = getPlyY(game.pPlayer[i]);
+            float PlyYtemp = getPlyY(game.pPlayer[i]);
             if (PlyY > PlyYtemp)
             {
                 PlyY = PlyYtemp;
@@ -161,6 +163,29 @@ int main(int argc, char *argv[])
         drawLava(game.pLava);
         drawPadding(game.pRenderer, game.screenRect);
         SDL_RenderPresent(game.pRenderer);
+
+        for (int i = 0; i < MAX_NROFPLAYERS; i++)
+        {
+            float playerY = getPlyY(game.pPlayer[i]);
+            if (playerY > CamY + ScreenSize.h + 10 && getAlive(game.pPlayer[i]) && getPlayerActive(game.pPlayer[i]))
+            {
+                SetAlivefalse(game.pPlayer[i]);
+                PlayerAlive--;
+                // printf("Player %d alive = %d\n", i, getAlive(game.pPlayer[i]));
+            }
+        }
+
+        if (PlayerAlive == 1)
+        {
+
+            printf("Player Bus won");
+
+            // cleanUpGame(&game);
+            // cleanUpNetwork(&sd, &p, &p2);
+            // cleanUpSDL();
+            // exit(EXIT_FAILURE);
+        }
+
         SDL_Delay(1);
     }
 
@@ -398,23 +423,6 @@ void cleanUpGame(Game *pGame)
         SDL_DestroyWindow(pGame->pWindow);
         pGame->pWindow = NULL;
     }
-}
-
-Movecheck setMoveCheck()
-{
-    Movecheck movecheck = {0};
-    movecheck.up = false;
-    movecheck.down = false;
-    movecheck.left = false;
-    movecheck.right = false;
-    movecheck.pGoUp = false;
-    movecheck.pGoDown = false;
-    movecheck.pGoLeft = false;
-    movecheck.pGoRight = false;
-    movecheck.pUpCounter = 0;
-    movecheck.onGround = true;
-
-    return movecheck;
 }
 
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, Movecheck *movecheck)
