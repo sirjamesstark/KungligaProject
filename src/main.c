@@ -31,7 +31,8 @@ typedef struct {
 
 int initSDL();
 void cleanUpSDL();
-int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char IPinput[]);
+int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, char IPinput[]);
+void cleanInput(char *str);
 void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2);
 int initGameBeforeMenu(Game *pGame);
 int initGameAfterMenu(Game *pGame);
@@ -54,7 +55,7 @@ int main(int argc, char *argv[])
     int is_server = 0;
     int PlayerAlive = MAX_NROFPLAYERS;
 
-    char IPinput[15];
+    char IPinput[20];
 
     Game game = {0};
     if (!initGameBeforeMenu(&game))
@@ -73,7 +74,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, IPinput))
+    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, IPinput))
     {
         cleanUpNetwork(&sd, &p, &p2);
         cleanUpSDL();
@@ -223,9 +224,9 @@ void cleanUpSDL()
     SDL_Quit();
 }
 
-int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char IPinput[])
+int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, char IPinput[])
 {
-    
+    cleanInput(IPinput);
     const char *srvIPadd = IPinput;
 
     printf("%s\n%s\n",srvIPadd,IPinput);
@@ -252,11 +253,6 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2,
     }
 
     if (!(*is_server)){
-        if (argc < 3){
-            fprintf(stderr, "Usage: %s client <server_ip>\n", srvIPadd);
-            return 0;
-        }
-
         if (SDLNet_ResolveHost(srvadd, srvIPadd, 60000) == -1){
             fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
             return 0;
@@ -270,6 +266,20 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2,
 
     return 1;
 }
+
+void cleanInput(char *str) {
+    char *end;
+
+    while (isspace((unsigned char)*str)) str++;
+
+    if (*str == 0) return;
+
+    end = str + strlen(str) - 1;
+    while (end > str && isspace((unsigned char)*end)) end--;
+
+    *(end + 1) = '\0';
+}
+
 
 void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2)
 {

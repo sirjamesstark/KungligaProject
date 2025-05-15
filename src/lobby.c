@@ -8,7 +8,7 @@
 #include "../include/theme.h"
 #include "../include/lobby.h"
 #define NROFBUTTONSLOBBY 2
-#define MAX_TEXT_LENGTH 15
+#define MAX_TEXT_LENGTH 20
 
 TTF_Font *initTTF();
 
