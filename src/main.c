@@ -80,13 +80,6 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, IPinput))
-    {
-        cleanUpNetwork(&sd, &p, &p2);
-        cleanUpSDL();
-        exit(EXIT_FAILURE);
-    }
-
     if (!initGameAfterMenu(&game)) {
         cleanUpGame(&game);
         cleanUpNetwork(&sd, &p, &p2);
@@ -226,7 +219,9 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2,
     *p = NULL;
     *p2 = NULL;
 
-    if (!(*sd = SDLNet_UDP_Open(*is_server ? 2000 : 0))){
+    printf(" is_server = %d\n",*is_server);
+
+    if (!(*sd = SDLNet_UDP_Open(*is_server ? 60000 : 0))){
         fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
         return 0;
     }
@@ -237,7 +232,7 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2,
             return 0;
         }
 
-        if (SDLNet_ResolveHost(srvadd, srvIPadd, 2000) == -1){
+        if (SDLNet_ResolveHost(srvadd, srvIPadd, 60000) == -1){
             fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
             return 0;
         }
