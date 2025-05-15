@@ -50,8 +50,6 @@ ifeq ($(OS), Windows_NT)
     CC = gcc
     # Windows'ta make komutu farklı olabilir
     MAKE_COMMAND = mingw64-make
-    # Windows için resource compiler
-    RC = windres
 else
     CC = gcc
     MAKE_COMMAND = make
@@ -87,20 +85,9 @@ else
     RMDIR = rm -rf
 endif
 
-# Windows için resource dosyasını derle
-ifeq ($(OS), Windows_NT)
-$(OBJDIR)/KungligaProject.res: resources/KungligaProject.rc | $(OBJDIR)
-	$(RC) -i $< -o $@
-endif
-
 # Skapar en exekverbar fil utifrån .o-filerna
-ifeq ($(OS), Windows_NT)
-KungligaProject: $(OBJS) $(OBJDIR)/KungligaProject.res
-	$(CC) $(OBJS) $(OBJDIR)/KungligaProject.res -o KungligaProject $(LDFLAGS)
-else
 KungligaProject: $(OBJS)
 	$(CC) $(OBJS) -o KungligaProject $(LDFLAGS)
-endif
 
 # Kompilerar källfiler till objektfiler
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
@@ -111,17 +98,7 @@ $(OBJDIR):
 	@echo Running: $(MKDIR)
 	@$(MKDIR)
 
-# macOS için .app paketi oluşturma
-ifeq ($(UNAME_S), Darwin)
-app: KungligaProject
-	@echo "Creating macOS application bundle"
-	@mkdir -p KungligaProject.app/Contents/MacOS
-	@mkdir -p KungligaProject.app/Contents/Resources
-	@cp KungligaProject KungligaProject.app/Contents/MacOS/
-	@cp -R resources/* KungligaProject.app/Contents/Resources/
-	@echo "Application bundle created: KungligaProject.app"
-	@echo "Note: Place KungligaProject.icns in KungligaProject.app/Contents/Resources/ for custom icon"
-endif
+
 
 # Städar upp genererade filer och tar bort obj-mappen
 clean:
@@ -133,5 +110,4 @@ else
 	$(RM) KungligaProject
 	$(RM) $(OBJS)
 	$(RMDIR) $(OBJDIR)
-	$(RM) -rf KungligaProject.app
 endif
