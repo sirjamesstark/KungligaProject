@@ -26,8 +26,7 @@ void makeButtonHoverd(Button *pButton);
 void makeButtonNotHovered(Button *pButton);
 void toggleHoveredButton(Button *pButton);
 bool isButtonPushed(Button *pButton);
-void setButton_isHovered(Button *pButton, Cursor *pCursor);
-bool getButton_isHovered(Button *pButton);
+void checkMouseOverButton(Button *pButton, Cursor *pCursor);
 void drawButton(Button *pButton);
 void destroyButton(Button *pButton);
 
