@@ -6,16 +6,20 @@
 #define BUTTON_SCALEFACTOR 0.35f
 #define NROFBUTTONS 3
 
-enum state {
-    MENU =  0,
-    GAME =  1
+enum state
+{
+    MENU = 0,
+    GAME = 1,
+    WIN = 2,
+    LOSE = 3
 };
 typedef enum state State;
 
-enum buttontype {
-    START   = 0,
-    EXIT    = 1,
-    SOUND   = 2
+enum buttontype
+{
+    START = 0,
+    EXIT = 1,
+    SOUND = 2
 };
 typedef enum buttontype ButtonType;
 

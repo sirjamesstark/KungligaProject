@@ -33,6 +33,8 @@ int initSDL();
 void cleanUpSDL();
 int initGameBeforeMenu(Game *pGame);
 int initGameAfterMenu(Game *pGame);
+int initGameWin(Game *pGame);
+int initGameLose(Game *pGame);
 void cleanUpGame(Game *pGame);
 bool readMap(int (*map)[BOX_COL]);
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, Movecheck *movecheck);
@@ -164,23 +166,69 @@ int main(int argc, char *argv[])
             float playerY = getPlyY(game.pPlayer[i]);
             if (playerY > CamY + ScreenSize.h + 10 && getAlive(game.pPlayer[i]) && getPlayerActive(game.pPlayer[i]))
             {
+                printf(" Playeralive: %d", PlayerAlive);
                 SetAlivefalse(game.pPlayer[i]);
                 PlayerAlive--;
             }
         }
 
+        bool waitingForExit = false;
         if (PlayerAlive == 1)
         {
-
-            printf("Player Bus won");
-
-            cleanUpGame(&game);
-            cleanUpNetwork(&sd, &sendPacket, &receivePacket);
-            cleanUpSDL();
-            exit(EXIT_FAILURE);
+            printf(" Playeralive: %d", PlayerAlive);
+            if (!initGameWin(&game))
+            {
+                cleanUpGame(&game);
+                cleanUpNetwork(&sd, &sendPacket, &receivePacket);
+                cleanUpSDL();
+                exit(EXIT_FAILURE);
+            }
+            SDL_RenderClear(game.pRenderer);
+            drawBackground(game.pBackground);
+            SDL_RenderPresent(game.pRenderer);
+            waitingForExit = true;
         }
 
-        SDL_Delay(1);
+        if (!getAlive(game.pPlayer[my_id]))
+        {
+
+            if (!initGameLose(&game))
+            {
+                cleanUpGame(&game);
+                cleanUpNetwork(&sd, &sendPacket, &receivePacket);
+                cleanUpSDL();
+                exit(EXIT_FAILURE);
+            }
+            SDL_RenderClear(game.pRenderer);
+            drawBackground(game.pBackground);
+            SDL_RenderPresent(game.pRenderer);
+            waitingForExit = true;
+        }
+
+        while (waitingForExit)
+        {
+            while (SDL_PollEvent(&event))
+            {
+                if (event.type == SDL_QUIT)
+                {
+                    waitingForExit = false;
+                    closeWindow = true;
+                }
+                else if (event.type == SDL_KEYDOWN)
+                {
+                    if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+                    {
+                        waitingForExit = false;
+                        closeWindow = true;
+                    }
+                }
+            }
+
+            SDL_RenderClear(game.pRenderer);
+            drawBackground(game.pBackground);
+            SDL_RenderPresent(game.pRenderer);
+            SDL_Delay(16); // För att undvika att loopa för snabbt
+        }
     }
 
     cleanUpGame(&game);
@@ -286,6 +334,30 @@ int initGameAfterMenu(Game *pGame)
     {
         cleanUpGame(pGame);
         printf("Error creating pBlock: %s\n", SDL_GetError());
+        return 0;
+    }
+    return 1;
+}
+
+int initGameWin(Game *pGame)
+{
+    pGame->pBackground = createBackground(pGame->pRenderer, &pGame->screenRect, WIN);
+    if (!pGame->pBackground)
+    {
+        printf("Error in initGameWin: pGame->pBackground is NULL.\n");
+        cleanUpGame(pGame);
+        return 0;
+    }
+    return 1;
+}
+
+int initGameLose(Game *pGame)
+{
+    pGame->pBackground = createBackground(pGame->pRenderer, &pGame->screenRect, LOSE);
+    if (!pGame->pBackground)
+    {
+        printf("Error in initGameLose: pGame->pBackground is NULL.\n");
+        cleanUpGame(pGame);
         return 0;
     }
     return 1;
