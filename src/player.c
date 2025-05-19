@@ -391,15 +391,39 @@ void updatePlayerFrame(Player *pPlayer)
 
     if (pPlayer->frames.currentFrame_y == 0)
     {
-        pPlayer->frames.currentFrame_x = (pPlayer->frames.currentFrame_x + 1) % pPlayer->frames.nrOfFrames_idle;
+        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_idle - 1)
+        {
+            pPlayer->frames.currentFrame_x += 1;
+        }
+        else
+            pPlayer->frames.currentFrame_x = 0;
     }
     else if (pPlayer->frames.currentFrame_y == 1)
     {
-        pPlayer->frames.currentFrame_x = (pPlayer->frames.currentFrame_x + 1) % pPlayer->frames.nrOfFrames_sprint;
+        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_sprint - 1)
+        {
+            pPlayer->frames.currentFrame_x += 1;
+        }
+        else
+            pPlayer->frames.currentFrame_x = 0;
     }
     else if (pPlayer->frames.currentFrame_y == 2)
     {
-        pPlayer->frames.currentFrame_x = (pPlayer->frames.currentFrame_x + 1) % pPlayer->frames.nrOfFrames_jump;
+        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_jump - 1)
+        {
+            pPlayer->frames.currentFrame_x += 1;
+        }
+        else
+            pPlayer->frames.currentFrame_x = 0;
+    }
+    else if (pPlayer->frames.currentFrame_y == 2)
+    {
+        if (pPlayer->frames.currentFrame_x < pPlayer->frames.nrOfFrames_jump - 1)
+        {
+            pPlayer->frames.currentFrame_x += 1;
+        }
+        else
+            pPlayer->frames.currentFrame_x = 0;
     }
 
     pPlayer->srcRect.x = pPlayer->frames.currentFrame_x * pPlayer->srcRect.w;

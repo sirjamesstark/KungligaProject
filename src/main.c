@@ -15,8 +15,8 @@
 #include "../include/scaling.h"
 #include <SDL_net.h>
 
-
-typedef struct {
+typedef struct
+{
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     SDL_Rect screenRect;
@@ -55,7 +55,12 @@ int main(int argc, char *argv[])
     int is_server = 0;
     int PlayerAlive = MAX_NROFPLAYERS;
 
-    char IPinput[20];
+    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc))
+    {
+        cleanUpNetwork(&sd, &p, &p2);
+        cleanUpSDL();
+        exit(EXIT_FAILURE);
+    }
 
     Game game = {0};
     if (!initGameBeforeMenu(&game))
@@ -66,7 +71,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (!runMenu(game.pRenderer, &game.screenRect, IPinput))
+    if (!runMenu(game.pRenderer, &game.screenRect))
     {
         cleanUpGame(&game);
         cleanUpNetwork(&sd, &p, &p2);
@@ -74,14 +79,8 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, IPinput))
+    if (!initGameAfterMenu(&game))
     {
-        cleanUpNetwork(&sd, &p, &p2);
-        cleanUpSDL();
-        exit(EXIT_FAILURE);
-    }
-
-    if (!initGameAfterMenu(&game)) {
         cleanUpGame(&game);
         cleanUpNetwork(&sd, &p, &p2);
         cleanUpSDL();
@@ -97,7 +96,7 @@ int main(int argc, char *argv[])
         game.pPlayer[i] = createPlayer(i, game.pRenderer, &game.screenRect);
         initStartPosition(game.pPlayer[i], blockRect);
     }
-
+    game.pCamera = createCamera(&game.screenRect);
     if (!game.pPlayer[0])
     {
         cleanUpGame(&game);
@@ -162,32 +161,9 @@ int main(int argc, char *argv[])
         }
 
         drawLava(game.pLava);
-        drawPadding(game.pRenderer, game.screenRect);
+        drawPadding(game.pRenderer, game.screenRect); // fyller ut med svarta kanter
         SDL_RenderPresent(game.pRenderer);
-
-        for (int i = 0; i < MAX_NROFPLAYERS; i++)
-        {
-            float playerY = getPlyY(game.pPlayer[i]);
-            if (playerY > CamY + ScreenSize.h + 10 && getAlive(game.pPlayer[i]) && getPlayerActive(game.pPlayer[i]))
-            {
-                SetAlivefalse(game.pPlayer[i]);
-                PlayerAlive--;
-                // printf("Player %d alive = %d\n", i, getAlive(game.pPlayer[i]));
-            }
-        }
-
-        if (PlayerAlive == 1)
-        {
-
-            // printf("Player Bus won");
-
-            // cleanUpGame(&game);
-            // cleanUpNetwork(&sd, &p, &p2);
-            // cleanUpSDL();
-            // exit(EXIT_FAILURE);
-        }
-
-        SDL_Delay(1);
+        SDL_Delay(1); // Undvik 100% CPU-användning men låt SDL hantera FPS
     }
 
     cleanUpGame(&game);
@@ -229,14 +205,16 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2,
     cleanInput(IPinput);
     const char *srvIPadd = IPinput;
 
-    printf("%s\n%s\n",srvIPadd,IPinput);
+    printf("%s\n%s\n", srvIPadd, IPinput);
     *is_server = 0;
 
-    if (strlen(srvIPadd)){
+    if (strlen(srvIPadd))
+    {
         *is_server = 1;
     }
 
-    if (SDLNet_Init() < 0){
+    if (SDLNet_Init() < 0)
+    {
         fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
         return 0;
     }
@@ -245,21 +223,25 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2,
     *p = NULL;
     *p2 = NULL;
 
-    printf(" is_server = %d\n",*is_server);
+    printf(" is_server = %d\n", *is_server);
 
-    if (!(*sd = SDLNet_UDP_Open(*is_server ? 60000 : 0))){
+    if (!(*sd = SDLNet_UDP_Open(*is_server ? 60000 : 0)))
+    {
         fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
         return 0;
     }
 
-    if (!(*is_server)){
-        if (SDLNet_ResolveHost(srvadd, srvIPadd, 60000) == -1){
+    if (!(*is_server))
+    {
+        if (SDLNet_ResolveHost(srvadd, srvIPadd, 60000) == -1)
+        {
             fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
             return 0;
         }
     }
 
-    if (!((*p = SDLNet_AllocPacket(512)) && (*p2 = SDLNet_AllocPacket(512)))){
+    if (!((*p = SDLNet_AllocPacket(512)) && (*p2 = SDLNet_AllocPacket(512))))
+    {
         fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
         return 0;
     }
@@ -267,19 +249,22 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2,
     return 1;
 }
 
-void cleanInput(char *str) {
+void cleanInput(char *str)
+{
     char *end;
 
-    while (isspace((unsigned char)*str)) str++;
+    while (isspace((unsigned char)*str))
+        str++;
 
-    if (*str == 0) return;
+    if (*str == 0)
+        return;
 
     end = str + strlen(str) - 1;
-    while (end > str && isspace((unsigned char)*end)) end--;
+    while (end > str && isspace((unsigned char)*end))
+        end--;
 
     *(end + 1) = '\0';
 }
-
 
 void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2)
 {
@@ -356,14 +341,6 @@ int initGameAfterMenu(Game *pGame)
         return 0;
     }
     toggleCursorVisibility(pGame->pCursor);
-
-    pGame->pCamera = createCamera(&pGame->screenRect);
-    if (!pGame->pCamera)
-    {
-        printf("Error in initGameAfterMenu: pGame->pCamera is NULL.\n");
-        cleanUpGame(pGame);
-        return 0;
-    }
 
     pGame->pBlock = createBlock(pGame->pRenderer, &pGame->screenRect);
     if (!pGame->pBlock)
