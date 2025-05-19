@@ -61,12 +61,12 @@ SDL_Rect *getPlayerRect(Player *pPly)
     return &(pPly->srcRect);
 }
 
-int getPlyX(Player *pPlayer)
+int getPlyRectX(Player *pPlayer)
 {
     return pPlayer->dstRect.x;
 }
 
-float getRealX(Player *pPlayer)
+float getPlyX(Player *pPlayer)
 {
     return pPlayer->x;
 }

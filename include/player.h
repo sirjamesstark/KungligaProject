@@ -53,17 +53,17 @@ int getAlive(Player *pPlayer);
 void SetAlivefalse(Player *pPlayer);
 void setActive(Player *pPlayer, bool condition);
 void setIpAddress(Player *pPlayer, IPaddress address);
-Offsets setOffsets(SDL_Rect screenRect,float shiftY,float shiftX);
-int getPlyX(Player *pPlayer);
-float getRealX(Player *pPlayer);
+Offsets setOffsets(SDL_Rect screenRect, float shiftY, float shiftX);
+int getPlyRectX(Player *pPlayer);
+float getPlyX(Player *pPlayer);
 float getPlyY(Player *pPlayer);
 // void updatePlayer(Player *pPlayer, SDL_Rect blockRect);
 
-void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], Offsets offset,int my_id, float deltaTime, int gameMap[BOX_ROW][BOX_COL], SDL_Rect blockRect,
-                    Movecheck *movecheck);
+void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], Offsets offset, int my_id, float deltaTime, int gameMap[BOX_ROW][BOX_COL], SDL_Rect blockRect,
+                  Movecheck *movecheck);
 void syncCharacterRect(Player *pPlayer);
 void updatePlayerFrame(Player *pPlayer);
-void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPacket, UDPpacket *receivePacket, int is_server, 
+void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPacket, UDPpacket *receivePacket, int is_server,
                 IPaddress srvadd, UDPsocket sd, int *pNrOfPlayers);
 void drawPlayer(Player *pPlayer, int CamX, int CamY);
 void setAnimation(Player *pPlayer);
