@@ -8,7 +8,7 @@
 #define BOX_COL 26
 #define BOX_SCREEN_Y 14
 #define COUNTER 20
-#define MAX_NROFPLAYERS 2
+#define MAX_NROFPLAYERS 4
 #define PLAYER_SCALEFACTOR 0.1f
 #define TOP_OFFSETSCALER 23.35f
 #define BOT_OFFSETSCALER -432.0f
@@ -51,16 +51,20 @@ SDL_Rect *getPlayerRect(Player *pPly);
 int getPlayerActive(Player *pPlayer);
 int getAlive(Player *pPlayer);
 void SetAlivefalse(Player *pPlayer);
-int getPlyX(Player *pPlayer);
+void setActive(Player *pPlayer, bool condition);
+void setIpAddress(Player *pPlayer, IPaddress address);
+Offsets setOffsets(SDL_Rect screenRect, float shiftY, float shiftX);
+int getPlyRectX(Player *pPlayer);
+float getPlyX(Player *pPlayer);
 float getPlyY(Player *pPlayer);
 // void updatePlayer(Player *pPlayer, SDL_Rect blockRect);
 
-void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], float deltaTime, int gameMap[BOX_ROW][BOX_COL], SDL_Rect blockRect, UDPpacket *p,
-                  UDPpacket *p2, int *pIs_server, IPaddress srvadd, UDPsocket *pSd, int window_height, float shiftX, Movecheck *movecheck);
+void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], Offsets offset, int my_id, float deltaTime, int gameMap[BOX_ROW][BOX_COL], SDL_Rect blockRect,
+                  Movecheck *movecheck);
 void syncCharacterRect(Player *pPlayer);
 void updatePlayerFrame(Player *pPlayer);
-void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], UDPpacket *p, UDPpacket *p2, int *pIs_server, IPaddress srvadd,
-                UDPsocket *pSd, float space, SDL_Rect blockRect, int window_height);
+void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPacket, UDPpacket *receivePacket, int is_server,
+                IPaddress srvadd, UDPsocket sd, int *pNrOfPlayers);
 void drawPlayer(Player *pPlayer, int CamX, int CamY);
 void setAnimation(Player *pPlayer);
 void destroyPlayer(Player *pPlayer);

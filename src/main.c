@@ -5,7 +5,7 @@
 #include <SDL_image.h>
 #include <SDL_timer.h>
 #include <SDL_mixer.h>
-#include <string.h>
+#include <SDL_net.h>
 
 #include "../include/menu.h"
 #include "../include/platform.h"
@@ -14,10 +14,10 @@
 #include "../include/camera.h"
 #include "../include/video_player.h"
 #include "../include/scaling.h"
-#include <SDL_net.h>
+#include "../include/net.h"
 
-
-typedef struct {
+typedef struct
+{
     SDL_Window *pWindow;
     SDL_Renderer *pRenderer;
     SDL_Rect screenRect;
@@ -32,10 +32,10 @@ typedef struct {
 
 int initSDL();
 void cleanUpSDL();
-int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char IPinput[]);
-void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2);
 int initGameBeforeMenu(Game *pGame);
 int initGameAfterMenu(Game *pGame);
+int initGameWin(Game *pGame);
+int initGameLose(Game *pGame);
 void cleanUpGame(Game *pGame);
 bool readMap(int (*map)[BOX_COL]);
 void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, Movecheck *movecheck);
@@ -48,20 +48,25 @@ int main(int argc, char *argv[])
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
-
+    ////probably need to move to another file/function
     UDPsocket sd;
     IPaddress srvadd;
-    UDPpacket *p, *p2;
-    int is_server = 0;
-    int PlayerAlive = MAX_NROFPLAYERS;
-
-    char IPinput[15];
-
+    UDPpacket *sendPacket, *receivePacket;
+    //////////////////
     Game game = {0};
+    int is_server = 0, my_id = -1, nrOfPlayers = 0, playerjoined = 1;
+    int PlayerActive = 0;
+    if (!initNetwork(&sd, &srvadd, &sendPacket, &receivePacket, &is_server, argc, argv, &my_id))
+    {
+        cleanUpNetwork(&sd, &sendPacket, &receivePacket);
+        cleanUpSDL();
+        exit(EXIT_FAILURE);
+    }
+
     if (!initGameBeforeMenu(&game))
     {
         cleanUpGame(&game);
-        cleanUpNetwork(&sd, &p, &p2);
+        cleanUpNetwork(&sd, &sendPacket, &receivePacket);
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
@@ -120,24 +125,18 @@ int main(int argc, char *argv[])
     // Set game state to 0 (menu)
     setGameState(0);
 
-    if (!runMenu(game.pRenderer, &game.screenRect, IPinput))
+    if (!runMenu(game.pRenderer, &game.screenRect))
     {
         cleanUpGame(&game);
-        cleanUpNetwork(&sd, &p, &p2);
+        cleanUpNetwork(&sd, &sendPacket, &receivePacket);
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
 
-    if (!initNetwork(&sd, &srvadd, &p, &p2, &is_server, argc, IPinput))
+    if (!initGameAfterMenu(&game))
     {
-        cleanUpNetwork(&sd, &p, &p2);
-        cleanUpSDL();
-        exit(EXIT_FAILURE);
-    }
-
-    if (!initGameAfterMenu(&game)) {
         cleanUpGame(&game);
-        cleanUpNetwork(&sd, &p, &p2);
+        cleanUpNetwork(&sd, &sendPacket, &receivePacket);
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
@@ -157,22 +156,20 @@ int main(int argc, char *argv[])
         cleanUpGame(&game);
         return 1;
     }
-
+    connectToServer(game.pPlayer, is_server, &my_id, srvadd, &nrOfPlayers, sendPacket, receivePacket, sd, &playerjoined);
     playMusic(game.pAudio);
     bool closeWindow = false;
-    float shiftLength = getShiftLength(game.pBlock);
-
+    float shiftX = getShiftX(game.pBlock);
+    float shiftY = getShiftY(game.pBlock);
     Uint32 lastTime = SDL_GetTicks(); // Tidpunkt för senaste uppdateringen
     Uint32 currentTime;
     float deltaTime;
-
     int gameMap[BOX_ROW][BOX_COL] = {0};
     if (!readMap(gameMap))
     {
         cleanUpGame(&game);
         return 1;
     }
-
     while (!closeWindow)
     {
         // Beräkna tid sedan senaste frame
@@ -180,7 +177,6 @@ int main(int argc, char *argv[])
         deltaTime = (currentTime - lastTime) / 1000.0f; // Omvandla till sekunder
         lastTime = currentTime;
         SDL_Event event;
-
         while (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
@@ -188,12 +184,15 @@ int main(int argc, char *argv[])
             else
                 handleInput(&game, &event, &closeWindow, &movecheck);
         }
-
         movecheck.pGoDown = movecheck.pGoLeft = movecheck.pGoRight = movecheck.pGoUp = 0;
-        setSpeed(game.pPlayer[0], &movecheck);
-        setAnimation(game.pPlayer[1]);
-        updatePlayer(game.pPlayer, deltaTime, gameMap, blockRect, p, p2, &is_server, srvadd, &sd, game.screenRect.h, shiftLength, &movecheck);
-
+        setSpeed(game.pPlayer[my_id], &movecheck);
+        for (int i = 1; i < MAX_NROFPLAYERS; i++)
+        {
+            setAnimation(game.pPlayer[i]);
+        }
+        Offsets offset = setOffsets(game.screenRect, my_id, shiftX);
+        networkUDP(game.pPlayer, my_id, sendPacket, receivePacket, is_server, srvadd, sd, &nrOfPlayers);
+        updatePlayer(game.pPlayer, offset, my_id, deltaTime, gameMap, blockRect, &movecheck);
         float PlyY = game.screenRect.y;
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
@@ -203,8 +202,7 @@ int main(int argc, char *argv[])
                 PlyY = PlyYtemp;
             }
         }
-
-        int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyX(game.pPlayer[0]);
+        int CamX = getCamX(game.pCamera), CamY = getCamY(game.pCamera), PlyX = getPlyRectX(game.pPlayer[0]);
         updateCamera(game.pCamera, PlyX, PlyY);
         SDL_RenderClear(game.pRenderer);
         drawBackground(game.pBackground);
@@ -218,34 +216,82 @@ int main(int argc, char *argv[])
         drawLava(game.pLava);
         drawPadding(game.pRenderer, game.screenRect);
         SDL_RenderPresent(game.pRenderer);
-
+        int controll = 0;
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
             float playerY = getPlyY(game.pPlayer[i]);
-            if (playerY > CamY + ScreenSize.h + 10 && getAlive(game.pPlayer[i]) && getPlayerActive(game.pPlayer[i]))
+            if (playerY > CamY + ScreenSize.h + 10 && getPlayerActive(game.pPlayer[i]))
             {
+                printf(" Playeralive: %d", PlayerActive);
                 SetAlivefalse(game.pPlayer[i]);
-                PlayerAlive--;
-                // printf("Player %d alive = %d\n", i, getAlive(game.pPlayer[i]));
+                controll++;
             }
         }
 
-        if (PlayerAlive == 1)
+        PlayerActive = controll;
+
+        bool waitingForExit = false;
+        if (PlayerActive == 1 && playerjoined)
         {
-
-            // printf("Player Bus won");
-
-            // cleanUpGame(&game);
-            // cleanUpNetwork(&sd, &p, &p2);
-            // cleanUpSDL();
-            // exit(EXIT_FAILURE);
+            printf(" Playeralive: %d", PlayerActive);
+            if (!initGameWin(&game))
+            {
+                cleanUpGame(&game);
+                cleanUpNetwork(&sd, &sendPacket, &receivePacket);
+                cleanUpSDL();
+                exit(EXIT_FAILURE);
+            }
+            SDL_RenderClear(game.pRenderer);
+            drawBackground(game.pBackground);
+            SDL_RenderPresent(game.pRenderer);
+            waitingForExit = true;
         }
 
-        SDL_Delay(1);
+        if (!getAlive(game.pPlayer[my_id]))
+        {
+            setActive(game.pPlayer[my_id], false);
+
+            if (!initGameLose(&game))
+            {
+                cleanUpGame(&game);
+                cleanUpNetwork(&sd, &sendPacket, &receivePacket);
+                cleanUpSDL();
+                exit(EXIT_FAILURE);
+            }
+            SDL_RenderClear(game.pRenderer);
+            drawBackground(game.pBackground);
+            SDL_RenderPresent(game.pRenderer);
+            waitingForExit = true;
+        }
+
+        while (waitingForExit)
+        {
+            while (SDL_PollEvent(&event))
+            {
+                if (event.type == SDL_QUIT)
+                {
+                    waitingForExit = false;
+                    closeWindow = true;
+                }
+                else if (event.type == SDL_KEYDOWN)
+                {
+                    if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+                    {
+                        waitingForExit = false;
+                        closeWindow = true;
+                    }
+                }
+            }
+
+            SDL_RenderClear(game.pRenderer);
+            drawBackground(game.pBackground);
+            SDL_RenderPresent(game.pRenderer);
+            SDL_Delay(16); // För att undvika att loopa för snabbt
+        }
     }
 
     cleanUpGame(&game);
-    cleanUpNetwork(&sd, &p, &p2);
+    cleanUpNetwork(&sd, &sendPacket, &receivePacket);
     cleanUpSDL();
 
     return 0;
@@ -278,73 +324,7 @@ void cleanUpSDL()
     SDL_Quit();
 }
 
-int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **p, UDPpacket **p2, int *is_server, int argc, char IPinput[])
-{
-
-    const char *srvIPadd = IPinput;
-
-    printf("%s\n%s\n",srvIPadd,IPinput);
-    *is_server = 0;
-
-    if (!strlen(srvIPadd)){
-        *is_server = 1;
-    }
-
-    if (SDLNet_Init() < 0){
-        fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
-        return 0;
-    }
-
-    *sd = NULL;
-    *p = NULL;
-    *p2 = NULL;
-
-    printf(" is_server = %d\n",*is_server);
-
-    if (!(*sd = SDLNet_UDP_Open(*is_server ? 60000 : 0))){
-        fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
-        return 0;
-    }
-
-    if (!(*is_server)){
-        /*if (argc < 3){
-            fprintf(stderr, "Usage: %s client <server_ip>\n", srvIPadd);
-            return 0;
-        }*/
-
-        if (SDLNet_ResolveHost(srvadd, srvIPadd, 60000) == -1){
-            fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
-            return 0;
-        }
-    }
-
-    if (!((*p = SDLNet_AllocPacket(512)) && (*p2 = SDLNet_AllocPacket(512)))){
-        fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
-        return 0;
-    }
-
-    return 1;
-}
-
-void cleanUpNetwork(UDPsocket *sd, UDPpacket **p, UDPpacket **p2)
-{
-    if (*p != NULL)
-    {
-        SDLNet_FreePacket(*p);
-        *p = NULL;
-    }
-    if (*p2 != NULL)
-    {
-        SDLNet_FreePacket(*p2);
-        *p2 = NULL;
-    }
-    if (*sd != NULL)
-    {
-        SDLNet_UDP_Close(*sd);
-        *sd = NULL;
-    }
-    SDLNet_Quit();
-}
+// Network functions are now implemented in net.c
 
 int initGameBeforeMenu(Game *pGame)
 {
@@ -426,6 +406,30 @@ int initGameAfterMenu(Game *pGame)
     {
         cleanUpGame(pGame);
         printf("Error creating pBlock: %s\n", SDL_GetError());
+        return 0;
+    }
+    return 1;
+}
+
+int initGameWin(Game *pGame)
+{
+    pGame->pBackground = createBackground(pGame->pRenderer, &pGame->screenRect, WIN);
+    if (!pGame->pBackground)
+    {
+        printf("Error in initGameWin: pGame->pBackground is NULL.\n");
+        cleanUpGame(pGame);
+        return 0;
+    }
+    return 1;
+}
+
+int initGameLose(Game *pGame)
+{
+    pGame->pBackground = createBackground(pGame->pRenderer, &pGame->screenRect, LOSE);
+    if (!pGame->pBackground)
+    {
+        printf("Error in initGameLose: pGame->pBackground is NULL.\n");
+        cleanUpGame(pGame);
         return 0;
     }
     return 1;

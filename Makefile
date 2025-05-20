@@ -67,15 +67,15 @@ OBJDIR = ./obj
 # Lista över filer
 SRC = $(SRCDIR)/main.c $(SRCDIR)/menu.c $(SRCDIR)/platform.c \
        $(SRCDIR)/player.c $(SRCDIR)/theme.c $(SRCDIR)/camera.c \
-       $(SRCDIR)/video_player.c $(SRCDIR)/scaling.c $(SRCDIR)/lobby.c
+       $(SRCDIR)/video_player.c $(SRCDIR)/scaling.c $(SRCDIR)/net.c
 
 OBJS = $(OBJDIR)/main.o $(OBJDIR)/menu.o $(OBJDIR)/platform.o \
         $(OBJDIR)/player.o  $(OBJDIR)/theme.o $(OBJDIR)/camera.o \
-        $(OBJDIR)/video_player.o $(OBJDIR)/scaling.o $(OBJDIR)/lobby.o
+        $(OBJDIR)/video_player.o $(OBJDIR)/scaling.o $(OBJDIR)/net.o
 
 HEADERS =  $(INCDIR)/menu.h $(INCDIR)/platform.h $(INCDIR)/player.h \
             $(INCDIR)/theme.h $(INCDIR)/camera.h \
-            $(INCDIR)/video_player.h $(INCDIR)/scaling.h $(INCDIR)/lobby.h
+            $(INCDIR)/video_player.h $(INCDIR)/scaling.h $(INCDIR)/net.h
 
 # Välj rätt kommando för att skapa kataloger och radera filer
 
@@ -90,8 +90,8 @@ else
 endif
 
 # Skapar en exekverbar fil utifrån .o-filerna
-KungligaProject: $(OBJS)
-	$(CC) $(OBJS) -o KungligaProject $(LDFLAGS)
+LavaRun: $(OBJS)
+	$(CC) $(OBJS) -o LavaRun $(LDFLAGS)
 
 # Kompilerar källfiler till objektfiler
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
@@ -107,11 +107,11 @@ $(OBJDIR):
 # Städar upp genererade filer och tar bort obj-mappen
 clean:
 ifeq ($(UNAME_S), Windows)
-	@if exist KungligaProject.exe $(RM) KungligaProject.exe
+	@if exist LavaRun.exe $(RM) LavaRun.exe
 	@if exist $(NULLCHECK) $(RM) $(OBJDIR)\*.o
 	@if exist $(NULLCHECK) $(RMDIR) $(OBJDIR)
 else
-	$(RM) KungligaProject
+	$(RM) LavaRun
 	$(RM) $(OBJS)
 	$(RMDIR) $(OBJDIR)
 endif
