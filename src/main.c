@@ -53,8 +53,8 @@ int main(int argc, char *argv[])
     UDPpacket *sendPacket, *receivePacket;
     //////////////////
     Game game = {0};
-    int is_server = 0, my_id = -1, nrOfPlayers = 0;
-    int PlayerAlive = MAX_NROFPLAYERS;
+    int is_server = 0, my_id = -1, nrOfPlayers = 0, playerjoined = 1;
+    int PlayerActive = 0;
     if (!initNetwork(&sd, &srvadd, &sendPacket, &receivePacket, &is_server, argc, argv, &my_id))
     {
         cleanUpNetwork(&sd, &sendPacket, &receivePacket);
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
         cleanUpGame(&game);
         return 1;
     }
-    connectToServer(game.pPlayer, is_server, &my_id, srvadd, &nrOfPlayers, sendPacket, receivePacket, sd);
+    connectToServer(game.pPlayer, is_server, &my_id, srvadd, &nrOfPlayers, sendPacket, receivePacket, sd, &playerjoined);
     playMusic(game.pAudio);
     bool closeWindow = false;
     float shiftX = getShiftX(game.pBlock);
@@ -161,21 +161,24 @@ int main(int argc, char *argv[])
         drawLava(game.pLava);
         drawPadding(game.pRenderer, game.screenRect);
         SDL_RenderPresent(game.pRenderer);
+        int controll = 0;
         for (int i = 0; i < MAX_NROFPLAYERS; i++)
         {
             float playerY = getPlyY(game.pPlayer[i]);
-            if (playerY > CamY + ScreenSize.h + 10 && getAlive(game.pPlayer[i]) && getPlayerActive(game.pPlayer[i]))
+            if (playerY > CamY + ScreenSize.h + 10 && getPlayerActive(game.pPlayer[i]))
             {
-                printf(" Playeralive: %d", PlayerAlive);
+                printf(" Playeralive: %d", PlayerActive);
                 SetAlivefalse(game.pPlayer[i]);
-                PlayerAlive--;
+                controll++;
             }
         }
 
+        PlayerActive = controll;
+
         bool waitingForExit = false;
-        if (PlayerAlive == 1)
+        if (PlayerActive == 1 && playerjoined)
         {
-            printf(" Playeralive: %d", PlayerAlive);
+            printf(" Playeralive: %d", PlayerActive);
             if (!initGameWin(&game))
             {
                 cleanUpGame(&game);
@@ -191,6 +194,7 @@ int main(int argc, char *argv[])
 
         if (!getAlive(game.pPlayer[my_id]))
         {
+            setActive(game.pPlayer[my_id], false);
 
             if (!initGameLose(&game))
             {

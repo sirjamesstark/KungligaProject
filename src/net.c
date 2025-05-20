@@ -86,7 +86,7 @@ void cleanUpNetwork(UDPsocket *sd, UDPpacket **sendPacket, UDPpacket **receivePa
 }
 
 void connectToServer(Player *pPlayer[MAX_NROFPLAYERS], bool is_server, int *pMy_id, IPaddress srvadd, int *pNrOfPlayers,
-                        UDPpacket *pSendPacket, UDPpacket *pReceivePacket, UDPsocket sd)
+                     UDPpacket *pSendPacket, UDPpacket *pReceivePacket, UDPsocket sd, int *playerjoined)
 {
     bool joined = false;
     if (is_server == 1)
@@ -114,6 +114,7 @@ void connectToServer(Player *pPlayer[MAX_NROFPLAYERS], bool is_server, int *pMy_
                 {
                     *pMy_id = assigned;
                     joined = true;
+                    *playerjoined = 1;
                     setActive(pPlayer[*pMy_id], true);
                     printf("Client: My ID is %d\n", *pMy_id);
                 }
@@ -127,4 +128,3 @@ void connectToServer(Player *pPlayer[MAX_NROFPLAYERS], bool is_server, int *pMy_
         }
     }
 }
-

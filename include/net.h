@@ -7,5 +7,5 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **sendPacket, UDPpac
                 int *is_server, int argc, char *argv[], int *pMyId);
 void cleanUpNetwork(UDPsocket *sd, UDPpacket **sendPacket, UDPpacket **receivePacket);
 void connectToServer(Player *pPlayer[MAX_NROFPLAYERS], bool is_server, int *pMy_id, IPaddress srvadd, int *pNrOfPlayers,
-                     UDPpacket *pSendPacket, UDPpacket *pReceivePacket, UDPsocket sd);
+                     UDPpacket *pSendPacket, UDPpacket *pReceivePacket, UDPsocket sd, int *playerjoined);
 #endif
