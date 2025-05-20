@@ -52,8 +52,8 @@ else
 endif
 
 # Skapar en exekverbar fil utifrån .o-filerna
-KungligaProject: $(OBJS)
-	$(CC) $(OBJS) -o KungligaProject $(LDFLAGS)
+LavaRun: $(OBJS)
+	$(CC) $(OBJS) -o LavaRun $(LDFLAGS)
 
 # Kompilerar källfiler till objektfiler
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
@@ -67,11 +67,11 @@ $(OBJDIR):
 # Städar upp genererade filer och tar bort obj-mappen
 clean:
 ifeq ($(UNAME_S), Windows)
-	@if exist KungligaProject.exe $(RM) KungligaProject.exe
+	@if exist LavaRun.exe $(RM) LavaRun.exe
 	@if exist $(NULLCHECK) $(RM) $(OBJDIR)\*.o
 	@if exist $(NULLCHECK) $(RMDIR) $(OBJDIR)
 else
-	$(RM) KungligaProject
+	$(RM) LavaRun
 	$(RM) $(OBJS)
 	$(RMDIR) $(OBJDIR)
 endif
