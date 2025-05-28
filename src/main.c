@@ -14,6 +14,7 @@
 #include "../include/camera.h"
 #include "../include/scaling.h"
 #include "../include/net.h"
+#include "../include/video_player.h"
 
 typedef struct
 {
@@ -68,6 +69,15 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    // Play the intro video first, before showing the menu
+    #ifdef USE_FFMPEG
+    if (!playIntroVideo(game.pRenderer)) {
+        fprintf(stderr, "Failed to play intro video\n");
+        // Continue even if video fails
+    }
+    #endif
+
+    // Only show menu after video has finished playing
     if (!runMenu(game.pRenderer, &game.screenRect))
     {
         cleanUpGame(&game);
