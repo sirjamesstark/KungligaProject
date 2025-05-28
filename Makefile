@@ -2,15 +2,19 @@ ifeq ($(OS), Windows_NT)
     UNAME_S = Windows
     INCLUDE = C:/msys64/mingw64/include/SDL2
     LIBS = C:/msys64/mingw64/lib
-    CFLAGS = -g -I$(INCLUDE) -Dmain=SDL_main -DUSE_FFMPEG -c
-    LDFLAGS = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
+    CFLAGS = -g -I$(INCLUDE) -Dmain=SDL_main -c
+    LDFLAGS_BASE = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
+    LDFLAGS_FFMPEG = -lavformat -lavcodec -lavutil -lswscale -lswresample
+    LDFLAGS = $(LDFLAGS_BASE)
 else
     UNAME_S := $(shell uname -s)
     INCLUDE = /opt/homebrew/include/SDL2
     FFMPEG_INCLUDE = /opt/homebrew/Cellar/ffmpeg/7.1.1_3/include
     LIBS = /opt/homebrew/lib
-    CFLAGS = -g -I$(INCLUDE) -I$(FFMPEG_INCLUDE) -DUSE_FFMPEG -c
-    LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
+    CFLAGS = -g -I$(INCLUDE) -c
+    LDFLAGS_BASE = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
+    LDFLAGS_FFMPEG = -lavformat -lavcodec -lavutil -lswscale -lswresample
+    LDFLAGS = $(LDFLAGS_BASE)
 endif
 
 CC = gcc
@@ -19,13 +23,35 @@ SRCDIR = ./src
 INCDIR = ./include
 OBJDIR = ./obj
 
-SRC = $(SRCDIR)/main.c $(SRCDIR)/menu.c $(SRCDIR)/platform.c \
+SRC_BASE = $(SRCDIR)/main.c $(SRCDIR)/menu.c $(SRCDIR)/platform.c \
        $(SRCDIR)/player.c $(SRCDIR)/theme.c $(SRCDIR)/camera.c \
-       $(SRCDIR)/scaling.c $(SRCDIR)/net.c $(SRCDIR)/video.c
+       $(SRCDIR)/scaling.c $(SRCDIR)/net.c
 
-OBJS = $(OBJDIR)/main.o $(OBJDIR)/menu.o $(OBJDIR)/platform.o \
+OBJS_BASE = $(OBJDIR)/main.o $(OBJDIR)/menu.o $(OBJDIR)/platform.o \
         $(OBJDIR)/player.o  $(OBJDIR)/theme.o $(OBJDIR)/camera.o \
-        $(OBJDIR)/scaling.o $(OBJDIR)/net.o $(OBJDIR)/video.o
+        $(OBJDIR)/scaling.o $(OBJDIR)/net.o
+
+# Conditionally add video.c if FFmpeg is available
+ifeq ($(UNAME_S), Windows)
+    ifeq ($(wildcard C:/msys64/mingw64/bin/avcodec-*.dll),)
+        SRC = $(SRC_BASE)
+        OBJS = $(OBJS_BASE)
+    else
+        SRC = $(SRC_BASE) $(SRCDIR)/video.c
+        OBJS = $(OBJS_BASE) $(OBJDIR)/video.o
+        CFLAGS += -DUSE_FFMPEG
+    endif
+else
+    FFMPEG_AVAILABLE = $(shell [ -f /opt/homebrew/lib/libavcodec.dylib ] || [ -f /usr/local/lib/libavcodec.dylib ] && echo 1 || echo 0)
+    ifeq ($(FFMPEG_AVAILABLE), 1)
+        SRC = $(SRC_BASE) $(SRCDIR)/video.c
+        OBJS = $(OBJS_BASE) $(OBJDIR)/video.o
+        CFLAGS += -DUSE_FFMPEG -I$(FFMPEG_INCLUDE)
+    else
+        SRC = $(SRC_BASE)
+        OBJS = $(OBJS_BASE)
+    endif
+endif
 
 
 HEADERS =  $(INCDIR)/menu.h $(INCDIR)/platform.h $(INCDIR)/player.h \
@@ -43,7 +69,11 @@ else
 endif
 
 LavaRun: $(OBJS) check-ffmpeg
-	$(CC) $(OBJS) -o LavaRun $(LDFLAGS)
+	@if [ "$(findstring video.o,$(OBJS))" != "" ]; then \
+		$(CC) $(OBJS) -o LavaRun $(LDFLAGS) $(LDFLAGS_FFMPEG); \
+	else \
+		$(CC) $(OBJS) -o LavaRun $(LDFLAGS); \
+	fi
 	@echo "\033[1;32mCompilation successful. LavaRun is ready to play!\033[0m"
 
 check-ffmpeg:
