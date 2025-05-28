@@ -24,8 +24,8 @@ struct player
     SDL_Renderer *pRenderer;
     SDL_Texture *pTexture;
     SDL_Rect *pScreenRect;
-    SDL_Rect srcRect; // srcRect.w och srcRect.h lagrar den verkliga storleken av en frame i spritesheetet, srcRect.x och srcRect.y anger vilken frame i spritesheetet som väljs
-    SDL_Rect dstRect; // dstRect.w och dstRect.h är en nerskalad variant av srcRect.w och srcRect.h, srcRect.x och srcRect.y anger var i fönstret som den aktuella framen i srcRect.x och srcRect.y ska ritas upp
+    SDL_Rect srcRect; 
+    SDL_Rect dstRect; 
     bool active;
     bool alive;
     IPaddress clientAddress;
@@ -167,28 +167,10 @@ SDL_Surface *initPlayerFrames(Player *pPlayer, int player_ID)
 void initStartPosition(Player *pPlayer, SDL_Rect blockRect)
 {
     pPlayer->oldX = pPlayer->x = blockRect.w * 5;
-    // pPlayer->oldY = pPlayer->y = BOX_SCREEN_Y * blockRect.h - blockRect.h * 2 - pPlayer->dstRect.h;
+    //pPlayer->oldY = pPlayer->y = BOX_SCREEN_Y * blockRect.h - blockRect.h * 2 - pPlayer->dstRect.h;
+        // För single player test...
     pPlayer->oldY = pPlayer->y = 0;
-    /*
-    pPlayer->dstRect.x = (float)(pPlayer->pScreenRect->x + blockRect.w / 2);  // Börjar i mitten av ett block i x-led
-    pPlayer->dstRect.y = (float)(pPlayer->pScreenRect->y + pPlayer->pScreenRect->h - blockRect.h - pPlayer->frames.characterRect.h);
-    printf("pPlayer->dstRect: x=%d, y=%d\n", pPlayer->dstRect.x, pPlayer->dstRect.y);
-
-    pPlayer->frames.characterRect.x = pPlayer->dstRect.x + (int)(((float)(pPlayer->dstRect.w - pPlayer->frames.characterRect.w) / 2.0f) + 0.5f);
-    pPlayer->frames.characterRect.y = pPlayer->dstRect.y + (int)(float)(pPlayer->dstRect.h - pPlayer->frames.characterRect.h + 0.5f);
-    printf("pPlayer->frames.characterRect: x=%d, y=%d\n", pPlayer->frames.characterRect.x, pPlayer->frames.characterRect.y);
-    */
 }
-
-// bool isSolidTile(Player pPlayer, int row, int col)
-// {
-//     int gameMap[row][col];
-//     if (row < 0 || row >= pPlayer.window_height || col < 0 || col >= pPlayer.window_width)
-//     {
-//         return true; // Treat out-of-bounds as solid
-//     }
-//     return gameMap[row][col] != 0;
-// }
 
 void setSpeed(Player *pPlayer, Movecheck *movecheck)
 {
@@ -295,8 +277,7 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], Offsets offset, int my_id, f
         checkY += blockRect.h * BOX_SCREEN_Y;
     }
 
-    float lerpSpeed = 0.2f; // Testa mellan 0.1 och 0.2
-    // printf("here\n");
+    float lerpSpeed = 0.2f; 
     for (int i = 0; i < MAX_NROFPLAYERS; i++)
     {
         if (i != my_id)
@@ -309,8 +290,6 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], Offsets offset, int my_id, f
     // Check Collision
     if ((movecheck->pGoLeft) != 0)
     {
-        // printf("y: %d\n", (((int)pPlayer->y - 4) + pPlayer->playerRect.h)/blockRect.h);
-        // printf("x: %d\n", ((int)pPlayer->x)/blockRect.w);
         if (gameMap[(int)(checkY + offset.bot + pPlayer[my_id]->frames.characterRect.h) / blockRect.h][(int)(pPlayer[my_id]->x + offset.left) / blockRect.w] != 0) // Bottom edge blocked on left?
         {
             pPlayer[my_id]->x -= (pPlayer[my_id]->vx * 5 * deltaTime); // Dont move
@@ -323,8 +302,6 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], Offsets offset, int my_id, f
 
     if ((movecheck->pGoRight) != 0)
     {
-        // printf("y: %d\n", (((int)pPlayer->y - 4) + pPlayer->playerRect.h)/blockRect.h);
-        // printf("x: %d\n", (((int)pPlayer->x) + pPlayer->playerRect.w) / blockRect.w);
         if (gameMap[(int)(checkY + offset.bot + pPlayer[my_id]->frames.characterRect.h) / blockRect.h][(int)(pPlayer[my_id]->x + offset.right + pPlayer[my_id]->frames.characterRect.w) / blockRect.w] != 0 || // Bottom edge blocked on right?
             gameMap[(int)(checkY + offset.top) / blockRect.h][(int)(pPlayer[my_id]->x + offset.right + pPlayer[my_id]->frames.characterRect.w) / blockRect.w] != 0)                                            // Top edge blocked on right?
         {
@@ -334,8 +311,6 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], Offsets offset, int my_id, f
 
     if ((movecheck->pGoUp) != 0)
     {
-        // printf("y: %d,\n", ((int)pPlayer->y + 1)/blockRect.h);
-        // printf("x: %d,\n", ((int)pPlayer->x + 1)/blockRect.w);
         if (gameMap[(int)(checkY + offset.top) / blockRect.h][(int)(pPlayer[my_id]->x + offset.left) / blockRect.w] != 0 ||                                         // Left edge blocked on top?
             gameMap[(int)(checkY + offset.top) / blockRect.h][(int)(pPlayer[my_id]->x + offset.right + pPlayer[my_id]->frames.characterRect.w) / blockRect.w] != 0) // Right edge blocked on top?
         {
@@ -365,32 +340,6 @@ void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], Offsets offset, int my_id, f
         pPlayer[i]->dstRect.y = pPlayer[i]->y;
         syncCharacterRect(pPlayer[i]);
     }
-    // if (pPlayer[0]->x < 0)
-    // {
-    //     pPlayer[0]->x = 0; // gör så att man inte kan falla ned i vänster hörnet
-    // }
-
-    /* BEHÖVER UNDERSÖKA SPELETS LOGIK INNAN NEDANSTÅENDE KOD IMPLEMENTERAS
-    pPlayer[0]->frames.characterRect.x = pPlayer[0]->dstRect.x + (pPlayer[0]->dstRect.w - pPlayer[0]->frames.characterRect.w) / 2;
-    pPlayer[0]->frames.characterRect.y = pPlayer[0]->dstRect.y + (pPlayer[0]->dstRect.h - pPlayer[0]->frames.characterRect.h);
-
-    // Kontrollerar så att spelaren inte kan röra sig utanför "spelets bana"
-    if (pPlayer[0]->frames.characterRect.x <= pPlayer[0]->pScreenRect->x) {
-        pPlayer[0]->frames.characterRect.x = pPlayer[0]->pScreenRect->x;
-    }
-    else if (pPlayer[0]->frames.characterRect.x >= (pPlayer[0]->pScreenRect->x + pPlayer[0]->pScreenRect->w)) {
-        pPlayer[0]->frames.characterRect.x = (pPlayer[0]->pScreenRect->x + pPlayer[0]->pScreenRect->w);
-    }
-
-    if (pPlayer[0]->frames.characterRect.y <= pPlayer[0]->pScreenRect->y) {
-        pPlayer[0]->frames.characterRect.x = pPlayer[0]->pScreenRect->y;
-    }
-    else if (pPlayer[0]->frames.characterRect.y >= (pPlayer[0]->pScreenRect->y + pPlayer[0]->pScreenRect->h)) {
-        pPlayer[0]->frames.characterRect.x = (pPlayer[0]->pScreenRect->y + pPlayer[0]->pScreenRect->h);
-    }
-    pPlayer[0]->dstRect.x = pPlayer[0]->frames.characterRect.x - (pPlayer[0]->dstRect.w - pPlayer[0]->frames.characterRect.w) / 2;
-    pPlayer[0]->dstRect.y = pPlayer[0]->frames.characterRect.y - (pPlayer[0]->dstRect.h - pPlayer[0]->frames.characterRect.h);
-    */
 }
 
 void syncCharacterRect(Player *pPlayer)
@@ -445,7 +394,7 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPack
                 }
             }
         }
-        else // Client sends to server
+        else
         {
             sendPacket->address = pPlayer[0]->clientAddress;
             SDLNet_UDP_Send(sd, -1, sendPacket);
@@ -472,7 +421,7 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPack
 
                     printf("Server: Accepted JOIN, assigned ID %d\n", newID);
 
-                    for (int i = 0; i < *pNrOfPlayers; i++) // Include server (i=0)
+                    for (int i = 0; i < *pNrOfPlayers; i++) 
                     {
                         if (pPlayer[i]->active)
                         {
@@ -492,7 +441,6 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPack
             }
             else
             {
-                // Positionsuppdatering: "123 456"
                 int id;
                 float client_x, client_y;
                 if (sscanf((char *)receivePacket->data, "%d %f %f", &id, &client_x, &client_y) == 3)
@@ -506,7 +454,7 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPack
                     }
                     for (int i = 1; i < (*pNrOfPlayers); i++)
                     {
-                        if (pPlayer[i]->active && i != id) // Don't send back to sender
+                        if (pPlayer[i]->active && i != id)
                         {
                             snprintf((char *)sendPacket->data, 512, "%d %f %f", id, client_x, client_y);
                             sendPacket->len = strlen((char *)sendPacket->data) + 1;
@@ -519,15 +467,12 @@ void networkUDP(Player *pPlayer[MAX_NROFPLAYERS], int my_id, UDPpacket *sendPack
         }
         else
         {
-            // Klient: mottar data i formatet "id x y"
             int id;
             float x, y;
             if (sscanf((char *)receivePacket->data, "%d %f %f", &id, &x, &y) == 3)
             {
                 if (id >= 0 && id < MAX_NROFPLAYERS && id != my_id)
                 {
-                    // pPlayer[id]->oldX = pPlayer[id]->x;
-                    // pPlayer[id]->oldY = pPlayer[id]->y;
                     pPlayer[id]->targetX = x * pPlayer[id]->pScreenRect->w;
                     pPlayer[id]->targetY = pPlayer[id]->pScreenRect->h - y * pPlayer[id]->pScreenRect->h;
                     pPlayer[id]->active = true;

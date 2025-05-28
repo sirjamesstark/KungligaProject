@@ -47,11 +47,9 @@ int main(int argc, char *argv[])
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
-    ////probably need to move to another file/function
     UDPsocket sd;
     IPaddress srvadd;
     UDPpacket *sendPacket, *receivePacket;
-    //////////////////
     Game game = {0};
     int is_server = 0, my_id = -1, nrOfPlayers = 0, playerjoined = 1;
     int PlayerActive = 0;
@@ -88,7 +86,6 @@ int main(int argc, char *argv[])
     Movecheck movecheck = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
     SDL_Rect ScreenSize = getScreenRect(game.pWindow);
 
-    // flytta ev in dessa initieringar i initGameAfterMenu
     SDL_Rect blockRect = getBlockRect(game.pBlock);
     for (int i = 0; i < MAX_NROFPLAYERS; i++)
     {
@@ -106,7 +103,7 @@ int main(int argc, char *argv[])
     bool closeWindow = false;
     float shiftX = getShiftX(game.pBlock);
     float shiftY = getShiftY(game.pBlock);
-    Uint32 lastTime = SDL_GetTicks(); // Tidpunkt för senaste uppdateringen
+    Uint32 lastTime = SDL_GetTicks(); 
     Uint32 currentTime;
     float deltaTime;
     int gameMap[BOX_ROW][BOX_COL] = {0};
@@ -117,9 +114,8 @@ int main(int argc, char *argv[])
     }
     while (!closeWindow)
     {
-        // Beräkna tid sedan senaste frame
         currentTime = SDL_GetTicks();
-        deltaTime = (currentTime - lastTime) / 1000.0f; // Omvandla till sekunder
+        deltaTime = (currentTime - lastTime) / 1000.0f; 
         lastTime = currentTime;
         SDL_Event event;
         while (SDL_PollEvent(&event))
@@ -231,7 +227,7 @@ int main(int argc, char *argv[])
             SDL_RenderClear(game.pRenderer);
             drawBackground(game.pBackground);
             SDL_RenderPresent(game.pRenderer);
-            SDL_Delay(16); // För att undvika att loopa för snabbt
+            SDL_Delay(16); 
         }
     }
 
@@ -433,7 +429,7 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, Movecheck *
     {
         switch (pEvent->key.keysym.scancode)
         {
-        default: // Handle any unspecified keys
+        default: 
             break;
 
         case SDL_SCANCODE_W:
@@ -464,7 +460,7 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, Movecheck *
     {
         switch (pEvent->key.keysym.scancode)
         {
-        default: // Handle any unspecified keys
+        default:
             break;
         case SDL_SCANCODE_W:
         case SDL_SCANCODE_UP:

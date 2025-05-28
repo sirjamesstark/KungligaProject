@@ -17,7 +17,6 @@ int initNetwork(UDPsocket *sd, IPaddress *srvadd, UDPpacket **sendPacket, UDPpac
         *is_server = 1;
         *pMyId = 0;
 
-        // Sätt upp serveradress (lokal maskin, port 2000)
         if (SDLNet_ResolveHost(srvadd, NULL, 2000) < 0)
         {
             fprintf(stderr, "SDLNet_ResolveHost: %s\n", SDLNet_GetError());
@@ -103,7 +102,6 @@ void connectToServer(Player *pPlayer[MAX_NROFPLAYERS], bool is_server, int *pMy_
         pSendPacket->address = srvadd;
         SDLNet_UDP_Send(sd, -1, pSendPacket);
 
-        // ⬇️ Timeout-loop för att vänta på svar
         Uint32 join_start = SDL_GetTicks();
         while (!joined && SDL_GetTicks() - join_start < 3000)
         {
@@ -119,7 +117,7 @@ void connectToServer(Player *pPlayer[MAX_NROFPLAYERS], bool is_server, int *pMy_
                     printf("Client: My ID is %d\n", *pMy_id);
                 }
             }
-            SDL_Delay(10); // undvik att stressa CPU
+            SDL_Delay(10);
         }
         if (!joined)
         {

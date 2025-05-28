@@ -1,7 +1,3 @@
-# Identifierar operativsystem: Windows eller macOS
-# INCLUDE anger fullständig sökväg till SDL2:s headerfiler
-# LIB anger fullständig sökväg till SDL2:s bibliotek
-# CFLAGS & LDFLAGS säts för att bygga och länka SDL2 bibliotek till operativsystemet
 ifeq ($(OS), Windows_NT)
     UNAME_S = Windows
     INCLUDE = C:/msys64/mingw64/include/SDL2
@@ -16,15 +12,12 @@ else
     LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
 endif
 
-# Kompilator GCC
 CC = gcc
 
-# Sökvägar relativt Makefilen
 SRCDIR = ./src
 INCDIR = ./include
 OBJDIR = ./obj
 
-# Lista över filer
 SRC = $(SRCDIR)/main.c $(SRCDIR)/menu.c $(SRCDIR)/platform.c \
        $(SRCDIR)/player.c $(SRCDIR)/theme.c $(SRCDIR)/camera.c \
        $(SRCDIR)/scaling.c $(SRCDIR)/net.c
@@ -38,9 +31,6 @@ HEADERS =  $(INCDIR)/menu.h $(INCDIR)/platform.h $(INCDIR)/player.h \
             $(INCDIR)/theme.h $(INCDIR)/camera.h $(INCDIR)/scaling.h \
             $(INCDIR)/scaling.h $(INCDIR)/net.h 
 
-
-# Välj rätt kommando för att skapa kataloger och radera filer
-
 ifeq ($(UNAME_S), Windows)
     MKDIR = if not exist $(subst /,\,$(OBJDIR)) mkdir $(subst /,\,$(OBJDIR))
     RM = del /Q
@@ -51,20 +41,16 @@ else
     RMDIR = rm -rf
 endif
 
-# Skapar en exekverbar fil utifrån .o-filerna
 LavaRun: $(OBJS)
 	$(CC) $(OBJS) -o LavaRun $(LDFLAGS)
 
-# Kompilerar källfiler till objektfiler
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -o $@ $<
 
-# Skapar obj-mappen om den inte finns
 $(OBJDIR):
 	@echo Running: $(MKDIR)
 	@$(MKDIR)
 
-# Städar upp genererade filer och tar bort obj-mappen
 clean:
 ifeq ($(UNAME_S), Windows)
 	@if exist LavaRun.exe $(RM) LavaRun.exe

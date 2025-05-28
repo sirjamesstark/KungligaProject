@@ -10,8 +10,8 @@ struct block
     SDL_Renderer *pRenderer;
     SDL_Rect *pScreenRect;
     SDL_Texture *pTexture;
-    SDL_Rect srcRect; // srcRect.w och srcRect.h lagrar den verkliga storleken av en frame i spritesheetet, srcRect.x och srcRect.y anger vilken frame i spritesheetet för blocks som väljs
-    SDL_Rect dstRect; // dstRect.w och dstRect.h är en nerskalad variant av srcRect.w och srcRect.h, dstRect.x och dstRect.y anger var i fönstret som den aktuella framen i srcRect.x och srcRect.y ska ritas upp
+    SDL_Rect srcRect; 
+    SDL_Rect dstRect; 
 };
 
 Block *createBlock(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
@@ -82,7 +82,6 @@ void buildTheMap(int gameMap[BOX_ROW][BOX_COL], Block *pBlock, int CamY, SDL_Rec
         int blockScreenY = (screenRect->h + screenRect->y) - (BOX_ROW - row) * pBlock->dstRect.h;
         int blockYRelativeToCam = blockScreenY - CamY;
 
-        // Hoppa över block utanför bus skärm #viktigt
         if (blockYRelativeToCam + pBlock->dstRect.h < 0 || blockYRelativeToCam > screenRect->h)
             continue;
 
@@ -108,7 +107,7 @@ void drawBlock(Block *pBlock, int block_type, SDL_Rect *dstRect)
     {
         SDL_Rect srcRect =
             {
-                .x = (block_type - 1) * pBlock->srcRect.w, // Välj rätt block i spritesheet
+                .x = (block_type - 1) * pBlock->srcRect.w, 
                 .y = 0,
                 .w = pBlock->srcRect.w,
                 .h = pBlock->srcRect.h};
