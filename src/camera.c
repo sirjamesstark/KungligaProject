@@ -68,16 +68,6 @@ void updateCamera(Camera *pCamera, int targetX, float targetY)
         pCamera->view.y = pCamera->pScreenRect->y * 2 + pCamera->pScreenRect->h; //- pCamera->view.h;
 
     pCamera->latestY = pCamera->view.y;
-    // if (pCamera->view.x < 0)
-    //     pCamera->view.x = 0;
-    // // if (pCamera->view.y < 0)
-    // //     pCamera->view.y = 0;
-    // if (pCamera->view.x + pCamera->view.w > pCamera->window_width)
-    //     pCamera->view.x = pCamera->window_width - pCamera->view.w;
-    // if (pCamera->view.y + pCamera->view.h > pCamera->window_height)
-    //     pCamera->view.y = pCamera->window_height - pCamera->view.h;
-
-    // pCamera->latestY = pCamera->view.y;
 }
 
 void destroyCamera(Camera *pCamera)

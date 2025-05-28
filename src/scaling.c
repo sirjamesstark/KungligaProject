@@ -50,19 +50,17 @@ void drawPadding(SDL_Renderer *pRenderer, const SDL_Rect screenRect) {
         .h = screenRect.y
     };
 
-    // We're not using the bottom padding anymore as requested by the user
     SDL_Rect bottomPadding = {
-         .x = 0,
-         .y = screenRect.y + screenRect.h,
-         .w = screenRect.x * 2 + screenRect.w,
-         .h = screenRect.y + 10
+        .x = 0,
+        .y = screenRect.y + screenRect.h,
+        .w = screenRect.x * 2 + screenRect.w,
+        .h = screenRect.y
     };
 
     SDL_SetRenderDrawColor(pRenderer, 0, 0, 0, 255);
     SDL_RenderFillRect(pRenderer, &leftPadding);
     SDL_RenderFillRect(pRenderer, &rightPadding);
     SDL_RenderFillRect(pRenderer, &topPadding);
-    // Not drawing the bottom padding anymore
     SDL_RenderFillRect(pRenderer, &bottomPadding);
 }
 

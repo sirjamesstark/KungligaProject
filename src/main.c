@@ -12,9 +12,9 @@
 #include "../include/player.h"
 #include "../include/theme.h"
 #include "../include/camera.h"
-#include "../include/video_player.h"
 #include "../include/scaling.h"
 #include "../include/net.h"
+#include "../include/video_player.h"
 
 typedef struct
 {
@@ -22,7 +22,7 @@ typedef struct
     SDL_Renderer *pRenderer;
     SDL_Rect screenRect;
     Background *pBackground;
-    Lava *pLava;         // Will be NULL during menu phase
+    Lava *pLava;
     Audio *pAudio;
     Cursor *pCursor;
     Camera *pCamera;
@@ -48,11 +48,9 @@ int main(int argc, char *argv[])
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
-    ////probably need to move to another file/function
     UDPsocket sd;
     IPaddress srvadd;
     UDPpacket *sendPacket, *receivePacket;
-    //////////////////
     Game game = {0};
     int is_server = 0, my_id = -1, nrOfPlayers = 0, playerjoined = 1;
     int PlayerActive = 0;
@@ -70,61 +68,16 @@ int main(int argc, char *argv[])
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
-    
-    // Initialize and play the intro video
-    printf("\n=== Starting Intro Sequence ===\n");
-    
-#ifdef USE_FFMPEG
-    printf("Using FFmpeg for video playback\n");
-    // Use FFmpeg video player when available
-    if (!initVideoPlayer(game.pRenderer)) {
-        fprintf(stderr, "Failed to initialize video player\n");
-    } else {
-        // Try different video formats based on platform
-        #ifdef _WIN32
-        // On Windows, try MP4 first (more compatible)
-        if (!playVideo(game.pRenderer, "resources/video.mp4")) {
-            // If MP4 fails, try MOV as fallback
-            if (!playVideo(game.pRenderer, "resources/video.mov")) {
-                fprintf(stderr, "Failed to play video in any format\n");
-            }
-        }
-        #else
-        // On macOS/Linux, try MOV first
-        if (!playVideo(game.pRenderer, "resources/video.mov")) {
-            // If MOV fails, try MP4 as fallback
-            if (!playVideo(game.pRenderer, "resources/video.mp4")) {
-                fprintf(stderr, "Failed to play video in any format\n");
-            }
-        }
-        #endif
-        cleanupVideoPlayer();
+
+    // Play the intro video first, before showing the menu
+    #ifdef USE_FFMPEG
+    if (!playIntroVideo(game.pRenderer)) {
+        fprintf(stderr, "Failed to play intro video\n");
+        // Continue even if video fails
     }
-#else
-    printf("FFmpeg not available, using audio only mode\n");
-    // Play only the audio file
-    Mix_Chunk *introSound = Mix_LoadWAV("resources/KungligaProjectSound.wav");
-    if (introSound) {
-        Mix_PlayChannel(0, introSound, 0);
-        
-        // Show black screen
-        SDL_SetRenderDrawColor(game.pRenderer, 0, 0, 0, 255);
-        SDL_RenderClear(game.pRenderer);
-        SDL_RenderPresent(game.pRenderer);
-        
-        // Wait for sound to play
-        SDL_Delay(3000);
-        Mix_FreeChunk(introSound);
-    } else {
-        fprintf(stderr, "Could not load sound file: %s\n", Mix_GetError());
-    }
-#endif
+    #endif
 
-    printf("=== Intro Sequence Complete ===\n");
-
-    // Set game state to 0 (menu)
-    setGameState(0);
-
+    // Only show menu after video has finished playing
     if (!runMenu(game.pRenderer, &game.screenRect))
     {
         cleanUpGame(&game);
@@ -140,10 +93,9 @@ int main(int argc, char *argv[])
         cleanUpSDL();
         exit(EXIT_FAILURE);
     }
-    // Set game state to 1 (game) after menu and initialization
-    setGameState(1);
     Movecheck movecheck = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
-    SDL_Rect ScreenSize = getScreenRect(game.pWindow);   // flytta ev in dessa initieringar i initGameAfterMenu
+    SDL_Rect ScreenSize = getScreenRect(game.pWindow);
+
     SDL_Rect blockRect = getBlockRect(game.pBlock);
     for (int i = 0; i < MAX_NROFPLAYERS; i++)
     {
@@ -161,7 +113,7 @@ int main(int argc, char *argv[])
     bool closeWindow = false;
     float shiftX = getShiftX(game.pBlock);
     float shiftY = getShiftY(game.pBlock);
-    Uint32 lastTime = SDL_GetTicks(); // Tidpunkt för senaste uppdateringen
+    Uint32 lastTime = SDL_GetTicks(); 
     Uint32 currentTime;
     float deltaTime;
     int gameMap[BOX_ROW][BOX_COL] = {0};
@@ -172,9 +124,8 @@ int main(int argc, char *argv[])
     }
     while (!closeWindow)
     {
-        // Beräkna tid sedan senaste frame
         currentTime = SDL_GetTicks();
-        deltaTime = (currentTime - lastTime) / 1000.0f; // Omvandla till sekunder
+        deltaTime = (currentTime - lastTime) / 1000.0f; 
         lastTime = currentTime;
         SDL_Event event;
         while (SDL_PollEvent(&event))
@@ -286,7 +237,7 @@ int main(int argc, char *argv[])
             SDL_RenderClear(game.pRenderer);
             drawBackground(game.pBackground);
             SDL_RenderPresent(game.pRenderer);
-            SDL_Delay(16); // För att undvika att loopa för snabbt
+            SDL_Delay(16); 
         }
     }
 
@@ -324,22 +275,9 @@ void cleanUpSDL()
     SDL_Quit();
 }
 
-// Network functions are now implemented in net.c
-
 int initGameBeforeMenu(Game *pGame)
 {
-    // Initialize all pointers to NULL to prevent any accidental use
-    pGame->pBackground = NULL;
-    pGame->pLava = NULL;
-    pGame->pAudio = NULL;
-    pGame->pCursor = NULL;
-    pGame->pCamera = NULL;
-    pGame->pBlock = NULL;
-    for (int i = 0; i < MAX_NROFPLAYERS; i++) {
-        pGame->pPlayer[i] = NULL;
-    }
-    
-    pGame->pWindow = SDL_CreateWindow("KungligaProject", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    pGame->pWindow = SDL_CreateWindow("LavaRun", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
     if (!pGame->pWindow)
     {
         printf("Error in initGameBeforeMenu: pGame->pWindow is NULL.\n");
@@ -501,7 +439,7 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, Movecheck *
     {
         switch (pEvent->key.keysym.scancode)
         {
-        default: // Handle any unspecified keys
+        default: 
             break;
 
         case SDL_SCANCODE_W:
@@ -532,7 +470,7 @@ void handleInput(Game *pGame, SDL_Event *pEvent, bool *pCloseWindow, Movecheck *
     {
         switch (pEvent->key.keysym.scancode)
         {
-        default: // Handle any unspecified keys
+        default:
             break;
         case SDL_SCANCODE_W:
         case SDL_SCANCODE_UP:

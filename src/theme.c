@@ -54,55 +54,6 @@ struct audio
     bool isMuted;
 };
 
-// Constants for lava animation
-#define LAVA_FRAME_COUNT 4
-#define LAVA_SPEED 100
-
-// This function is not used in the current implementation
-// It's kept for reference but we'll use the existing createLava function instead
-/*
-Lava *CreateLavaAnimation(SDL_Renderer *pRenderer, Background *pBackground)
-{
-    if (!pRenderer)
-    {
-        printf("Error in createLava: pRenderer is NULL.\n");
-        return NULL;
-    }
-
-    Lava *pLava = malloc(sizeof(struct lava));
-    if (!pLava)
-    {
-        printf("Error in createLava: Failed to allocate memory for pLava.\n");
-        return NULL;
-    }
-
-    SDL_Surface *lavaSurface = IMG_Load("resources/lava_spritesheet.png");
-    if (!lavaSurface)
-    {
-        printf("Failed to load lava spritesheet: %s\n", SDL_GetError());
-        return NULL;
-    }
-
-    pLava->pTexture = SDL_CreateTextureFromSurface(pRenderer, lavaSurface);
-    if (!pLava->pTexture)
-    {
-        printf("Lava texture creation failed!\n");
-    }
-    
-    pLava->nrOfFrames = LAVA_FRAME_COUNT;
-    pLava->currentFrame = 0;
-    pLava->lastFrameTime = SDL_GetTicks();
-
-    if (!pLava->pTexture)
-    {
-        printf("Error in createLava: pLava->pTexture is NULL.\n");
-        destroyLava(pLava);
-        return NULL;
-    }
-    return pLava;
-}
-*/
-
 Background *createBackground(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, State theme_type)
 {
     if (!pRenderer || !pScreenRect)
@@ -172,48 +123,6 @@ void drawBackground(Background *pBackground)
     SDL_RenderCopy(pBackground->pRenderer, pBackground->pTexture, &pBackground->srcRect, &pBackground->dstRect);
 }
 
-// Enhanced lava drawing function - not currently used
-// Keeping it commented out to avoid conflicts with the existing drawLava function
-/*
-void drawLavaEnhanced(Lava *pLava, Background *pBackground, SDL_Rect BlockRect)
-{
-    Uint32 now = SDL_GetTicks();
-    if (now - pLava->lastFrameTime > LAVA_SPEED)
-    {
-        pLava->currentFrame = (pLava->currentFrame + 1) % LAVA_FRAME_COUNT;
-        pLava->lastFrameTime = now;
-    }
-
-    // Calculate frame width based on texture size and number of frames
-    int textureWidth, textureHeight;
-    SDL_QueryTexture(pLava->pTexture, NULL, NULL, &textureWidth, &textureHeight);
-    int frameWidth = textureWidth / pLava->nrOfFrames;
-    
-    SDL_Rect srcRect = {
-        frameWidth * pLava->currentFrame,
-        0,
-        frameWidth,
-        textureHeight};
-
-    float scale = 0.25f;
-    int scaledWidth = frameWidth * scale;
-    int scaledHeight = textureHeight * scale;
-
-    int y = pBackground->pScreenRect->h - scaledHeight;
-
-    for (int x = 0; x < pBackground->pScreenRect->w; x += scaledWidth)
-    {
-        SDL_Rect dstRect = {
-            x,
-            y,
-            scaledWidth,
-            scaledHeight};
-
-        SDL_RenderCopy(pBackground->pRenderer, pLava->pTexture, &srcRect, &dstRect);
-    }
-}
-*/
-
 void destroyBackground(Background *pBackground)
 {
     if (!pBackground)
@@ -269,11 +178,6 @@ Lava *createLava(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect)
     printf("\nLava size:\n");
     pLava->dstRect = scaleRect(pLava->srcRect, *pLava->pScreenRect, LAVA_SCALEFACTOR);
     pLava->dstRect.x = pLava->pScreenRect->x;
-    // Position the lava approximately 1cm (38 pixels) lower than original position
-    // Original position: pLava->dstRect.y = pLava->pScreenRect->y + pLava->pScreenRect->h - pLava->dstRect.h;
-    // Previous position: pLava->dstRect.y = pLava->pScreenRect->y + pLava->pScreenRect->h - pLava->dstRect.h + 113;
-    // Now moved 2cm (75 pixels) upward from previous position and then fine-tuned with additional adjustments
-    // Moved 10 pixels upward as requested
     pLava->dstRect.y = pLava->pScreenRect->y + pLava->pScreenRect->h - pLava->dstRect.h;
 
     pLava->frameDelay = 100;
@@ -292,26 +196,10 @@ void updateLavaFrame(Lava *pLava)
     pLava->srcRect.x = pLava->srcRect.w * pLava->currentFrame;
 }
 
-// Global variable to track the current game state
-// 0 = menu, 1 = game
-static int gameState = 0;
-
-// Function to set the current game state
-void setGameState(int state)
-{
-    printf("Game state changed to: %d\n", state);
-    gameState = state;
-}
-
 void drawLava(Lava *pLava)
 {
-    // Only draw lava if we're in the game state, not in the menu
     if (!pLava)
         return;
-    if (gameState == 0) {
-        // We're in menu mode, don't draw lava
-        return;
-    }
     updateLavaFrame(pLava);
     for (int i = pLava->pScreenRect->x; i < pLava->pScreenRect->w; i += pLava->dstRect.w)
     {

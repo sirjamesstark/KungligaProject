@@ -16,10 +16,6 @@
 #define RIGHT_OFFSETSCALER -153.6f
 #define GRAVITY_OFFSETSCALER 432.0f
 
-// #define TOP_OFFSET 25
-// #define BOT_OFFSET 22
-// #define GRAVITY_OFFSET 26
-
 struct movecheck
 {
     bool up;
@@ -57,7 +53,6 @@ Offsets setOffsets(SDL_Rect screenRect, float shiftY, float shiftX);
 int getPlyRectX(Player *pPlayer);
 float getPlyX(Player *pPlayer);
 float getPlyY(Player *pPlayer);
-// void updatePlayer(Player *pPlayer, SDL_Rect blockRect);
 
 void updatePlayer(Player *pPlayer[MAX_NROFPLAYERS], Offsets offset, int my_id, float deltaTime, int gameMap[BOX_ROW][BOX_COL], SDL_Rect blockRect,
                   Movecheck *movecheck);

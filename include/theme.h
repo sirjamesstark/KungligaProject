@@ -19,7 +19,6 @@ Lava *createLava(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect);
 void updateLavaFrame(Lava *pLava);
 void drawLava(Lava *pLava);
 void destroyLava(Lava *pLava);
-void setGameState(int state);
 
 Button *createButton(SDL_Renderer *pRenderer, SDL_Rect *pScreenRect, ButtonType button_type);
 int setButtonPlacement(Button *pButton, ButtonType button_type);

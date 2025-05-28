@@ -1,83 +1,36 @@
-# Identifierar operativsystem: Windows eller macOS
-# INCLUDE anger fullständig sökväg till SDL2:s headerfiler
-# LIB anger fullständig sökväg till SDL2:s bibliotek
-# CFLAGS & LDFLAGS säts för att bygga och länka SDL2 bibliotek till operativsystemet
 ifeq ($(OS), Windows_NT)
     UNAME_S = Windows
-    # SDL2 and FFmpeg paths for Windows
-    INCLUDE = C:/SDL2/include
-    LIBS = C:/SDL2/lib
-    
-    # FFmpeg paths for Windows
-    FFMPEG_INCLUDE = C:/FFmpeg/include
-    FFMPEG_LIBS = C:/FFmpeg/lib
-    
-    # FFmpeg control - Set to 1 if FFmpeg is installed on Windows, 0 otherwise
-    FFMPEG_INSTALLED = 1
-    
-    ifeq ($(FFMPEG_INSTALLED), 1)
-        CFLAGS = -g -I$(INCLUDE) -I$(FFMPEG_INCLUDE) -DUSE_FFMPEG -DDEBUG -c
-        LDFLAGS = -L$(LIBS) -L$(FFMPEG_LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
-        $(info FFmpeg enabled for Windows. Using video playback.)
-    else
-        CFLAGS = -g -I$(INCLUDE) -DDEBUG -c
-        LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
-        $(info FFmpeg disabled for Windows. Using audio only.)
-    endif
+    INCLUDE = C:/msys64/mingw64/include/SDL2
+    LIBS = C:/msys64/mingw64/lib
+    CFLAGS = -g -I$(INCLUDE) -Dmain=SDL_main -DUSE_FFMPEG -c
+    LDFLAGS = -L$(LIBS) -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
 else
-    # macOS eller Linux
     UNAME_S := $(shell uname -s)
-    ifeq ($(UNAME_S), Darwin)
-        # macOS
-        INCLUDE = /opt/homebrew/include/SDL2
-        LIBS = /opt/homebrew/lib
-        
-        # Check if FFmpeg is available
-        FFMPEG_AVAILABLE := $(shell brew list ffmpeg >/dev/null 2>&1 && echo 1 || echo 0)
-        
-        ifeq ($(FFMPEG_AVAILABLE), 1)
-            # FFmpeg is available
-            CFLAGS = -g -I$(INCLUDE) -I/opt/homebrew/include -DUSE_FFMPEG -DDEBUG -c
-            LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
-            $(info FFmpeg detected on macOS. Using video playback.)
-        else
-            # FFmpeg is not available
-            CFLAGS = -g -I$(INCLUDE) -DDEBUG -c
-            LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lm
-            $(info FFmpeg not detected on macOS. Using audio only.)  
-        endif
-    endif
+    INCLUDE = /opt/homebrew/include/SDL2
+    FFMPEG_INCLUDE = /opt/homebrew/Cellar/ffmpeg/7.1.1_3/include
+    LIBS = /opt/homebrew/lib
+    CFLAGS = -g -I$(INCLUDE) -I$(FFMPEG_INCLUDE) -DUSE_FFMPEG -c
+    LDFLAGS = -L$(LIBS) -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -lSDL2_net -lavformat -lavcodec -lavutil -lswscale -lswresample -lm
 endif
 
-# Kompilator GCC
-ifeq ($(OS), Windows_NT)
-    CC = gcc
-    # Windows'ta make komutu farklı olabilir
-    MAKE_COMMAND = mingw64-make
-else
-    CC = gcc
-    MAKE_COMMAND = make
-endif
+CC = gcc
 
-# Sökvägar relativt Makefilen
 SRCDIR = ./src
 INCDIR = ./include
 OBJDIR = ./obj
 
-# Lista över filer
 SRC = $(SRCDIR)/main.c $(SRCDIR)/menu.c $(SRCDIR)/platform.c \
        $(SRCDIR)/player.c $(SRCDIR)/theme.c $(SRCDIR)/camera.c \
-       $(SRCDIR)/video_player.c $(SRCDIR)/scaling.c $(SRCDIR)/net.c
+       $(SRCDIR)/scaling.c $(SRCDIR)/net.c $(SRCDIR)/video.c
 
 OBJS = $(OBJDIR)/main.o $(OBJDIR)/menu.o $(OBJDIR)/platform.o \
         $(OBJDIR)/player.o  $(OBJDIR)/theme.o $(OBJDIR)/camera.o \
-        $(OBJDIR)/video_player.o $(OBJDIR)/scaling.o $(OBJDIR)/net.o
+        $(OBJDIR)/scaling.o $(OBJDIR)/net.o $(OBJDIR)/video.o
+
 
 HEADERS =  $(INCDIR)/menu.h $(INCDIR)/platform.h $(INCDIR)/player.h \
-            $(INCDIR)/theme.h $(INCDIR)/camera.h \
-            $(INCDIR)/video_player.h $(INCDIR)/scaling.h $(INCDIR)/net.h
-
-# Välj rätt kommando för att skapa kataloger och radera filer
+            $(INCDIR)/theme.h $(INCDIR)/camera.h $(INCDIR)/scaling.h \
+            $(INCDIR)/scaling.h $(INCDIR)/net.h 
 
 ifeq ($(UNAME_S), Windows)
     MKDIR = if not exist $(subst /,\,$(OBJDIR)) mkdir $(subst /,\,$(OBJDIR))
@@ -89,22 +42,35 @@ else
     RMDIR = rm -rf
 endif
 
-# Skapar en exekverbar fil utifrån .o-filerna
-LavaRun: $(OBJS)
+LavaRun: $(OBJS) check-ffmpeg
 	$(CC) $(OBJS) -o LavaRun $(LDFLAGS)
+	@echo "\033[1;32mCompilation successful. LavaRun is ready to play!\033[0m"
 
-# Kompilerar källfiler till objektfiler
+check-ffmpeg:
+	@echo "\033[1;34mChecking for FFmpeg installation...\033[0m"
+ifeq ($(UNAME_S), Windows)
+	@if exist C:\msys64\mingw64\bin\avcodec-*.dll (\
+		echo "\033[1;32mFFmpeg detected: Intro video feature is enabled.\033[0m" \
+	) else (\
+		echo "\033[1;33mWARNING: FFmpeg not detected. The game will run, but the intro video will be skipped.\033[0m" \
+		echo "\033[1;33mPlease see FFMPEG_SETUP_WINDOWS.md for installation instructions.\033[0m" \
+	)
+else
+	@if [ -f /opt/homebrew/lib/libavcodec.dylib ] || [ -f /usr/local/lib/libavcodec.dylib ]; then \
+		echo "\033[1;32mFFmpeg detected: Intro video feature is enabled.\033[0m"; \
+	else \
+		echo "\033[1;33mWARNING: FFmpeg not detected. The game will run, but the intro video will be skipped.\033[0m"; \
+		echo "\033[1;33mPlease see FFMPEG_SETUP_MAC.md for installation instructions.\033[0m"; \
+	fi
+endif
+
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 	$(CC) $(CFLAGS) -o $@ $<
 
-# Skapar obj-mappen om den inte finns
 $(OBJDIR):
 	@echo Running: $(MKDIR)
 	@$(MKDIR)
 
-
-
-# Städar upp genererade filer och tar bort obj-mappen
 clean:
 ifeq ($(UNAME_S), Windows)
 	@if exist LavaRun.exe $(RM) LavaRun.exe
